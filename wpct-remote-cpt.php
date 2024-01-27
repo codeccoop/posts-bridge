@@ -1,7 +1,11 @@
 <?php
 
+namespace WPCT_REMOTE_CPT;
+
+use Exception;
+
 /**
- * Plugin Name:     WPCT Remote CPT
+ * Plugin Name:     Wpct Remote CPT
  * Plugin URI:      https://git.coopdevs.org/coopdevs/website/wp/wp-plugins/wpct-remote-cpt
  * Description:     Custom Post Type with remote sourcing
  * Author:          Còdec Cooperativa
@@ -13,34 +17,56 @@
  * @package         wpct_remote_cpt
  */
 
-define('WPCT_REMOTE_CPT_PLUGIN_PATH', plugin_dir_path(__FILE__));
+require_once 'includes/class-model.php';
+require_once 'includes/class-bridge.php';
+require_once 'includes/class-patterns.php';
+require_once 'includes/class-templates.php';
+require_once 'includes/class-rest-controller.php';
 
-require_once 'env.php';
-require_once 'includes/model.php';
-require_once 'includes/api.php';
-require_once 'includes/templates.php';
+add_action('init', function () {
+    if (!wp_is_block_theme()) return;
 
-// Plugin dependencies
+    $post_type = apply_filters('wpct_remote_cpt_post_type', 'remote-cpt');
+    $remote_fields = apply_filters('wpct_remote_cpt_fields', []);
+
+    $bridge = new Bridge('/api/private/crm-lead', $post_type);
+
+    $plugin_dir = plugin_dir_path(__FILE__);
+    Patterns::register_block_patterns($plugin_dir, $post_type);
+    Templates::register_block_templates($plugin_dir, $post_type);
+
+    Model::$bridge = $bridge;
+    Model::init($post_type);
+
+    global $post;
+    if (empty($post) || $post->post_type !== $post_type) return;
+
+    $model = new Model($post);
+    foreach ($remote_fields as $field) {
+        add_shortcode('remote_field_' . $field, function () use ($model, $field) {
+            $data = $model->get_data();
+            if (!isset($data[$field])) return  '';
+            return $data[$field];
+        });
+    }
+});
+
+add_action('rest_api_init', function () {
+    $post_type = apply_filters('wpct_remote_cpt_post_type', 'remote-cpt');
+    (new REST_Controller($post_type))->register_routes();
+});
+
 add_filter('wpct_dependencies_check', function ($dependencies) {
     $dependencies['Wpct Odoo Connect'] = '<a href="https://git.coopdevs.org/coopdevs/website/wp/wp-plugins/wpct-odoo-connect">Wpct Odoo Connect</a>';
+    $dependencies['Wpct String Translation'] = '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-string-translation">Wpct String Translation</a>';
     return $dependencies;
 });
 
-function wpct_remote_cpt_activate()
-{
-    wpct_remote_cpt_register_post_type();
-    flush_rewrite_rules();
+add_action('plugins_loaded', function () {
 
-    wpct_remote_cpt_register_templates();
-}
-
-function wpct_remote_cpt_deactivate()
-{
-    unregister_post_type(WPCT_REMOTE_CPT_POST_TYPE);
-    flush_rewrite_rules();
-
-    wpct_remote_cpt_unregister_templates();
-}
-
-register_activation_hook(__FILE__, 'wpct_remote_cpt_activate'); // 'wpct_remote_cpt_register_templates');
-register_deactivation_hook(__FILE__, 'wpct_remote_cpt_deactivate'); // 'wpct_remote_cpt_unregister_templates');
+    load_plugin_textdomain(
+        'wpct-remote-cpt',
+        false,
+        dirname(plugin_dir_path(__FILE__)) . '/languages'
+    );
+}, 90);
