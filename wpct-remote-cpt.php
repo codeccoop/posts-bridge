@@ -57,8 +57,8 @@ add_action('rest_api_init', function () {
 });
 
 add_filter('wpct_dependencies_check', function ($dependencies) {
-    $dependencies['Wpct Odoo Connect'] = '<a href="https://git.coopdevs.org/coopdevs/website/wp/wp-plugins/wpct-odoo-connect">Wpct Odoo Connect</a>';
-    $dependencies['Wpct String Translation'] = '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-string-translation">Wpct String Translation</a>';
+    $dependencies['Wpct Http Backend'] = '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-http-backend/">Wpct Http Backend</a>';
+    $dependencies['Wpct String Translation'] = '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-string-translation/">Wpct String Translation</a>';
     return $dependencies;
 });
 
