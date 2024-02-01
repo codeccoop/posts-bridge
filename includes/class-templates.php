@@ -458,25 +458,4 @@ class Templates
             return TemplateUtils::build_template_from_post($post);
         }, $posts);
     }
-
-
-    /* public static function is_site_edit($template_id) */
-    /* { */
-    /*     $post_type = isset($_GET['postType']) ? $_GET['postType'] : null; */
-    /*     $post_id = isset($_GET['postId']) ? $_GET['postId'] : null; */
-    /*     $canvas = isset($_GET['canvas']) ? $_GET['canvas'] : null; */
-    /*     return $post_type === 'wp_template' && $post_id === $template_id && $canvas === 'edit'; */
-    /* } */
-
-    /* public static function is_edit_post_type($post_type) */
-    /* { */
-    /*     $is_edit = isset($_GET['action']) && $_GET['action'] === 'edit'; */
-    /*     $post_id = isset($_GET['post']) ? (int) $_GET['post'] : 0; */
-    /*     if ($is_edit && $post_id) { */
-    /*         $post = get_post($post_id); */
-    /*         return $post->post_type === $post_type; */
-    /*     } */
-
-    /*     return false; */
-    /* } */
 }
