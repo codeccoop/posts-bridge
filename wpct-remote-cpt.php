@@ -1,8 +1,6 @@
 <?php
 
-namespace WPCT_REMOTE_CPT;
-
-use Exception;
+namespace WPCT_RCPT;
 
 /**
  * Plugin Name:     Wpct Remote CPT
@@ -17,56 +15,87 @@ use Exception;
  * @package         wpct_remote_cpt
  */
 
+require_once 'abstract/class-singleton.php';
+require_once 'abstract/class-plugin.php';
+
 require_once 'includes/class-model.php';
-require_once 'includes/class-bridge.php';
+require_once 'includes/class-api-client.php';
 require_once 'includes/class-patterns.php';
 require_once 'includes/class-templates.php';
 require_once 'includes/class-rest-controller.php';
 
-add_action('init', function () {
-    if (!wp_is_block_theme()) return;
 
-    $post_type = apply_filters('wpct_remote_cpt_post_type', 'remote-cpt');
-    $remote_fields = apply_filters('wpct_remote_cpt_fields', []);
+if (!defined('WPCT_REMOTE_CPT_ENV')) {
+    define('WPCT_REMOTE_CPT_ENV', 'development');
+}
 
-    $bridge = new Bridge('/api/private/crm-lead', $post_type);
+class Wpct_Remote_Cpt extends Abstract\Plugin
+{
+    protected $name = 'Wpct Remote CPT';
+    protected $textdomain = 'wpct-remote-cpt';
 
-    $plugin_dir = plugin_dir_path(__FILE__);
-    Patterns::register_block_patterns($plugin_dir, $post_type);
-    Templates::register_block_templates($plugin_dir, $post_type);
+    private $post_type = 'remote-cpt';
 
-    Model::$bridge = $bridge;
-    Model::init($post_type);
+    protected $dependencies = [
+        'Wpct Http Backend' => '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-http-backend/">Wpct Http Backend</a>',
+        'Wpct String Translation' => '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-string-translation/">Wpct String Translation</a>'
+    ];
 
-    global $post;
-    if (empty($post) || $post->post_type !== $post_type) return;
+    public static function activate()
+    {
+    }
 
-    $model = new Model($post);
-    foreach ($remote_fields as $field) {
-        add_shortcode('remote_field_' . $field, function () use ($model, $field) {
+    public static function deactivate()
+    {
+    }
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        add_action('rest_api_init', function () {
+            (new REST_Controller($this->post_type))->register_routes();
+        });
+
+        add_action('wp', [$this, 'register_shortcode']);
+    }
+
+    public function init()
+    {
+        if (!wp_is_block_theme()) return;
+
+        $api_client = ApiClient::get_instance('/api/private/crm-lead', $this->post_type);
+
+        $plugin_dir = plugin_dir_path(__FILE__);
+        Patterns::register_block_patterns($plugin_dir, $this->post_type);
+        Templates::register_block_templates($plugin_dir, $this->post_type);
+
+        Model::$api_client = $api_client;
+        Model::init($this->post_type);
+
+        $this->register_shortcode();
+    }
+
+    public function register_shortcode()
+    {
+        if (is_admin()) return;
+
+        global $post;
+        if (empty($post) || $post->post_type !== $this->post_type) return;
+
+        $model = new Model($post);
+
+        add_shortcode('remote_field', function ($atts) use ($model) {
+            $field = isset($atts['field']) ? $atts['field'] : null;
+            if (!$field) return;
+
             $data = $model->get_data();
             if (!isset($data[$field])) return  '';
             return $data[$field];
         });
     }
-});
-
-add_action('rest_api_init', function () {
-    $post_type = apply_filters('wpct_remote_cpt_post_type', 'remote-cpt');
-    (new REST_Controller($post_type))->register_routes();
-});
-
-add_filter('wpct_dependencies_check', function ($dependencies) {
-    $dependencies['Wpct Http Backend'] = '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-http-backend/">Wpct Http Backend</a>';
-    $dependencies['Wpct String Translation'] = '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-string-translation/">Wpct String Translation</a>';
-    return $dependencies;
-});
+}
 
 add_action('plugins_loaded', function () {
-
-    load_plugin_textdomain(
-        'wpct-remote-cpt',
-        false,
-        dirname(plugin_dir_path(__FILE__)) . '/languages'
-    );
-}, 90);
+    $plugin = Wpct_Remote_Cpt::get_instance();
+});

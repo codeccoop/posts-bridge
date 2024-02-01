@@ -1,10 +1,10 @@
 <?php
 
-namespace WPCT_REMOTE_CPT;
+namespace WPCT_RCPT;
 
 class Model
 {
-    public static $bridge;
+    public static $api_client;
     private $remote_data;
     private $post;
 
@@ -59,14 +59,14 @@ class Model
     {
         $this->post = $post;
         if (is_singular($post->post_type)) {
-            $this->remote_data = self::$bridge->get_data($this->post->ID);
+            $this->remote_data = self::$api_client->get_data($this->post->ID);
         }
     }
 
     public function get_data()
     {
         if ($this->remote_data) return $this->remote_data;
-        $this->remote_data = self::$bridge->get_data($this->post->ID);
+        $this->remote_data = self::$api_client->get_data($this->post->ID);
         return $this->remote_data;
     }
 }

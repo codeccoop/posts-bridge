@@ -1,6 +1,6 @@
 <?php
 
-namespace WPCT_REMOTE_CPT;
+namespace WPCT_RCPT;
 
 use WP_Block_Patterns_Registry;
 
