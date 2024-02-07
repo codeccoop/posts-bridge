@@ -8,7 +8,7 @@ class Model
     private $remote_data;
     private $post;
 
-    public static function init($post_type)
+    public static function register($post_type)
     {
         register_post_type(
             $post_type,

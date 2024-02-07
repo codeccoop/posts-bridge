@@ -7,7 +7,7 @@ use WP_Block_Patterns_Registry;
 class Patterns
 {
     private static $slug_regex = '/^[A-z0-9\/_-]+$/';
-    private static $comma_separated_regex = '/[\s,]+/';
+    private static $comma_separated_regex = '/[,]+/';
     private static $default_headers = [
         'title' => 'Title',
         'slug' => 'Slug',
@@ -28,50 +28,52 @@ class Patterns
         if (!$files) return;
 
         foreach ($files as $file) {
-            $data = get_file_data($file, self::$default_headers);
+            $_data = get_file_data($file, self::$default_headers);
 
-            if (empty($data['slug']) || empty($data['title'])) continue;
-            if (!preg_match(self::$slug_regex, $data['slug'])) continue;
-            if (WP_Block_Patterns_Registry::get_instance()->is_registered($data['slug'])) continue;
+            if (empty($_data['slug']) || empty($_data['title'])) continue;
+            if (!preg_match(self::$slug_regex, $_data['slug'])) continue;
+            if (WP_Block_Patterns_Registry::get_instance()->is_registered($_data['slug'])) continue;
 
-            self::parse_data($data, ['categories', 'keywords', 'blockTypes'], function ($val) {
-                return preg_split(
+            self::parse_data($_data, ['categories', 'keywords', 'blockTypes'], function ($val) {
+                return array_map(function ($item) {
+                    return trim($item);
+                }, preg_split(
                     self::$comma_separated_regex,
                     (string) $val,
-                );
+                ));
             });
 
-            self::parse_data($data, ['viewportWidth'], function ($val) {
+            self::parse_data($_data, ['viewportWidth'], function ($val) {
                 return (int) $val;
             });
 
-            self::parse_data($data, ['inserter'], function ($val) {
+            self::parse_data($_data, ['inserter'], function ($val) {
                 return in_array(strtolower($val), ['yes', 'true'], true);
             });
 
-            $data['title'] = translate_with_gettext_context($data['title'], 'Pattern title', 'wpct-remote-cpt');
-            if (!empty($data['description'])) {
-                $data['description'] = translate_with_gettext_context($data['description'], 'Pattern description', 'wpct-remote-cpt');
+            $_data['title'] = translate_with_gettext_context($_data['title'], 'Pattern title', 'wpct-remote-cpt');
+            if (!empty($_data['description'])) {
+                $_data['description'] = translate_with_gettext_context($_data['description'], 'Pattern description', 'wpct-remote-cpt');
             }
 
             ob_start();
             include $file;
-            $data['content'] = ob_get_clean();
+            $_data['content'] = ob_get_clean();
 
-            if (!$data['content']) continue;
+            if (!$_data['content']) continue;
 
-            if (!isset($data['categories'])) $data['categories'] = [];
+            if (!isset($_data['categories'])) $_data['categories'] = [];
 
-            foreach ($data['categories'] as $key => $cat) {
+            foreach ($_data['categories'] as $key => $cat) {
                 $slug = _wp_to_kebab_case($cat);
-                $data['categories'][$key] = $slug;
+                $_data['categories'][$key] = $slug;
                 register_block_pattern_category(
                     $slug,
                     ['label' => __($cat, 'wpct-remote-cpt')]
                 );
             }
 
-            register_block_pattern($data['slug'], $data);
+            register_block_pattern($_data['slug'], $_data);
         }
     }
 
