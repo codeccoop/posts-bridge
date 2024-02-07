@@ -57,7 +57,10 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
             (new REST_Controller($this->post_type))->register_routes();
         });
 
-        add_action('wp', [$this, 'register_shortcode']);
+        /* add_action('wp', [$this, 'register_shortcode']); */
+        add_action('the_post', [$this, 'the_post'], 10, 2);
+        add_action('wp', [$this, 'set_global'], 10);
+        add_action('wp', [$this, 'register_shortcode'], 20);
     }
 
     public function init()
@@ -71,31 +74,50 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
         Templates::register_block_templates($plugin_dir, $this->post_type);
 
         Model::$api_client = $api_client;
-        Model::init($this->post_type);
-
-        $this->register_shortcode();
+        Model::register($this->post_type);
     }
 
     public function register_shortcode()
     {
         if (is_admin()) return;
 
-        global $post;
-        if (empty($post) || $post->post_type !== $this->post_type) return;
+        global $remote_cpt;
+        if (empty($remote_cpt)) return;
 
-        $model = new Model($post);
-
-        add_shortcode('remote_field', function ($atts) use ($model) {
+        add_shortcode('remote_field', function ($atts, $content) use ($remote_cpt) {
             $field = isset($atts['field']) ? $atts['field'] : null;
             if (!$field) return;
 
-            $data = $model->get_data();
+            $data = $remote_cpt->get_data();
             if (!isset($data[$field])) return  '';
-            return $data[$field];
+
+            if (empty($content)) {
+                return $data[$field];
+            }
+
+            return sprintf($content, $data[$field]);
         });
+    }
+
+    public function set_global()
+    {
+        global $post;
+        $this->the_post($post);
+    }
+
+    public function the_post($post)
+    {
+        global $remote_cpt;
+        if (empty($post) || $post->post_type !== $this->post_type) {
+            $remote_cpt = null;
+        } else {
+            $remote_cpt = new Model($post);
+        }
     }
 }
 
 add_action('plugins_loaded', function () {
     $plugin = Wpct_Remote_Cpt::get_instance();
 });
+
+$remote_cpt = null;
