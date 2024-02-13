@@ -38,7 +38,7 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
 
     protected $dependencies = [
         'Wpct Http Backend' => '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-http-backend/">Wpct Http Backend</a>',
-        'Wpct i18n' => '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-string-translation/">Wpct i18n</a>'
+        'Wpct i18n' => '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-i18n/">Wpct i18n</a>'
     ];
 
     public static function activate()
