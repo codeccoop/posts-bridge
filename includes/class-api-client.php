@@ -21,7 +21,7 @@ class ApiClient extends Abstract\Singleton
 
         if ($locale) {
             add_option('wpct_remote_cpt_api_language', $locale);
-            add_filter('wpct_st_current_language', [$this, 'language_interceptor'], 99, 2);
+            add_filter('wpct_i18n_current_language', [$this, 'language_interceptor'], 99, 2);
         }
 
         if (WPCT_REMOTE_CPT_ENV === 'development') {
@@ -54,7 +54,7 @@ class ApiClient extends Abstract\Singleton
         $api_language = get_option('wpct_remote_cpt_api_language');
         if ($api_language) $language = $api_language;
 
-        remove_filter('wpct_st_current_language', [$this, 'language_interceptor'], 99, 2);
+        remove_filter('wpct_i18n_current_language', [$this, 'language_interceptor'], 99, 2);
         delete_option('wpct_remote_cpt_api_locale');
 
         return $language;
