@@ -119,7 +119,7 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
     public function the_post($post)
     {
         global $remote_cpt;
-        if (empty($post) || in_array($post->post_types, $this->post_types)) {
+        if (empty($post) || !in_array($post->post_types, $this->post_types)) {
             $remote_cpt = null;
         } else {
             $remote_cpt = new Model($post);
