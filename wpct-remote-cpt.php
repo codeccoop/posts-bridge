@@ -53,6 +53,8 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
     {
         parent::__construct();
 
+        $this->post_type = apply_filters('wpct_remote_cpt_post_type', $this->post_type);
+
         add_action('rest_api_init', function () {
             (new REST_Controller($this->post_type))->register_routes();
         });
