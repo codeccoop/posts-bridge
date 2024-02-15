@@ -1,3 +1,4 @@
 data
 .env
 .nvimrc
+.php-cs-fixer.cache
