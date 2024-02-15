@@ -1,0 +1,40 @@
+# Copyright (C) 2024 Còdec Cooperativa
+# This file is distributed under the same license as the Wpct Remote CPT plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: Wpct Remote CPT 0.0.1\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wpct-remote-cpt\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2024-02-15T18:27:38+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.10.0\n"
+"X-Domain: wpct-remote-cpt\n"
+
+#. Plugin Name of the plugin
+#: wpct-remote-cpt.php
+msgid "Wpct Remote CPT"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: wpct-remote-cpt.php
+msgid "https://git.coopdevs.org/coopdevs/website/wp/wp-plugins/wpct-remote-cpt"
+msgstr ""
+
+#. Description of the plugin
+#: wpct-remote-cpt.php
+msgid "Custom Post Type with remote sourcing"
+msgstr ""
+
+#. Author of the plugin
+#: wpct-remote-cpt.php
+msgid "Còdec Cooperativa"
+msgstr ""
+
+#. Author URI of the plugin
+#: wpct-remote-cpt.php
+msgid "https://www.codeccoop.org"
+msgstr ""
