@@ -31,7 +31,7 @@ class REST_Controller extends WP_REST_Controller
         $base = "{$namespace}/v{$version}";
 
         foreach ($this->post_types as $post_type) {
-            register_rest_route($base, "/remote/{$post_type}", [
+            register_rest_route($base, "/{$post_type}", [
                 [
                     'methods' => 'GET',
                     'callback' => [$this, 'get_items'],
@@ -44,7 +44,7 @@ class REST_Controller extends WP_REST_Controller
                 ],
             ]);
 
-            register_rest_route($base, "/remote/{$post_type}/(?P<id>[\d]+)", [
+            register_rest_route($base, "/{$post_type}/(?P<id>[\d]+)", [
                 [
                     'methods' => 'GET',
                     'callback' => [$this, 'get_item'],

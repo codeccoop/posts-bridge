@@ -53,8 +53,6 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
     {
         parent::__construct();
 
-        $this->post_types = apply_filters('wpct_remote_cpt_post_type', $this->post_types);
-
         add_action('rest_api_init', function () {
             (new REST_Controller($this->post_types))->register_routes();
         });
@@ -69,6 +67,8 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
         if (!wp_is_block_theme()) {
             return;
         }
+
+        $this->post_types = apply_filters('wpct_remote_cpt_post_types', $this->post_types);
 
         $api_client = ApiClient::get_instance('/api/private/crm-lead', $this->post_types);
 
