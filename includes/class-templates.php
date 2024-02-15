@@ -40,7 +40,7 @@ class TemplateUtils
         $terms = get_the_terms($post, 'wp_theme');
         if (is_wp_error($terms)) return $terms;
 
-        if (!$terms) return new WP_Error('template_missing_theme', __('No theme is defined for this template', 'wpct-remote-cpt'));
+        if (!$terms) return new WP_Error('template_missing_theme', __('No theme is defined for this template', 'scaffolding'));
 
         $theme = $terms[0]->name;
         $has_theme_file = true;

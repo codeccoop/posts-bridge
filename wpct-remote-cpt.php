@@ -34,7 +34,7 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
     protected $name = 'Wpct Remote CPT';
     protected $textdomain = 'wpct-remote-cpt';
 
-    private $post_type = 'remote-cpt';
+    private $post_types = ['remote-cpt'];
 
     protected $dependencies = [
         'Wpct Http Backend' => '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-http-backend/">Wpct Http Backend</a>',
@@ -49,17 +49,16 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
     {
     }
 
-    public function __construct()
+    public function load()
     {
         parent::__construct();
 
-        $this->post_type = apply_filters('wpct_remote_cpt_post_type', $this->post_type);
+        $this->post_types = apply_filters('wpct_remote_cpt_post_type', $this->post_types);
 
         add_action('rest_api_init', function () {
-            (new REST_Controller($this->post_type))->register_routes();
+            (new REST_Controller($this->post_types))->register_routes();
         });
 
-        /* add_action('wp', [$this, 'register_shortcode']); */
         add_action('the_post', [$this, 'the_post'], 10, 2);
         add_action('wp', [$this, 'set_global'], 10);
         add_action('wp', [$this, 'register_shortcode'], 20);
@@ -67,31 +66,41 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
 
     public function init()
     {
-        if (!wp_is_block_theme()) return;
+        if (!wp_is_block_theme()) {
+            return;
+        }
 
-        $api_client = ApiClient::get_instance('/api/private/crm-lead', $this->post_type);
+        $api_client = ApiClient::get_instance('/api/private/crm-lead', $this->post_types);
 
         $plugin_dir = plugin_dir_path(__FILE__);
-        Patterns::register_block_patterns($plugin_dir, $this->post_type);
-        Templates::register_block_templates($plugin_dir, $this->post_type);
+        Patterns::register_block_patterns($plugin_dir, $this->post_types);
+        Templates::register_block_templates($plugin_dir, $this->post_types);
 
         Model::$api_client = $api_client;
-        Model::register($this->post_type);
+        Model::register($this->post_types);
     }
 
     public function register_shortcode()
     {
-        if (is_admin()) return;
+        if (is_admin()) {
+            return;
+        }
 
         global $remote_cpt;
-        if (empty($remote_cpt)) return;
+        if (empty($remote_cpt)) {
+            return;
+        }
 
         add_shortcode('remote_field', function ($atts, $content) use ($remote_cpt) {
             $field = isset($atts['field']) ? $atts['field'] : null;
-            if (!$field) return;
+            if (!$field) {
+                return;
+            }
 
             $data = $remote_cpt->get_data();
-            if (!isset($data[$field])) return  '';
+            if (!isset($data[$field])) {
+                return  '';
+            }
 
             if (empty($content)) {
                 return $data[$field];
@@ -110,7 +119,7 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
     public function the_post($post)
     {
         global $remote_cpt;
-        if (empty($post) || $post->post_type !== $this->post_type) {
+        if (empty($post) || in_array($post->post_types, $this->post_types)) {
             $remote_cpt = null;
         } else {
             $remote_cpt = new Model($post);
@@ -120,6 +129,7 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
 
 add_action('plugins_loaded', function () {
     $plugin = Wpct_Remote_Cpt::get_instance();
+    $plugin->load();
 });
 
 $remote_cpt = null;
