@@ -6,22 +6,25 @@ use WP_REST_Response;
 use WP_REST_Controller;
 use WP_Error;
 use Exception;
+use WP_Query;
 
 class REST_Controller extends WP_REST_Controller
 {
     // https://developer.wordpress.org/rest-api/extending-the-rest-api/adding-custom-endpoints/
+    private $post_type;
+    public static $db_schema = [
+        'post_title' => null,
+        'post_name' => null,
+        'post_excerpt' => null,
+        'post_status' => null,
+        'post_type' => null,
+        'featured_media' => null,
+        'post_content' => null,
+    ];
 
-    private $post_types;
-
-    public function __construct($post_types)
+    public function __construct($post_type)
     {
-        $this->post_types = $post_types;
-
-        foreach ($post_types as $post_type) {
-            add_action('rest_insert_' . $post_type, function ($post, $request, $is_new) use ($post_type) {
-                $this->on_rest_insert($post, $request, $is_new, $post_type);
-            }, 10, 3);
-        }
+        $this->post_type = $post_type;
     }
 
     public function register_routes()
@@ -30,44 +33,41 @@ class REST_Controller extends WP_REST_Controller
         $version = '1';
         $base = "{$namespace}/v{$version}";
 
-        foreach ($this->post_types as $post_type) {
-            register_rest_route($base, "/{$post_type}", [
-                [
-                    'methods' => 'GET',
-                    'callback' => [$this, 'get_items'],
-                    'permission_callback' => [$this, 'get_items_permission_callback'],
-                ],
-                [
-                    'methods' => 'POST',
-                    'callback' => [$this, 'create_item'],
-                    'permission_callback' => [$this, 'create_item_permission_callback']
-                ],
-            ]);
+        register_rest_route($base, "/{$this->post_type}", [
+            [
+                'methods' => 'GET',
+                'callback' => [$this, 'get_items'],
+                'permission_callback' => [$this, 'get_items_permission_callback'],
+            ],
+            [
+                'methods' => 'POST',
+                'callback' => [$this, 'create_item'],
+                'permission_callback' => [$this, 'create_item_permission_callback']
+            ],
+        ]);
 
-            register_rest_route($base, "/{$post_type}/(?P<id>[\d]+)", [
-                [
-                    'methods' => 'GET',
-                    'callback' => [$this, 'get_item'],
-                    'permission_callback' => [$this, 'get_item_permission_callback']
-                ],
-                [
-                    'methods' => 'PUT',
-                    'callback' => [$this, 'update_item'],
-                    'permission_callback' => [$this, 'update_item_permission_callback']
-                ],
-                [
-                    'methods' => 'DELETE',
-                    'callback' => [$this, 'delete_item'],
-                    'permission_callback' => [$this, 'delete_item_permission_callback']
-                ],
-            ]);
-        }
+        register_rest_route($base, "/{$this->post_type}/(?P<id>[\d]+)", [
+            [
+                'methods' => 'GET',
+                'callback' => [$this, 'get_item'],
+                'permission_callback' => [$this, 'get_item_permission_callback']
+            ],
+            [
+                'methods' => 'PUT',
+                'callback' => [$this, 'update_item'],
+                'permission_callback' => [$this, 'update_item_permission_callback']
+            ],
+            [
+                'methods' => 'DELETE',
+                'callback' => [$this, 'delete_item'],
+                'permission_callback' => [$this, 'delete_item_permission_callback']
+            ],
+        ]);
     }
 
     public function get_items($request)
     {
-        $post_type = $this->get_post_type($request);
-        $posts = get_posts(['post_type' => $post_type]);
+        $posts = get_posts(['post_type' => $this->post_type]);
         $data = [];
         foreach ($posts as $post) {
             $datum = $this->prepare_item_for_response($post, $request);
@@ -81,20 +81,20 @@ class REST_Controller extends WP_REST_Controller
     public function get_item($request)
     {
         $item = $this->prepare_item_for_database($request);
-        $item = $this->_get_item($item->id, $request);
+        $item = $this->_get_item($item->id);
         if (!$item) {
             new WP_Error('not-found', __('Not Found', 'scaffolding'), ['status' => 404]);
         }
-        return new WP_REST_Response($item, 200);
+        return new WP_REST_Response($this->prepare_item_for_response($item, $request), 200);
     }
 
-    private function _get_item($item_id, $request = null)
+    private function _get_item($item_id)
     {
         $item = get_post($item_id);
         if (!$item) {
             return null;
         }
-        return $this->prepare_item_for_response($item, $request);
+        return $item;
     }
 
     public function create_item($request)
@@ -104,9 +104,11 @@ class REST_Controller extends WP_REST_Controller
             return $this->bad_request();
         }
 
-        $inserted = $this->insert_item($item);
-        if (is_array($inserted)) {
-            return new WP_REST_Response($inserted, 200);
+        $post = $this->add_item($item);
+
+        if (!empty($post)) {
+            do_action("rest_insert_{$post->post_type}", $post, $request, true);
+            return new WP_REST_Response($this->prepare_item_for_response($post, $request), 200);
         }
 
         return new WP_Error('cant-create', __('Internal Server Error', 'scaffolding'), ['status' => 500]);
@@ -119,9 +121,10 @@ class REST_Controller extends WP_REST_Controller
             return $this->bad_request();
         }
 
-        $updated = $this->patch_item($item);
-        if (is_array($updated)) {
-            return new WP_REST_Response($updated, 200);
+        $post = $this->patch_item($item);
+        if (!empty($post)) {
+            do_action("rest_insert_{$post->post_type}", $post, $request, false);
+            return new WP_REST_Response($this->prepare_item_for_response($post, $request), 200);
         }
 
         return new WP_Error('cant-update', __('Internal Server Error', 'scaffolding'), ['status' => 500]);
@@ -134,9 +137,9 @@ class REST_Controller extends WP_REST_Controller
             return $this->bad_request();
         }
 
-        $deleted = $this->remove_item($item);
-        if ($deleted) {
-            return new WP_REST_Response($deleted, 200);
+        $post = $this->remove_item($item);
+        if ($post) {
+            return new WP_REST_Response($this->prepare_item_for_response($post, $request), 200);
         }
 
         return new WP_Error('cant-delete', __('Internal Server Error', 'scaffolding'), ['status' => 500]);
@@ -167,41 +170,50 @@ class REST_Controller extends WP_REST_Controller
         return current_user_can('delete_posts');
     }
 
+    public static function parse_payload($payload, $post_id = null)
+    {
+        $data = [];
+        foreach (array_merge(self::$db_schema, $payload) as $key => $val) {
+            if (isset(self::$db_schema[$key])) {
+                $data[$key] = $val;
+            }
+        }
+
+        if (!empty($post_id)) {
+            $existing_post = $this->_get_item($post_id);
+            if (empty($existing_post)) {
+                return null;
+            }
+
+            $data['ID'] = (int) $post_id;
+        }
+
+        return $data;
+    }
+
     public function prepare_item_for_database($request)
     {
         $method = $request->get_method();
-        $data = $request->get_body_params();
-        $params = $request->get_params();
-        $post_type = $this->get_post_type($request);
+        $payload = $request->get_json_params();
+        $params = $request->get_url_params();
+
+        if ($method === 'POST') {
+            $data = self::parse_payload($payload);
+            $prepared_post = apply_filters("rest_pre_insert_{$this->post_type}", (object) $data, $request);
+        } elseif ($method === 'PUT') {
+            $data = self::parse_payload($payload, $params['id']);
+            $prepared_post = apply_filters("rest_pre_insert_{$this->post_type}", (object) $data, $request);
+        }
+        
 
         try {
             switch ($method) {
                 case 'POST':
-                    return (object) [
-                        'post_title' => (string) $data['post_title'],
-                        'post_excerpt' => (string) $data['post_excerpt'],
-                        'post_content' => (string) $data['post_content'],
-                        'post_name' => (string) $data['post_name'],
-                        'post_status' => (string) $data['post_status'],
-                        'thumbnail' => (array) $data['thumbnail'],
-                        'remote_id' => (string) $data['remote_id'],
-                        'post_type' => (string) $post_type,
-                    ];
                 case 'PUT':
-                    return (object) [
-                        'ID' => (int) $data['ID'],
-                        'post_title' => (string) $data['post_title'],
-                        'post_excerpt' => (string) $data['post_excerpt'],
-                        'post_content' => (string) $data['post_content'],
-                        'post_name' => (string) $data['post_name'],
-                        'post_status' => (string) $data['post_status'],
-                        'thumbnail' => (array) $data['thumbnail'],
-                        'remote_id' => (string) $data['remote_id'],
-                        'post_type' => (string) $post_type,
-                    ];
+                    return (object) $prepared_post;
                 case 'GET':
                 case 'DELETE':
-                    return (object) ['id' => (int) $params['id']];
+                    return (object) ['ID' => (int) $params['id']];
                 default:
                     throw new Exception('Method Not Allowed', 405);
             };
@@ -212,28 +224,45 @@ class REST_Controller extends WP_REST_Controller
 
     public function prepare_item_for_response($item, $request)
     {
-        $remote_id = get_post_meta($item->ID, 'remote_id', true);
-        $data = get_object_vars($item);
-        $data['remote_id'] = (string) $remote_id;
-        return $data;
+        return get_object_vars($item);
     }
 
-    private function insert_item($item)
+    private function insert_item($item, $is_new = true)
     {
+        $featured_media = $item->featured_media;
+        if (isset($item->featured_media)) {
+            unset($item->featured_media);
+        }
+
         $post_id = wp_insert_post($item);
         if (!$post_id) {
             return null;
         }
-        return $this->_get_item($post_id);
+
+        $post = $this->_get_item($post_id);
+
+        if (!empty($featured_media)) {
+            if ((int) $featured_media == $featured_media) {
+                $attachment_id = (int) $featured_media;  
+            } else {
+                $attachment_id = $this->store_external_image($featured_media, $post_id, $is_new);
+            }
+
+            if (is_int($attachment_id)) {
+                set_post_thumbnail($post->ID, $attachment_id);
+            }
+
+        }
+        return $post;
+    }
+
+    private function add_item($item) {
+        return $this->insert_item($item, true);
     }
 
     private function patch_item($item)
     {
-        $post_id = wp_insert_post($item);
-        if (!$post_id) {
-            return null;
-        }
-        return $this->_get_item($item->id);
+        return $this->insert_item($item, false);
     }
 
     private function remove_item($item)
@@ -247,26 +276,28 @@ class REST_Controller extends WP_REST_Controller
         return new WP_Error('bad-request', __('Bad Request', 'scaffolding'), ['status' => 400]);
     }
 
-    private function get_post_type($request)
-    {
-
-    }
-
-    private function on_rest_insert($post, $request, $is_new)
-    {
-        $payload = $request->get_json_params();
-
-        if (isset($payload['thumbnail']) && $payload['thumbnail']) {
-            $img_info = $payload['thumbnail'];
-            $attachment_id = $this->store_external_image($img_info, $post->ID, $is_new);
-            set_post_thumbnail($post->ID, $attachment_id);
-        }
-    }
-
     private function store_external_image($img_info, $post_id, $is_new)
     {
-        if (!$img_info) {
+        if (empty($img_info)) {
             throw new Exception('NULL remote image resource');
+        }
+
+        if (filter_var($img_info, FILTER_VALIDATE_URL)) {
+            $img_info = [
+                'url' => $img_info,
+                'modified' => date('Y-m-d h:m', time()),
+            ];
+        } else if (is_array($img_info)) {
+            $img_info = array_merge([
+                'url' => null,
+                'modified' => date('Y-m-d h:m', time())
+            ], $img_info);
+        } else {
+            return;
+        }
+
+        if (!(empty($img_info['url']) && empty($img_info['modified']))) {
+            return;
         }
 
         if (!$is_new) {

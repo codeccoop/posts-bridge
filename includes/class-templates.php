@@ -7,15 +7,14 @@ use WP_Query;
 
 class TemplateUtils
 {
-
-    const PLUGIN_SLUG = 'wpct-remote-cpt/wpct-remote-cpt';
+    public const PLUGIN_SLUG = 'wpct-remote-cpt/wpct-remote-cpt';
 
     public static function supports_block_templates($type = 'wp_template')
     {
         $is_fse = (bool) wp_is_block_theme();
         if ('wp_template_part' === $type && $is_fse || current_theme_supports('block-template-parts')) {
             return true;
-        } else if ('wp_template' === $type && $is_fse) {
+        } elseif ('wp_template' === $type && $is_fse) {
             return true;
         }
 
@@ -38,9 +37,13 @@ class TemplateUtils
     public static function build_template_from_post($post)
     {
         $terms = get_the_terms($post, 'wp_theme');
-        if (is_wp_error($terms)) return $terms;
+        if (is_wp_error($terms)) {
+            return $terms;
+        }
 
-        if (!$terms) return new WP_Error('template_missing_theme', __('No theme is defined for this template', 'scaffolding'));
+        if (!$terms) {
+            return new WP_Error('template_missing_theme', __('No theme is defined for this template', 'scaffolding'));
+        }
 
         $theme = $terms[0]->name;
         $has_theme_file = true;
@@ -94,8 +97,9 @@ class TemplateUtils
         ];
 
         foreach ($possible_paths as $path) {
-            if (is_readable($path))
+            if (is_readable($path)) {
                 return $path;
+            }
         }
 
         return null;
@@ -164,6 +168,10 @@ class TemplateUtils
                 'title' => 'Archive Remote CPT',
                 'description' => '',
             ],
+            'single-rest-ce-landing' => [
+                'title' => 'Single Rest CE Landing',
+                'description' => ''
+            ]
         ];
     }
 
@@ -261,24 +269,32 @@ class TemplateUtils
 
 class Templates
 {
-    public static function register_block_templates($plugin_path, $post_type)
+    public static function register_block_templates($post_type)
     {
         // Short-circuit the query in Gutenberg
         add_filter('pre_get_block_file_template', function ($template, $id, $type) {
             $name_parts = explode('//', $id);
-            if (count($name_parts) < 2) return $template;
+            if (count($name_parts) < 2) {
+                return $template;
+            }
 
             list($template_id, $slug) = $name_parts;
 
-            if (TemplateUtils::PLUGIN_SLUG !== $template_id) return $template;
-            if (!self::is_available($slug, $type)) return $template;
+            if (TemplateUtils::PLUGIN_SLUG !== $template_id) {
+                return $template;
+            }
+            if (!self::is_available($slug, $type)) {
+                return $template;
+            }
 
             $directory = TemplateUtils::get_templates_directory($type);
             $file_path = $directory . '/' . $slug . '.html';
             $file_object = TemplateUtils::create_file_object($file_path, $type, $slug);
             $_template = TemplateUtils::build_from_file($file_object, $type);
 
-            if (null !== $_template) return $_template;
+            if (null !== $_template) {
+                return $_template;
+            }
             return $template;
         }, 10, 3);
 
@@ -288,20 +304,26 @@ class Templates
             $query,
             $type
         ) use ($post_type) {
-            if (!TemplateUtils::supports_block_templates($type)) return $query_result;
+            if (!TemplateUtils::supports_block_templates($type)) {
+                return $query_result;
+            }
 
             $post_type = isset($query['post_type']) ? $query['post_type'] : '';
             $slugs = isset($query['slug__in']) ? $query['slug__in'] : [];
             $templates = self::get_block_templates($slugs, $type);
 
-            if (count($templates) === 0) return $query_result;
+            if (count($templates) === 0) {
+                return $query_result;
+            }
 
             foreach ($templates as $template) {
                 if (
                     $post_type &&
                     isset($template->post_type) &&
                     !in_array($post_type, $template->post_types, true)
-                ) continue;
+                ) {
+                    continue;
+                }
 
                 if ('custom' !== $template->source) {
                     $template = TemplateUtils::build_from_file($template, $type);
@@ -363,7 +385,9 @@ class Templates
             ) {
                 $settings['original_render_callback'] = $settings['render_callback'];
                 $settings['render_callback'] = function ($attributes, $content) use ($settings) {
-                    if (strstr($content, 'remote_field')) return $content;
+                    if (strstr($content, 'remote_field')) {
+                        return $content;
+                    }
 
                     $render_callback = $settings['original_render_callback'];
                     return $render_callback($attributes, $content);
@@ -389,7 +413,9 @@ class Templates
 
     private static function is_available($template_name, $template_type = 'wp_template')
     {
-        if (!$template_name) return false;
+        if (!$template_name) {
+            return false;
+        }
 
         $file = TemplateUtils::get_templates_directory($template_type) . '/' . $template_name . '.html';
         return is_readable($file) || self::get_block_templates([$template_name], $template_type);
@@ -407,7 +433,9 @@ class Templates
     private static function get_templates_from_files($slugs, $db_templates, $type)
     {
         $directory = TemplateUtils::get_templates_directory($type);
-        if (!file_exists($directory)) return [];
+        if (!file_exists($directory)) {
+            return [];
+        }
 
         $files = glob($directory . '/*.html');
         $templates = [];
@@ -424,7 +452,9 @@ class Templates
                 return $template->slug === $slug;
             });
 
-            if (count($db_found) > 0 || TemplateUtils::theme_has_template($slug)) continue;
+            if (count($db_found) > 0 || TemplateUtils::theme_has_template($slug)) {
+                continue;
+            }
 
             $templates[] = TemplateUtils::create_file_object($filename, $type, $slug);
         }
