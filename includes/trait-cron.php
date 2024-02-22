@@ -2,13 +2,15 @@
 
 namespace WPCT_RCPT;
 
-trait Cron {
-    private static $opt = '_wpct_rcpt_schedule_contexts';
-    public static $hook = '_wpct_rcpt_do_schedule';
+use Exception;
 
-    public static function do_schedue()
+trait Cron {
+    private static $schedule_opt = '_wpct_rcpt_schedule_contexts';
+    public static $schedule_hook = '_wpct_rcpt_do_schedule';
+
+    public static function do_schedule()
     {
-        $contexts = get_option(self::$opt, []);
+        $contexts = get_option(self::$schedule_opt, []);
 
         $errors = [];
         foreach ($contexts as $context) {
@@ -21,7 +23,7 @@ trait Cron {
             }
         }
 
-        delete_option(self::$opt);
+        delete_option(self::$schedule_opt);
 
         if (count($errors) > 0) {
             $to = get_bloginfo('admin_email');
@@ -32,20 +34,16 @@ trait Cron {
     }
 
     public static function detach($task, $payload, $delay = 5) {
-        if (!wp_next_schedule(self::$hook)) {
-            wp_schedule_singe_event(time() + $delay, self::$hook, [], true);
+        if (!wp_next_scheduled(self::$schedule_hook)) {
+            wp_schedule_single_event(time() + $delay, self::$schedule_hook, [], true);
         }
 
-        $contexts = get_option(self::$opt, []);
+        $contexts = get_option(self::$schedule_opt, []);
         $contexts[] = [
             'task' => $task,
             'payload' => $payload
         ];
 
-        update_option(self::$opt, $contexts, false);
+        update_option(self::$schedule_opt, $contexts, false);
     }
 }
-
-add_action(Cron::$hook, function () {
-    Cron::do_schedule();
-});

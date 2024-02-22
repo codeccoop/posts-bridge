@@ -16,7 +16,7 @@ class ApiClient extends Abstract\Singleton
             add_filter('wpct_i18n_current_language', [$this, 'language_interceptor'], 99);
         }
 
-        if (WPCT_REMOTE_CPT_ENV === 'development') {
+        if (WPCT_RCPT_ENV === 'development') {
             $file = fopen($endpoint, 'r');
             $data = json_decode(fread($file, filesize($endpoint)), true);
             fclose($file);
@@ -36,7 +36,7 @@ class ApiClient extends Abstract\Singleton
 
     private function get_endpoint($post)
     {
-        if (WPCT_REMOTE_CPT_ENV === 'development') {
+        if (WPCT_RCPT_ENV === 'development') {
             return apply_filters('wpct_remote_cpt_endpoint', dirname(__FILE__, 2) . "/data/{$post->post_type}.json", $post);
         } else {
             return apply_filters('wpct_remote_cpt_endpoint', '/wp-json/wp/v2/' . $post->post_type . '/' . $post->ID, $post);

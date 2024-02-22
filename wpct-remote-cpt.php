@@ -2,13 +2,15 @@
 
 namespace WPCT_RCPT;
 
+use ValueError;
+
 /**
  * Plugin Name:     Wpct Remote CPT
  * Plugin URI:      https://git.coopdevs.org/coopdevs/website/wp/wp-plugins/wpct-remote-cpt
  * Description:     Custom Post Type with remote sourcing
  * Author:          Còdec Cooperativa
  * Author URI:      https://www.codeccoop.org
- * Text Domain:     wpct-remote-cpt
+ * Text Domain:     wpct-rcpt
  * Domain Path:     /languages
  * Version:         0.0.1
  *
@@ -26,6 +28,8 @@ require_once 'includes/class-rest-controller.php';
 
 require_once 'includes/trait-cron.php';
 require_once 'includes/trait-translations.php';
+
+require_once 'custom-blocks/remote-field/remote-field.php';
 
 
 if (!defined('WPCT_RCPT_ENV')) {
@@ -98,48 +102,14 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
         }
 
         add_shortcode('remote_field', function ($atts, $content) {
-            global $remote_cpt;
-            if (empty($remote_cpt)) {
+            if (!isset($atts['field'])) {
                 return '';
             }
-
-            $field = isset($atts['field']) ? $atts['field'] : null;
-
-            if (empty($field)) {
-                return '';
-            }
-
-            $value = $remote_cpt->get($field);
-            if (empty($value)) {
-                return  '';
-            }
-
-            if (empty($content)) {
-                return $value;
-            }
-
-            return sprintf($content, $value);
+            $atts['fields'] = $atts['field'];
+            unset($atts['field']);
+            return $this->do_shortcode($atts, $content);
         });
-
-        add_shortcode('remote_fields', function ($atts, $content) {
-            global $remote_cpt;
-            if (empty($remote_cpt)) {
-                return '';
-            }
-
-            $fields = isset($atts['fields']) ? $atts['fields'] : null;
-            if (empty($fields)) {
-                return  '';
-            }
-
-            $values = array_map(function ($field) use ($remote_cpt) {
-                $field = trim($field);
-                return $remote_cpt->get($field, '');
-            }, explode(',', $fields));
-
-
-            return sprintf($content, ...$values);
-        });
+        add_shortcode('remote_fields', [$this, 'do_shortcode']);
 
         add_shortcode('remote_callback', function ($atts) {
             global $remote_cpt;
@@ -157,6 +127,47 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
 
             return $callback($remote_cpt, $atts);
         });
+    }
+
+    public function do_shortcode($atts, $content)
+    {
+        global $remote_cpt;
+        if (empty($remote_cpt)) {
+            return '';
+        }
+
+        $fields = isset($atts['fields']) ? $atts['fields'] : null;
+        if (empty($fields)) {
+            return  '';
+        } else {
+            $fields = array_map(function ($field) {
+                return trim($field);
+            }, explode(',', $fields));
+        }
+
+        $is_empty = array_reduce($fields, function ($handle, $field) use ($remote_cpt) {
+            return $handle || $remote_cpt->get($field) === null;
+        }, false);
+        if ($is_empty) {
+            return '';
+        }
+
+        $values = array_map(function ($field) use ($remote_cpt) {
+            return $remote_cpt->get($field, '');
+        }, $fields);
+
+        try {
+            for ($i = 0; $i < count($fields); $i++) {
+                $field = $fields[$i];
+                $value = $values[$i];
+                $content = preg_replace('/_' . preg_quote($field, '/') . '_/', $value, $content);
+            }
+
+            return $content;
+            // return sprintf($content, ...$values);
+        } catch (ValueError $e) {
+            return $e->getMessage();
+        }
     }
 
     public function set_global()
@@ -203,15 +214,23 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
             return;
         }
 
-        self::detach(function ($post_id) {
-            self::do_translations($post_id);
-        }, $post_id);
+        self::detach('_wpct_rcpt_do_translation', $post_id);
     }
+}
+
+function _wpct_rcpt_do_translation($post_id)
+{
+    Wpct_Remote_Cpt::do_translations($post_id);
 }
 
 add_action('plugins_loaded', function () {
     $plugin = Wpct_Remote_Cpt::get_instance();
     $plugin->load();
+});
+
+
+add_action(Wpct_Remote_Cpt::$schedule_hook, function () {
+    Wpct_Remote_Cpt::do_schedule();
 });
 
 $remote_cpt = null;

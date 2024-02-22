@@ -42,7 +42,7 @@ class TemplateUtils
         }
 
         if (!$terms) {
-            return new WP_Error('template_missing_theme', __('No theme is defined for this template', 'scaffolding'));
+            return new WP_Error('template_missing_theme', __('No theme is defined for this template', 'wpct-rcpt'));
         }
 
         $theme = $terms[0]->name;
