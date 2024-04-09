@@ -48,12 +48,10 @@ class Model
 
     public function get($attr, $default = null)
     {
-        if (!isset($this->remote_data)) {
-            $this->fetch();
-        }
+        $data = $this->fetch();
 
-        if (isset($this->remote_data[$attr])) {
-            return $this->remote_data[$attr];
+        if (isset($data[$attr])) {
+            return $data[$attr];
         }
 
         return $default;
