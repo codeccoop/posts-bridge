@@ -16,7 +16,7 @@ fi
 
 api="http://$HOSTNAME/wp-json"
 login="$api/jwt-auth/v1/token"
-endpoint="$api/wp/v2/$POST_TYPE/$post_id"
+endpoint="$api/wpct-remote/v1/$POST_TYPE/$post_id"
 credentials='{"username":"'$USERNAME'","password":"'$PASSWORD'"}'
 
 session="$(curl \

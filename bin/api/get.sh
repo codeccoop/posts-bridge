@@ -8,7 +8,7 @@ fi
 
 source $dotenv
 
-endpoint="http://$HOSTNAME/wp-json/wp/v2/$POST_TYPE"
+endpoint="http://$HOSTNAME/wp-json/wpct-remote/v1/$POST_TYPE"
 if [ -z "$1" ]; then
     endpoint="$endpoint/$1"
 fi
