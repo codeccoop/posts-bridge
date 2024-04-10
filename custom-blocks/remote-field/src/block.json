@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wpct-rcpt/field",
+	"version": "0.1.0",
+	"title": "Remote Field",
+	"category": "widgets",
+	"description": "Remote field custom block.",
+	"supports": {
+        "anchor": true,
+		"html": false
+	},
+    "attributes": {
+        "remoteField": {
+            "type": "string"
+        }
+    },
+	"textdomain": "wpct-rcpt",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js",
+    "render": "file:./render.php"
+}

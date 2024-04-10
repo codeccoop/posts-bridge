@@ -14,9 +14,9 @@ if [ ! -f $file ]; then
     exit 1
 fi
 
-api="http://$HOSTNAME/wp-json"
+api="https://$HOSTNAME/wp-json"
 login="$api/jwt-auth/v1/token"
-endpoint="$api/wp/v2/$POST_TYPE"
+endpoint="$api/wpct-remote/v1/$POST_TYPE"
 credentials='{"username":"'$USERNAME'","password":"'$PASSWORD'"}'
 data="$(cat $file)"
 

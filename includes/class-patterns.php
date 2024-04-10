@@ -69,7 +69,7 @@ class Patterns
                 $_data['categories'][$key] = $slug;
                 register_block_pattern_category(
                     $slug,
-                    ['label' => __($cat, 'wpct-remote-cpt')]
+                    ['label' => __($cat, 'wpct-rcpt')]
                 );
             }
 

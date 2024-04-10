@@ -2,71 +2,70 @@
 
 namespace WPCT_RCPT;
 
+
 class Model
 {
-    public static $api_client;
-    private $remote_data;
-    private $post;
+    private static $api_client;
 
-    public static function register($post_type)
+    private $remote_data = null;
+    private $post = null;
+
+    public static function init()
     {
-        register_post_type(
-            $post_type,
-            [
-                'labels' => [
-                    'name' => __('Remote CPTs', 'wpct-remote-cpt'),
-                    'singular_name' => __('Remote CPT', 'wpct-remote-cpt'),
-                ],
-
-                // Frontend
-                'has_archive' => true,
-                'public' => true,
-                'publicly_queryable' => true,
-
-                // Admin
-                'capability_type' => 'post',
-                'menu_icon' => 'dashicons-admin-home',
-                'menu_position' => 28,
-                'query_var' => true,
-                'show_in_menu' => true,
-                'show_ui' => true,
-                'show_in_rest' => true,
-                'supports' => [
-                    'title',
-                    'thumbnail',
-                    'excerpt',
-                    'custom-fields',
-                    'editor',
-                ],
-                'rewrite' => ['slug' => 'remote'],
-                'taxonomies' => []
-            ]
-        );
-
-        register_post_meta(
-            $post_type,
-            'remote_id',
-            [
-                'type' => 'string',
-                'description' => 'Remote backend ID',
-                'single' => true,
-                'show_in_rest' => true
-            ]
-        );
+        self::$api_client = ApiClient::get_instance();
     }
 
     public function __construct($post)
     {
-        $this->post = $post;
-        if (is_singular($post->post_type)) {
-            $this->remote_data = self::$api_client->get_data($this->post->ID);
+        if (is_int($post)) {
+            $post = get_post($post);
         }
+
+        $this->post = $post;
     }
 
-    public function get_data()
+    public function fetch()
     {
-        if ($this->remote_data) return $this->remote_data;
-        $this->remote_data = self::$api_client->get_data($this->post->ID);
+        $locale = apply_filters('wpct_i18n_post_language', $this->ID, 'locale');
+
+        if ($this->remote_data) {
+            return $this->remote_data;
+        }
+
+        $this->remote_data = apply_filters('wpct_remote_cpt_fetch', self::$api_client->get_data($this, $locale), $this, $locale);
         return $this->remote_data;
     }
+
+    public function __get($attr)
+    {
+        $post_data = $this->post->to_array();
+        if (isset($post_data[$attr])) {
+            return $post_data[$attr];
+        }
+
+        return null;
+    }
+
+    public function get($attr, $default = null)
+    {
+        $data = $this->fetch();
+
+        if (isset($data[$attr])) {
+            return $data[$attr];
+        }
+
+        return $default;
+    }
+
+    public function get_terms($tax)
+    {
+        return get_the_terms($this->ID, $tax);
+    }
+
+    public function get_meta($field, $single = true)
+    {
+        return get_post_meta($this->ID, $field, $single);
+    }
 }
+
+Model::init();

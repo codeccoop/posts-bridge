@@ -2,3 +2,5 @@ data
 .env
 .nvimrc
 .php-cs-fixer.cache
+node_modules
+custom-blocks/**/*/build

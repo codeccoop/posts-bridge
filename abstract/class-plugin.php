@@ -2,6 +2,8 @@
 
 namespace WPCT_RCPT\Abstract;
 
+use Exception;
+
 abstract class Plugin extends Singleton
 {
     protected $name;
@@ -9,16 +11,18 @@ abstract class Plugin extends Singleton
     private $menu;
     protected $dependencies = [];
 
-    abstract public function init();
-
     abstract public static function activate();
 
     abstract public static function deactivate();
 
+    abstract public function load();
+
+    abstract public function init();
+
     public function __construct()
     {
         if (empty($this->name) || empty($this->textdomain)) {
-            throw new \Exception('Bad plugin initialization');
+            throw new Exception('Bad plugin initialization');
         }
 
         $this->load_textdomain();
