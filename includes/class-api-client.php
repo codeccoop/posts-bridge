@@ -37,9 +37,9 @@ class ApiClient extends Abstract\Singleton
     private function get_endpoint($post)
     {
         if (WPCT_RCPT_ENV === 'development') {
-            return apply_filters('wpct_remote_cpt_endpoint', dirname(__FILE__, 2) . "/data/{$post->post_type}.json", $post);
+            return apply_filters('wpct_remote_cpt_endpoint', dirname(__FILE__, 2) . "/data/{$post->post_type}.json", new Model($post));
         } else {
-            return apply_filters('wpct_remote_cpt_endpoint', '/wp-json/wp/v2/' . $post->post_type . '/' . $post->ID, $post);
+            return apply_filters('wpct_remote_cpt_endpoint', '/wp-json/wp/v2/' . $post->post_type . '/' . $post->ID, new Model($post));
         }
     }
 
