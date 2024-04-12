@@ -96,11 +96,6 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
             return;
         }
 
-        global $remote_cpt;
-        if (empty($remote_cpt)) {
-            return;
-        }
-
         add_shortcode('remote_field', function ($atts, $content) {
             if (!isset($atts['field'])) {
                 return '';
