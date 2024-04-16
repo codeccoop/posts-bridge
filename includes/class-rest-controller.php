@@ -70,8 +70,8 @@ class REST_Controller extends WP_REST_Controller
         $posts = get_posts(['post_type' => $this->post_type]);
         $data = [];
         foreach ($posts as $post) {
-            $datum = $this->prepare_item_for_response($post, $request);
-            $data[] = $datum;
+            $post_data = $this->prepare_item_for_response($post, $request);
+            $data[] = $post_data;
         }
 
         return new WP_REST_Response($data, 200);
@@ -81,11 +81,14 @@ class REST_Controller extends WP_REST_Controller
     public function get_item($request)
     {
         $item = $this->prepare_item_for_database($request);
-        $item = $this->_get_item($item->id);
-        if (!$item) {
+        $post = $this->_get_item($item->id);
+        if (!$post) {
             new WP_Error('not-found', __('Not Found', 'scaffolding'), ['status' => 404]);
         }
-        return new WP_REST_Response($this->prepare_item_for_response($item, $request), 200);
+
+        $post_data = $this->prepare_item_for_response($post, $request);
+        $response = new WP_REST_Response($post_data, 200);
+        return apply_filters("rest_prepare_{$this->post_type}", $response, $post, $request);
     }
 
     private function _get_item($item_id)
@@ -108,7 +111,9 @@ class REST_Controller extends WP_REST_Controller
 
         if (!empty($post)) {
             do_action("rest_insert_{$post->post_type}", $post, $request, true);
-            return new WP_REST_Response($this->prepare_item_for_response($post, $request), 200);
+            $post_data = $this->prepare_item_for_response($post, $request);
+            $response = new WP_REST_Response($post_data, 200);
+            return apply_filters("rest_prepare_{$this->post_type}", $response, $post, $request);
         }
 
         return new WP_Error('cant-create', __('Internal Server Error', 'scaffolding'), ['status' => 500]);
@@ -124,7 +129,9 @@ class REST_Controller extends WP_REST_Controller
         $post = $this->patch_item($item);
         if (!empty($post)) {
             do_action("rest_insert_{$post->post_type}", $post, $request, false);
-            return new WP_REST_Response($this->prepare_item_for_response($post, $request), 200);
+            $post_data = $this->prepare_item_for_response($post, $request);
+            $response = new WP_REST_Response($post_data, 200);
+            return apply_filters("rest_prepare_{$this->post_type}", $response, $post, $request);
         }
 
         return new WP_Error('cant-update', __('Internal Server Error', 'scaffolding'), ['status' => 500]);
@@ -138,8 +145,10 @@ class REST_Controller extends WP_REST_Controller
         }
 
         $post = $this->remove_item($item);
-        if ($post) {
-            return new WP_REST_Response($this->prepare_item_for_response($post, $request), 200);
+        if (!empty($post)) {
+            $post_data = $this->prepare_item_for_response($post, $request);
+            $response = new WP_REST_Response($post_data, 200);
+            return apply_filters("rest_prepare_{$this->post_type}", $response, $post, $request);
         }
 
         return new WP_Error('cant-delete', __('Internal Server Error', 'scaffolding'), ['status' => 500]);
@@ -170,7 +179,7 @@ class REST_Controller extends WP_REST_Controller
         return current_user_can('delete_posts');
     }
 
-    public static function parse_payload($payload, $post_id = null)
+    public function parse_payload($payload, $post_id = null)
     {
         $data = [];
         foreach (array_merge(self::$db_schema, $payload) as $key => $val) {
@@ -198,13 +207,12 @@ class REST_Controller extends WP_REST_Controller
         $params = $request->get_url_params();
 
         if ($method === 'POST') {
-            $data = self::parse_payload($payload);
+            $data = $this->parse_payload($payload);
             $prepared_post = apply_filters("rest_pre_insert_{$this->post_type}", (object) $data, $request);
         } elseif ($method === 'PUT') {
-            $data = self::parse_payload($payload, $params['id']);
+            $data = $this->parse_payload($payload, $params['id']);
             $prepared_post = apply_filters("rest_pre_insert_{$this->post_type}", (object) $data, $request);
         }
-        
 
         try {
             switch ($method) {
@@ -224,39 +232,53 @@ class REST_Controller extends WP_REST_Controller
 
     public function prepare_item_for_response($item, $request)
     {
-        return get_object_vars($item);
+        $GLOBALS['post'] = $item;
+        setup_postdata($item);
+        $post_data = get_object_vars($item);
+        $post_data['featured_media'] = get_thumbnail_id($item->ID);
+
+        $taxonomies = wp_list_filter(get_object_taxonomies($this->post_type, 'objects'), ['show_in_rest' => true]);
+		foreach ($taxonomies as $taxonomy) {
+			$base = !empty($taxonomy->rest_base) ? $taxonomy->rest_base : $taxonomy->name;
+			$terms = get_the_terms($item, $taxonomy->name);
+			$data[$base] = $terms ? array_values(wp_list_pluck($terms, 'term_id')) : [];
+        }
+
+        return $post_data;
     }
 
     private function insert_item($item, $is_new = true)
     {
-        $featured_media = $item->featured_media;
+        $featured_media = null;
         if (isset($item->featured_media)) {
+            $featured_media = $item->featured_media;
             unset($item->featured_media);
         }
 
-        $post_id = wp_insert_post($item);
-        if (!$post_id) {
+        $post_id = wp_insert_post(wp_slash((array) $item));
+        if (!$post_id || is_wp_error($post_id)) {
             return null;
         }
 
         $post = $this->_get_item($post_id);
 
         if (!empty($featured_media)) {
-            if ((int) $featured_media == $featured_media) {
-                $attachment_id = (int) $featured_media;  
-            } else {
-                $attachment_id = $this->store_external_image($featured_media, $post_id, $is_new);
+            if (filter_var($featured_media, FILTER_VALIDATE_URL)) {
+                $attachment_id = $this->upload_media($featured_media);
+            } elseif ((int) $featured_media === $featured_media) {
+                $attachment_id = (int) $featured_media;
             }
 
-            if (is_int($attachment_id)) {
+            if ($attachment_id) {
                 set_post_thumbnail($post->ID, $attachment_id);
             }
-
         }
+
         return $post;
     }
 
-    private function add_item($item) {
+    private function add_item($item)
+    {
         return $this->insert_item($item, true);
     }
 
@@ -276,62 +298,13 @@ class REST_Controller extends WP_REST_Controller
         return new WP_Error('bad-request', __('Bad Request', 'scaffolding'), ['status' => 400]);
     }
 
-    private function store_external_image($img_info, $post_id, $is_new)
+    private function upload_media($src)
     {
-        if (empty($img_info)) {
+        if (empty($src)) {
             throw new Exception('NULL remote image resource');
         }
 
-        if (filter_var($img_info, FILTER_VALIDATE_URL)) {
-            $img_info = [
-                'url' => $img_info,
-                'modified' => date('Y-m-d h:m', time()),
-            ];
-        } else if (is_array($img_info)) {
-            $img_info = array_merge([
-                'url' => null,
-                'modified' => date('Y-m-d h:m', time())
-            ], $img_info);
-        } else {
-            return;
-        }
-
-        if (!(empty($img_info['url']) && empty($img_info['modified']))) {
-            return;
-        }
-
-        if (!$is_new) {
-            $thumbnail_id = get_post_thumbnail_id($post_id);
-            $source = get_post_meta($thumbnail_id, '_wpct_remote_cpt_img_source', true);
-            $modified = get_post_meta($thumbnail_id, '_wpct_remote_cpt_img_modified', true);
-            if ($source === $img_info['url'] && $modified === $img_info['modified']) {
-                return;
-            }
-        }
-
-        $query = new WP_Query([
-            'post_type' => 'attachment',
-            'posts_per_page' => 1,
-            'post_status' => 'inherit',
-            'meta_query' => [
-                [
-                    'key' => '_wpct_remote_cpt_img_source',
-                    'value' => $img_info['url'],
-                    'compare' => '=',
-                ],
-                [
-                    'key' => '_wpct_remote_cpt_img_modified',
-                    'value' => $img_info['modified'],
-                    'compare' => '=',
-                ],
-            ]
-        ]);
-
-        foreach ($query->posts as $attachment) {
-            return $attachment->ID;
-        }
-
-        $filename = basename($img_info['url']);
+        $filename = basename($src);
         $path = ABSPATH . 'wp-content/uploads';
         $path .= '/' . date('Y');
         if (!is_dir($path)) {
@@ -341,13 +314,19 @@ class REST_Controller extends WP_REST_Controller
         if (!is_dir($path)) {
             mkdir($path);
         }
-        $path .=  '/' . $filename;
+        $filepath =  $path . '/' . $filename;
 
-        file_put_contents($path, file_get_contents($img_info['url']));
+        if (file_exists($filepath)) {
+            $extension_pos = strrpos($filename, '.'); // find position of the last dot, so where the extension starts
+            $filename = substr($filename, 0, $extension_pos) . '_copy' . substr($filename, $extension_pos);
+            $filepath = $path . '/' . $filename;
+        }
+
+        file_put_contents($path, file_get_contents($src));
 
         $filetype = wp_check_filetype($filename);
         if (!$filetype['type']) {
-            $filetype['type'] = mime_content_type($path);
+            $filetype['type'] = mime_content_type($filepath);
         }
 
         $attachment = [
@@ -357,16 +336,15 @@ class REST_Controller extends WP_REST_Controller
             'post_status' => 'inherit'
         ];
 
-        $attachment_id = wp_insert_attachment($attachment, $path);
+        $attachment_id = wp_insert_attachment($attachment, $filepath);
         if (is_wp_error($attachment_id)) {
-            throw new Exception();
+            throw new Exception('Error while uploading media');
         }
-        update_post_meta($attachment_id, '_wpct_remote_cpt_img_source', $img_info['url']);
-        update_post_meta($attachment_id, '_wpct_remote_cpt_img_modified', $img_info['modified']);
+        update_post_meta($attachment_id, '_wpct_remote_cpt_img_source', $src);
 
         require_once(ABSPATH . 'wp-admin/includes/image.php');
 
-        $attach_data = wp_generate_attachment_metadata($attachment_id, $path);
+        $attach_data = wp_generate_attachment_metadata($attachment_id, $filepath);
         wp_update_attachment_metadata($attachment_id, $attach_data);
 
         return $attachment_id;

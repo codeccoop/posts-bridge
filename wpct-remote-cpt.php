@@ -192,7 +192,8 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
 
     public function on_insert_post($post_id, $post, $update)
     {
-        if (!($update && in_array($post->post_type, $this->post_types))) {
+        // if (!($update && in_array($post->post_type, $this->post_types))) {
+        if (!in_array($post->post_type, $this->post_types)) {
             return;
         }
 
