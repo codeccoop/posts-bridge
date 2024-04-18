@@ -2,7 +2,6 @@
 
 namespace WPCT_RCPT;
 
-
 class Model
 {
     private static $api_client;
@@ -32,13 +31,13 @@ class Model
             return $this->remote_data;
         }
 
-        $this->remote_data = apply_filters('wpct_remote_cpt_fetch', self::$api_client->get_data($this, $locale), $this, $locale);
+        $this->remote_data = apply_filters('wpct_rcpt_fetch', self::$api_client->get_data($this, $locale), $this, $locale);
         return $this->remote_data;
     }
 
     public function __get($attr)
     {
-        $post_data = $this->post->to_array();
+        $post_data = wp_unslash(object_get_vars($this->post));
         if (isset($post_data[$attr])) {
             return $post_data[$attr];
         }

@@ -104,10 +104,15 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
             unset($atts['field']);
             return $this->do_shortcode($atts, $content);
         });
+
         add_shortcode('remote_fields', [$this, 'do_shortcode']);
 
         add_shortcode('remote_callback', function ($atts) {
             global $remote_cpt;
+            if (empty($remote_cpt)) {
+                return '';
+            }
+
             $callback = isset($atts['fn']) ? $atts['fn'] : null;
 
             if (empty($callback)) {
@@ -192,7 +197,6 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
 
     public function on_insert_post($post_id, $post, $update)
     {
-        // if (!($update && in_array($post->post_type, $this->post_types))) {
         if (!in_array($post->post_type, $this->post_types)) {
             return;
         }

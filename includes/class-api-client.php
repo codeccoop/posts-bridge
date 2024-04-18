@@ -12,7 +12,7 @@ class ApiClient extends Abstract\Singleton
         $endpoint = $this->get_endpoint($post);
 
         if ($locale) {
-            add_option('wpct_remote_cpt_api_language', $locale);
+            add_option('wpct_rcpt_api_language', $locale);
             add_filter('wpct_i18n_current_language', [$this, 'language_interceptor'], 99);
         }
 
@@ -34,24 +34,24 @@ class ApiClient extends Abstract\Singleton
         return $data;
     }
 
-    private function get_endpoint($post)
+    private function get_endpoint($remote_cpt)
     {
         if (WPCT_RCPT_ENV === 'development') {
-            return apply_filters('wpct_remote_cpt_endpoint', dirname(__FILE__, 2) . "/data/{$post->post_type}.json", new Model($post));
+            return apply_filters('wpct_rcpt_endpoint', dirname(__FILE__, 2) . "/data/{$remote_cpt->post_type}.json", $remote_cpt);
         } else {
-            return apply_filters('wpct_remote_cpt_endpoint', '/wp-json/wp/v2/' . $post->post_type . '/' . $post->ID, new Model($post));
+            return apply_filters('wpct_rcpt_endpoint', '/wp-json/wp/v2/' . $remote_cpt->post_type . '/' . $remote_cpt->ID, $remote_cpt);
         }
     }
 
     public function language_interceptor($lang)
     {
-        $api_lang = get_option('wpct_remote_cpt_api_language');
+        $api_lang = get_option('wpct_rcpt_api_language');
         if ($api_lang) {
             $lang = $api_lang;
         }
 
         remove_filter('wpct_i18n_current_language', [$this, 'language_interceptor'], 99);
-        delete_option('wpct_remote_cpt_api_language');
+        delete_option('wpct_rcpt_api_language');
 
         return $lang;
     }
