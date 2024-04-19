@@ -12,7 +12,7 @@ use ValueError;
  * Author URI:      https://www.codeccoop.org
  * Text Domain:     wpct-rcpt
  * Domain Path:     /languages
- * Version:         0.0.1
+ * Version:         1.0.0
  *
  * @package         Wpct_Remote_Cpt
  */
@@ -33,7 +33,7 @@ require_once 'custom-blocks/remote-field/remote-field.php';
 
 
 if (!defined('WPCT_RCPT_ENV')) {
-    define('WPCT_RCPT_ENV', 'development');
+    define('WPCT_RCPT_ENV', 'production');
 }
 
 class Wpct_Remote_Cpt extends Abstract\Plugin
@@ -42,7 +42,7 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
     use Cron;
 
     protected $name = 'Wpct Remote CPT';
-    protected $textdomain = 'wpct-remote-cpt';
+    protected $textdomain = 'wpct-rcpt';
 
     private $_post_types = ['remote-cpt'];
 
