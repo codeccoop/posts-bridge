@@ -2,7 +2,7 @@
 
 namespace WPCT_RCPT;
 
-use Exception;
+use Error;
 
 trait Cron {
     private static $schedule_opt = '_wpct_rcpt_schedule_contexts';
@@ -18,7 +18,7 @@ trait Cron {
             $payload = $context['payload'];
             try {
                 $task($payload);
-            } catch (Exception $e) {
+            } catch (Error $e) {
                 $errors[] = ['context' => $context, 'error' => $e->getMessage()];
             }
         }
