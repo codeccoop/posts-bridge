@@ -58,7 +58,7 @@ class REST_Controller extends WP_REST_Posts_Controller
             $filepath = $path . '/' . $filename;
         }
 
-        file_put_contents($path, file_get_contents($src));
+        file_put_contents($filepath, file_get_contents($src));
 
         $filetype = wp_check_filetype($filename);
         if (!$filetype['type']) {
