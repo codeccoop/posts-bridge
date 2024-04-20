@@ -2,7 +2,8 @@
 
 namespace WPCT_RCPT;
 
-trait Translations {
+trait Translations
+{
     public static function do_translations($post_id)
     {
         global $remote_cpt;
@@ -12,11 +13,16 @@ trait Translations {
         $translated = array_keys(apply_filters('wpct_i18n_post_translations', $post_id));
 
         foreach ($actives as $lang) {
-            if ($lang === $default || in_array($lang, $translated)) {
+            if ($lang === $default) {
                 continue;
             }
 
-            $trans_id = apply_filters('wpct_i18n_translate_post', $post_id, $lang);
+            if (in_array($lang, $translated)) {
+                $trans_id = $translated[$lang];
+            } else {
+                $trans_id = apply_filters('wpct_i18n_translate_post', $post_id, $lang);
+            }
+
             $remote_cpt = new Model($trans_id);
             do_action('wpct_rcpt_translation', [
                 'post_id' => $trans_id,

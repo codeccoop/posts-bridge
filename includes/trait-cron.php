@@ -33,7 +33,7 @@ trait Cron {
         }
     }
 
-    public static function detach($task, $payload, $delay = 5) {
+    public static function detach($task, $payload, $delay = 2) {
         if (!wp_next_scheduled(self::$schedule_hook)) {
             wp_schedule_single_event(time() + $delay, self::$schedule_hook, [], true);
         }
