@@ -14,7 +14,7 @@ if [ -z "$post_id" ]; then
     exit 1
 fi
 
-api="http://$HOSTNAME/wp-json"
+api="https://$HOSTNAME/wp-json"
 login="$api/jwt-auth/v1/token"
 endpoint="$api/wpct-remote/v1/$POST_TYPE/$post_id"
 credentials='{"username":"'$USERNAME'","password":"'$PASSWORD'"}'

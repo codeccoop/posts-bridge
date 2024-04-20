@@ -10,14 +10,14 @@ trait Translations
         $global = $remote_cpt;
         $actives = apply_filters('wpct_i18n_active_languages', null);
         $default = apply_filters('wpct_i18n_default_language', null);
-        $translated = array_keys(apply_filters('wpct_i18n_post_translations', $post_id));
+        $translated = apply_filters('wpct_i18n_post_translations', $post_id);
 
         foreach ($actives as $lang) {
             if ($lang === $default) {
                 continue;
             }
 
-            if (in_array($lang, $translated)) {
+            if (isset($translated[$lang])) {
                 $trans_id = $translated[$lang];
             } else {
                 $trans_id = apply_filters('wpct_i18n_translate_post', $post_id, $lang);
