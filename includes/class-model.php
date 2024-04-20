@@ -37,7 +37,7 @@ class Model
 
     public function __get($attr)
     {
-        $post_data = wp_unslash(get_object_vars($this->post));
+        $post_data = wp_slash((array) $this->post);
         if (isset($post_data[$attr])) {
             return $post_data[$attr];
         }

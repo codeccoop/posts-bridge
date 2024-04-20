@@ -164,7 +164,6 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
             }
 
             return $content;
-            // return sprintf($content, ...$values);
         } catch (ValueError $e) {
             return $e->getMessage();
         }
@@ -202,7 +201,7 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
         }
 
         if ($post->post_status === 'trash') {
-            Translations::drop_translations($post_id);
+            self::drop_translations($post_id);
             return;
         }
 
@@ -214,11 +213,11 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
             return;
         }
 
-        self::detach('_wpct_rcpt_do_translation', $post_id);
+        self::detach('\WPCT_RCPT\_wpct_rcpt_do_translations', $post_id);
     }
 }
 
-function _wpct_rcpt_do_translation($post_id)
+function _wpct_rcpt_do_translations($post_id)
 {
     Wpct_Remote_Cpt::do_translations($post_id);
 }
