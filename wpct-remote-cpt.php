@@ -214,7 +214,9 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
             return;
         }
 
-        self::detach('\WPCT_RCPT\_wpct_rcpt_do_translations', $post_id);
+        if ($post->post_status === 'publish') {
+            self::detach('\WPCT_RCPT\_wpct_rcpt_do_translations', $post_id);
+        }
     }
 }
 

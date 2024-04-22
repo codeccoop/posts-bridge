@@ -19,7 +19,7 @@ trait Cron {
             try {
                 $task($payload);
             } catch (Error $e) {
-                $errors[] = ['context' => $context, 'error' => $e->getMessage()];
+                $errors[] = ['context' => $context, 'error' => $e];
             }
         }
 
