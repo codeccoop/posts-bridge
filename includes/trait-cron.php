@@ -33,16 +33,24 @@ trait Cron {
         }
     }
 
-    public static function detach($task, $payload, $delay = 2) {
+    public static function detach($task, $payload, $delay = 1) {
         if (!wp_next_scheduled(self::$schedule_hook)) {
             wp_schedule_single_event(time() + $delay, self::$schedule_hook, [], true);
         }
 
         $contexts = get_option(self::$schedule_opt, []);
-        $contexts[] = [
+        $new_item = [
             'task' => $task,
             'payload' => $payload
         ];
+
+        $is_unique = array_reduce($contexts, function ($is_unique, $item) use ($new_item) {
+            return $is_unique && print_r($item, true) !== print_r($new_item, true);
+        }, true);
+
+        if ($is_unique) {
+            $contexts[] = $new_item;
+        }
 
         update_option(self::$schedule_opt, $contexts, false);
     }

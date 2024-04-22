@@ -202,6 +202,7 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
 
         if ($post->post_status === 'trash') {
             self::drop_translations($post_id);
+            wp_delete_post($post_id, true);
             return;
         }
 
