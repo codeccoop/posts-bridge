@@ -8,7 +8,7 @@ use ValueError;
  * Plugin Name:     Wpct Remote CPT
  * Plugin URI:      https://git.coopdevs.org/coopdevs/website/wp/wp-plugins/wpct-remote-cpt
  * Description:     Custom Post Type with remote sourcing
- * Author:          Còdec Cooperativa
+ * Author:          Còdec
  * Author URI:      https://www.codeccoop.org
  * Text Domain:     wpct-rcpt
  * Domain Path:     /languages
@@ -47,8 +47,16 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
     private $_post_types = ['remote-cpt'];
 
     protected $dependencies = [
-        'Wpct Http Bridge' => '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-http-bridge/">Wpct Http Bridge</a>',
-        'Wpct i18n' => '<a href="https://git.coopdevs.org/codeccoop/wp/wpct-i18n/">Wpct i18n</a>'
+        'wpct-http-bridge' => [
+            'name' => 'Wpct Http Bridge',
+            'url' => 'https://git.coopdevs.org/codeccoop/wp/wpct-http-bridge/',
+            'download' => 'https://git.coopdevs.org/codeccoop/wp/wpct-http-bridge/-/releases/permalink/latest/downloads/plugins/wpct-http-bridge.zip',
+        ],
+        'wpct-i18n' => [
+            'name' => 'Wpct i18n',
+            'url' => 'https://git.coopdevs.org/codeccoop/wp/wpct-i18n/',
+            'download' => 'https://git.coopdevs.org/codeccoop/wp/wpct-i18n/-/releases/permalink/latest/downloads/plugins/wpct-i18n.zip',
+        ],
     ];
 
     public static function activate()
