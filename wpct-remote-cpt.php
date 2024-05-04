@@ -47,12 +47,12 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
     private $_post_types = ['remote-cpt'];
 
     protected $dependencies = [
-        'wpct-http-bridge' => [
+        'wpct-http-bridge/wpct-http-bridge.php' => [
             'name' => 'Wpct Http Bridge',
             'url' => 'https://git.coopdevs.org/codeccoop/wp/plugins/wpct-http-bridge/',
             'download' => 'https://git.coopdevs.org/codeccoop/wp/plugins/wpct-http-bridge/-/releases/permalink/latest/downloads/plugins/wpct-http-bridge.zip',
         ],
-        'wpct-i18n' => [
+        'wpct-i18n/wpct-i18n.php' => [
             'name' => 'Wpct i18n',
             'url' => 'https://git.coopdevs.org/codeccoop/wp/plugins/wpct-i18n/',
             'download' => 'https://git.coopdevs.org/codeccoop/wp/plugins/wpct-i18n/-/releases/permalink/latest/downloads/plugins/wpct-i18n.zip',
