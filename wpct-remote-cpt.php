@@ -17,8 +17,11 @@ use ValueError;
  * @package         Wpct_Remote_Cpt
  */
 
-require_once 'abstract/class-singleton.php';
-require_once 'abstract/class-plugin.php';
+require_once 'abstracts/class-singleton.php';
+require_once 'abstracts/class-plugin.php';
+
+require_once 'wpct-http-bridge/wpct-http-bridge.php';
+require_once 'wpct-i18n/wpct-i18n.php';
 
 require_once 'includes/class-api-client.php';
 require_once 'includes/class-model.php';
@@ -41,23 +44,10 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
     use Translations;
     use Cron;
 
-    protected $name = 'Wpct Remote CPT';
-    protected $textdomain = 'wpct-rcpt';
+    public static $name = 'Wpct Remote CPT';
+    public static $textdomain = 'wpct-rcpt';
 
     private $_post_types = ['remote-cpt'];
-
-    protected $dependencies = [
-        'wpct-http-bridge/wpct-http-bridge.php' => [
-            'name' => 'Wpct Http Bridge',
-            'url' => 'https://git.coopdevs.org/codeccoop/wp/plugins/wpct-http-bridge/',
-            'download' => 'https://git.coopdevs.org/codeccoop/wp/plugins/wpct-http-bridge/-/releases/permalink/latest/downloads/plugins/wpct-http-bridge.zip',
-        ],
-        'wpct-i18n/wpct-i18n.php' => [
-            'name' => 'Wpct i18n',
-            'url' => 'https://git.coopdevs.org/codeccoop/wp/plugins/wpct-i18n/',
-            'download' => 'https://git.coopdevs.org/codeccoop/wp/plugins/wpct-i18n/-/releases/permalink/latest/downloads/plugins/wpct-i18n.zip',
-        ],
-    ];
 
     public static function activate()
     {
