@@ -69,13 +69,18 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
             }
         });
 
-        add_action('the_post', [$this, 'the_post'], 10, 2);
+        add_action('the_post', function ($post) {
+            $this->the_post($post);
+        }, 10, 2);
+
         add_action('wp', function () {
             $this->set_global();
         }, 10);
+
         add_action('wp', function () {
             return $this->register_shortcode();
         }, 20);
+
         add_action('wp_insert_post', function ($post_id, $post, $update) {
             $this->on_insert_post($post_id, $post, $update);
         }, 90, 3);
