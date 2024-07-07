@@ -20,7 +20,9 @@ class Settings extends BaseSettings
                 ],
                 'post_types' => [
                     'type' => 'array',
-                    'items' => 'string'
+                    'items' => [
+                        'type' => 'string',
+                    ]
                 ]
             ],
             [
