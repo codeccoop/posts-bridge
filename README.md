@@ -34,13 +34,6 @@ wp plugin install \
     https://git.coopdevs.org/codeccoop/wp/wpct-remote-cpt/-/releases/permalink/latest/downloads/plugins/wpct-remote-cpt.zip
 ```
 
-## Dependències
-
-1. [Wpct Http Backend](https://git.coopdevs.org/codeccoop/wp/wpct-http-backend/):
-Per a la gestió de les connexións HTTP amb la font remota de dades.
-2. [Wpct i18n](https://git.coopdevs.org/codeccoop/wp/wpct-i18n/): Per a la gestió
-de les traduccions.
-
 ## Ús
 
 Per tal de convertir els _post types_ de la teva instància WP en _remote cpt_ 
