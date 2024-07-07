@@ -28,6 +28,8 @@ require_once 'includes/class-model.php';
 // require_once 'includes/class-patterns.php';
 // require_once 'includes/class-templates.php';
 require_once 'includes/class-rest-controller.php';
+require_once 'includes/class-menu.php';
+require_once 'includes/class-settings.php';
 
 require_once 'includes/trait-cron.php';
 require_once 'includes/trait-translations.php';
@@ -44,10 +46,10 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
     use Translations;
     use Cron;
 
+    protected static $menu_class = '\WPCT_RCPT\Menu';
+
     public static $name = 'Wpct Remote CPT';
     public static $textdomain = 'wpct-rcpt';
-
-    private $_post_types = ['remote-cpt'];
 
     public static function activate()
     {
@@ -81,6 +83,9 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
 
     public function init()
     {
+        add_filter('option_wpct-http-bridge_general', function () {
+            return Settings::get_setting('wpct-rcpt', 'general');
+        });
         // if (!wp_is_block_theme()) {
         //     return;
         // }
@@ -194,7 +199,8 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
     public function __get($attr)
     {
         if ($attr === 'post_types') {
-            return apply_filters('wpct_rcpt_post_types', $this->_post_types);
+            $setting = Settings::get_setting('wpct-rcpt', 'general');
+            return apply_filters('wpct_rcpt_post_types', $setting['post_types']);
         }
 
         return null;
