@@ -11,13 +11,12 @@ class REST_Controller extends WP_REST_Posts_Controller
     protected $post_type;
     protected $meta;
     protected $rest_base;
-    protected $namespace;
+    protected $namespace = 'wpct/v1';
 
     public function __construct($post_type)
     {
         $this->post_type = $post_type;
-        $this->rest_base = $post_type;
-        $this->namespace = 'wpct-remote/v1';
+        $this->rest_base = 'remote/' . $post_type;
         $this->meta = new WP_REST_Post_Meta_Fields($this->post_type);
     }
 
