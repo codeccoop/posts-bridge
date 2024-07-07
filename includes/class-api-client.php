@@ -5,7 +5,7 @@ namespace WPCT_RCPT;
 use WPCT_HTTP\Http_Client as Wpct_Http_Client;
 use Exception;
 
-class ApiClient extends WPCT_ABSTRACT\Singleton
+class ApiClient extends \WPCT_ABSTRACT\Singleton
 {
     public function get_data($post, $locale = null)
     {
