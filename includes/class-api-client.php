@@ -24,11 +24,9 @@ class ApiClient extends \WPCT_ABSTRACT\Singleton
             $response = Wpct_Http_Client::get($endpoint);
             if (is_wp_error($response)) {
                 throw new Exception('Unable to connect to the remote API', 500);
-            } else if ($response['response']['code'] !== 200) {
-                throw new Exception('Http error while connecting to the remote API', $response['response']['code']);
             }
 
-            $data = json_decode($response['body'], true);
+            $data = (array) json_decode($response->body, true);
         }
 
         return $data;
