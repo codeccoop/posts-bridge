@@ -5,7 +5,7 @@ namespace WPCT_RCPT;
 use WPCT_HTTP\Http_Client as Wpct_Http_Client;
 use Exception;
 
-class ApiClient extends Abstract\Singleton
+class ApiClient extends \WPCT_ABSTRACT\Singleton
 {
     public function get_data($post, $locale = null)
     {
@@ -22,7 +22,7 @@ class ApiClient extends Abstract\Singleton
             fclose($file);
         } else {
             $response = Wpct_Http_Client::get($endpoint);
-            if (!$response || is_wp_error($response)) {
+            if (is_wp_error($response)) {
                 throw new Exception('Unable to connect to the remote API', 500);
             } else if ($response['response']['code'] !== 200) {
                 throw new Exception('Http error while connecting to the remote API', $response['response']['code']);

@@ -1,9 +1,5 @@
 <?php
 
-namespace WPCT_RCPT;
-
-use ValueError;
-
 /**
  * Plugin Name:     Wpct Remote CPT
  * Plugin URI:      https://git.coopdevs.org/coopdevs/website/wp/wp-plugins/wpct-remote-cpt
@@ -17,14 +13,23 @@ use ValueError;
  * @package         Wpct_Remote_Cpt
  */
 
-require_once 'abstract/class-singleton.php';
-require_once 'abstract/class-plugin.php';
+namespace WPCT_RCPT;
+
+use ValueError;
+
+require_once 'abstracts/class-singleton.php';
+require_once 'abstracts/class-plugin.php';
+
+require_once 'wpct-http-bridge/wpct-http-bridge.php';
+require_once 'wpct-i18n/wpct-i18n.php';
 
 require_once 'includes/class-api-client.php';
 require_once 'includes/class-model.php';
 // require_once 'includes/class-patterns.php';
 // require_once 'includes/class-templates.php';
 require_once 'includes/class-rest-controller.php';
+require_once 'includes/class-menu.php';
+require_once 'includes/class-settings.php';
 
 require_once 'includes/trait-cron.php';
 require_once 'includes/trait-translations.php';
@@ -36,28 +41,15 @@ if (!defined('WPCT_RCPT_ENV')) {
     define('WPCT_RCPT_ENV', 'production');
 }
 
-class Wpct_Remote_Cpt extends Abstract\Plugin
+class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
 {
     use Translations;
     use Cron;
 
-    protected $name = 'Wpct Remote CPT';
-    protected $textdomain = 'wpct-rcpt';
+    protected static $menu_class = '\WPCT_RCPT\Menu';
 
-    private $_post_types = ['remote-cpt'];
-
-    protected $dependencies = [
-        'wpct-http-bridge/wpct-http-bridge.php' => [
-            'name' => 'Wpct Http Bridge',
-            'url' => 'https://git.coopdevs.org/codeccoop/wp/plugins/wpct-http-bridge/',
-            'download' => 'https://git.coopdevs.org/codeccoop/wp/plugins/wpct-http-bridge/-/releases/permalink/latest/downloads/plugins/wpct-http-bridge.zip',
-        ],
-        'wpct-i18n/wpct-i18n.php' => [
-            'name' => 'Wpct i18n',
-            'url' => 'https://git.coopdevs.org/codeccoop/wp/plugins/wpct-i18n/',
-            'download' => 'https://git.coopdevs.org/codeccoop/wp/plugins/wpct-i18n/-/releases/permalink/latest/downloads/plugins/wpct-i18n.zip',
-        ],
-    ];
+    public static $name = 'Wpct Remote CPT';
+    public static $textdomain = 'wpct-rcpt';
 
     public static function activate()
     {
@@ -67,7 +59,7 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
     {
     }
 
-    public function load()
+    public function __construct()
     {
         parent::__construct();
 
@@ -77,14 +69,28 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
             }
         });
 
-        add_action('the_post', [$this, 'the_post'], 10, 2);
-        add_action('wp', [$this, 'set_global'], 10);
-        add_action('wp', [$this, 'register_shortcode'], 20);
-        add_action('wp_insert_post', [$this, 'on_insert_post'], 90, 3);
+        add_action('the_post', function ($post) {
+            $this->the_post($post);
+        }, 10, 2);
+
+        add_action('wp', function () {
+            $this->set_global();
+        }, 10);
+
+        add_action('wp', function () {
+            return $this->register_shortcode();
+        }, 20);
+
+        add_action('wp_insert_post', function ($post_id, $post, $update) {
+            $this->on_insert_post($post_id, $post, $update);
+        }, 90, 3);
     }
 
     public function init()
     {
+        add_filter('option_wpct-http-bridge_general', function () {
+            return Settings::get_setting('wpct-rcpt', 'general');
+        });
         // if (!wp_is_block_theme()) {
         //     return;
         // }
@@ -98,7 +104,7 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
         // }
     }
 
-    public function register_shortcode()
+    private function register_shortcode()
     {
         if (is_admin()) {
             return;
@@ -113,7 +119,9 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
             return $this->do_shortcode($atts, $content);
         });
 
-        add_shortcode('remote_fields', [$this, 'do_shortcode']);
+        add_shortcode('remote_fields', function ($atts, $content) {
+            return $this->do_shortcode($atts, $content);
+        });
 
         add_shortcode('remote_callback', function ($atts) {
             global $remote_cpt;
@@ -137,7 +145,7 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
         });
     }
 
-    public function do_shortcode($atts, $content)
+    private function do_shortcode($atts, $content)
     {
         global $remote_cpt;
         if (empty($remote_cpt)) {
@@ -177,13 +185,13 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
         }
     }
 
-    public function set_global()
+    private function set_global()
     {
         global $post;
         $this->the_post($post);
     }
 
-    public function the_post($post)
+    private function the_post($post)
     {
         global $remote_cpt;
         if (empty($post) || !in_array($post->post_type, $this->post_types)) {
@@ -196,13 +204,14 @@ class Wpct_Remote_Cpt extends Abstract\Plugin
     public function __get($attr)
     {
         if ($attr === 'post_types') {
-            return apply_filters('wpct_rcpt_post_types', $this->_post_types);
+            $setting = Settings::get_setting('wpct-rcpt', 'general');
+            return apply_filters('wpct_rcpt_post_types', $setting['post_types']);
         }
 
         return null;
     }
 
-    public function on_insert_post($post_id, $post, $update)
+    private function on_insert_post($post_id, $post, $update)
     {
         if (!in_array($post->post_type, $this->post_types)) {
             return;
@@ -235,7 +244,6 @@ function _wpct_rcpt_do_translations($post_id)
 
 add_action('plugins_loaded', function () {
     $plugin = Wpct_Remote_Cpt::get_instance();
-    $plugin->load();
 });
 
 

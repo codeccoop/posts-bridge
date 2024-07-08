@@ -17,39 +17,39 @@ msgstr ""
 #. Plugin Name of the plugin
 #: wpct-remote-cpt.php
 msgid "Wpct Remote CPT"
-msgstr ""
+msgstr "Wpct Remote CPT"
 
 #. Plugin URI of the plugin
 #: wpct-remote-cpt.php
-msgid "https://git.coopdevs.org/coopdevs/website/wp/wp-plugins/wpct-remote-cpt"
-msgstr ""
+msgid "https://git.coopdevs.org/codeccoop/wp/plugins/wpct-remote-cpt"
+msgstr "https://git.coopdevs.org/codeccoop/wp/plugins/wpct-remote-cpt"
 
 #. Description of the plugin
 #: wpct-remote-cpt.php
 msgid "Custom Post Type with remote sourcing"
-msgstr ""
+msgstr "Custom Post Types amb origen de dades remot"
 
 #. Author of the plugin
 #: wpct-remote-cpt.php
 msgid "Còdec Cooperativa"
-msgstr ""
+msgstr "Còdec Cooperativa"
 
 #. Author URI of the plugin
 #: wpct-remote-cpt.php
 msgid "https://www.codeccoop.org"
-msgstr ""
+msgstr "https://www.codeccoop.org"
 
 msgid "wpct-rcpt_general--title"
-msgstr ""
+msgstr "Remote CPT"
 
 msgid "wpct-rcpt_general--description"
-msgstr ""
+msgstr "Configuració general del plugin"
 
 msgid "wpct-rcpt_general__base_url--label"
-msgstr ""
+msgstr "URL base del backend amb el que connectar-se"
 
 msgid "wpct-rcpt_general__api_key--label"
-msgstr ""
+msgstr "API KEY del backend"
 
 msgid "wpct-rcpt_general__post_types--label"
-msgstr ""
+msgstr "Llistat de tipus de posts controlats pel plugin"
