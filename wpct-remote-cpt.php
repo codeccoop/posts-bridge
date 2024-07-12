@@ -88,9 +88,27 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
 
     public function init()
     {
-        add_filter('option_wpct-http-bridge_general', function () {
-            return Settings::get_setting('wpct-rcpt', 'general');
+        add_filter('option_wpct-rcpt_general', function ($value) {
+            $http_setting = Settings::get_setting('wpct-http-bridge', 'general');
+            foreach ($http_setting as $key => $val) {
+                $value[$key] = $val;
+            }
+
+            return $value;
         });
+
+        add_action('updated_option', function ($option, $from, $to) {
+            if ($option !== 'wpct-rcpt_general') {
+                return;
+            }
+
+            $http_setting = Settings::get_setting('wpct-http-bridge', 'general');
+            foreach ($http_setting as $key => $val) {
+                $http_setting[$key] = $to[$key];
+            }
+
+            update_option('wpct-http-bridge_general', $http_setting);
+        }, 10, 3);
         // if (!wp_is_block_theme()) {
         //     return;
         // }
