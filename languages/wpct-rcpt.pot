@@ -9,10 +9,13 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-02-15T18:27:38+00:00\n"
+"POT-Creation-Date: 2024-07-19 18:23+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.10.0\n"
+"X-Generator: Loco https://localise.biz/\n"
 "X-Domain: wpct-remote-cpt\n"
+"\n"
+"Language: \n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;"
 
 #. Plugin Name of the plugin
 #: wpct-remote-cpt.php
@@ -24,6 +27,18 @@ msgstr ""
 msgid "https://git.coopdevs.org/coopdevs/website/wp/wp-plugins/wpct-remote-cpt"
 msgstr ""
 
+#: custom-blocks/remote-field/build/block.json:1
+#: custom-blocks/remote-field/src/block.json:1
+msgctxt "block description"
+msgid "Remote field custom block."
+msgstr ""
+
+#: custom-blocks/remote-field/build/block.json:1
+#: custom-blocks/remote-field/src/block.json:1
+msgctxt "block title"
+msgid "Remote Field"
+msgstr ""
+
 #. Description of the plugin
 #: wpct-remote-cpt.php
 msgid "Custom Post Type with remote sourcing"
@@ -31,12 +46,24 @@ msgstr ""
 
 #. Author of the plugin
 #: wpct-remote-cpt.php
-msgid "Còdec Cooperativa"
+msgid "Còdec"
 msgstr ""
 
 #. Author URI of the plugin
 #: wpct-remote-cpt.php
 msgid "https://www.codeccoop.org"
+msgstr ""
+
+#: includes/class-synchronizer.php:195
+msgid "Error on remote synchronization"
+msgstr ""
+
+#: includes/class-synchronizer.php:198
+msgid "Successfully synchronized"
+msgstr ""
+
+#: includes/class-synchronizer.php:149
+msgid "Synchronize"
 msgstr ""
 
 msgid "wpct-rcpt_general--title"
@@ -52,4 +79,34 @@ msgid "wpct-rcpt_general__api_key--label"
 msgstr ""
 
 msgid "wpct-rcpt_general__post_types--label"
+msgstr ""
+
+msgid "wpct-rcpt_rest-api--title"
+msgstr ""
+
+msgid "wpct-rcpt_rest-api--description"
+msgstr ""
+
+msgid "wpct-rcpt_rest-api_relations--label"
+msgstr ""
+
+msgid "wpct-rcpt_rpc-api--title"
+msgstr ""
+
+msgid "wpct-rcpt_rpc-api--description"
+msgstr ""
+
+msgid "wpct-rcpt_rpc-api_endpoint--label"
+msgstr ""
+
+msgid "wpct-rcpt_rpc-api_user--label"
+msgstr ""
+
+msgid "wpct-rcpt_rpc-api_password--label"
+msgstr ""
+
+msgid "wpct-rcpt_rpc-api_database--label"
+msgstr ""
+
+msgid "wpct-rcpt_rpc-api_relations--label"
 msgstr ""

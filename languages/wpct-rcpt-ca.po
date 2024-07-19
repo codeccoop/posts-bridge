@@ -24,6 +24,18 @@ msgstr "Wpct Remote CPT"
 msgid "https://git.coopdevs.org/codeccoop/wp/plugins/wpct-remote-cpt"
 msgstr "https://git.coopdevs.org/codeccoop/wp/plugins/wpct-remote-cpt"
 
+#: custom-blocks/remote-field/build/block.json:1
+#: custom-blocks/remote-field/src/block.json:1
+msgctxt "block description"
+msgid "Remote field custom block."
+msgstr "Bloc custom de camp remot."
+
+#: custom-blocks/remote-field/build/block.json:1
+#: custom-blocks/remote-field/src/block.json:1
+msgctxt "block title"
+msgid "Remote Field"
+msgstr "Camp remot"
+
 #. Description of the plugin
 #: wpct-remote-cpt.php
 msgid "Custom Post Type with remote sourcing"
@@ -31,25 +43,64 @@ msgstr "Custom Post Types amb origen de dades remot"
 
 #. Author of the plugin
 #: wpct-remote-cpt.php
-msgid "Còdec Cooperativa"
-msgstr "Còdec Cooperativa"
+msgid "Còdec"
+msgstr "Còdec"
 
 #. Author URI of the plugin
 #: wpct-remote-cpt.php
 msgid "https://www.codeccoop.org"
 msgstr "https://www.codeccoop.org"
 
+#: includes/class-synchronizer:195
+msgid "Error on remote syncrhonization"
+msgstr "Error de sincronització"
+
+#: includes/class-synchronizer:198
+msgid "Successfully synchronized"
+msgstr "Sincronització existosa"
+
+#: includes/class-synchronizer:149
+msgid "Synchronize"
+msgstr "Sincronitzar"
+
 msgid "wpct-rcpt_general--title"
-msgstr "Remote CPT"
+msgstr "General"
 
 msgid "wpct-rcpt_general--description"
-msgstr "Configuració general del plugin"
+msgstr "Configuració general del plugin Remote CPT"
 
 msgid "wpct-rcpt_general__base_url--label"
-msgstr "URL base del backend amb el que connectar-se"
+msgstr "URL base del backend"
 
 msgid "wpct-rcpt_general__api_key--label"
-msgstr "API KEY del backend"
+msgstr "Clau API del backend"
 
-msgid "wpct-rcpt_general__post_types--label"
-msgstr "Llistat de tipus de posts controlats pel plugin"
+msgid "wpct-rcpt_rest-api--title"
+msgstr "REST API"
+
+msgid "wpct-rcpt_rest-api--description"
+msgstr "Configuració de la sincronització via REST API amb el backend"
+
+msgid "wpct-rcpt_rest-api__relations--label"
+msgstr "Llistat de relacions entre post types i endpoints"
+
+msgid "wpct-rcpt_rpc-api--title"
+msgstr "RPC API"
+
+msgid "wpct-rcpt_rpc-api--description"
+msgstr "Configuració de la sincronització via RPC API amb el backend"
+
+msgid "wpct-rcpt_rpc-api__endpoint--label"
+msgstr "Endpoint de la API RPC"
+
+msgid "wpct-rcpt_rpc-api__user--label"
+msgstr "Login de l'usuari de la API"
+
+msgid "wpct-rcpt_rpc-api__password--label"
+msgstr "Contrasenya de l'usuari"
+
+msgid "wpct-rcpt_rpc-api__database--label"
+msgstr "Nom de la base de dades"
+
+msgid "wpct-rcpt_rpc-api__relations--label"
+msgstr "Llistat de relacions entre post types i models de la base de dades del backend"
