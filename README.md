@@ -31,10 +31,10 @@ settings. The page has thre main sections:
     endpoints. Each realtion needs a post type, an endpoint and the remote field to be
     used as relation.
 3. RPC API
-	* **RPC API endpoint**: Entry point of your ERP's RPC external API.
-	* **API user login**: Login of the ERP's user to use use on the API authentication requests.
-	* **User password**: Password of the user.
-	* **Database name**: Database  name to be used.
+    * **RPC API endpoint**: Entry point of your ERP's RPC external API.
+    * **API user login**: Login of the ERP's user to use use on the API authentication requests.
+    * **User password**: Password of the user.
+    * **Database name**: Database  name to be used.
     * **Relations**: A list of handled post types and it's relation with your backend
     models. Each relation needs a post type and a model.
 
@@ -99,6 +99,26 @@ Example:
 ```php
 add_filter('wpct_rcpt_endpoint', function ($endpoint, $remote_id, $rcpt) {
     return $endpoint;
+}, 10, 3);
+```
+
+#### `wpct_http_headers`
+
+Use this hook to filters the headers of the HTTP requests. Use it to
+match your backend api requirements. For example, insert the `Authorization`
+header.
+
+Arguments:
+
+1. `array $headers`: Associative array with key values containing request header's.
+2. `string $method`: Request method.
+3. `string $url`: Request URL.
+
+Example:
+
+```php
+add_filter('wpct_http_headers', function ($headers, $method, $url) {
+    return $headers;
 }, 10, 3);
 ```
 
