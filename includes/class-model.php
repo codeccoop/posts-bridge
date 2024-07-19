@@ -2,17 +2,13 @@
 
 namespace WPCT_RCPT;
 
-class Model
+class Remote_CPT
 {
     private static $api_client;
 
+    private $remote_id = null;
     private $remote_data = null;
     private $post = null;
-
-    public static function init()
-    {
-        self::$api_client = ApiClient::get_instance();
-    }
 
     public function __construct($post)
     {
@@ -21,6 +17,7 @@ class Model
         }
 
         $this->post = $post;
+        $this->api_client = new ApiClient($this);
     }
 
     public function fetch()
@@ -31,12 +28,55 @@ class Model
             return $this->remote_data;
         }
 
-        $this->remote_data = apply_filters('wpct_rcpt_fetch', self::$api_client->get_data($this, $locale), $this, $locale);
+        $this->remote_data = apply_filters('wpct_rcpt_fetch', $this->api_client->get_data($locale), $this, $locale);
         return $this->remote_data;
+    }
+
+    public function endpoint()
+    {
+        $rel = $this->relation();
+        if ($rel['type'] === 'rest') {
+            $endpoint = $rel['endpoint'];
+            $endpoint .= '/' . $this->remote_id;
+            $endpoint = apply_filters('wpct_rcpt_endpoint', $endpoint, $this->remote_id, $this);
+        } else {
+            $endpoint = Settings::get_setting('wpct-rcpt', 'rpc-api', 'endpoint');
+        }
+
+        return $endpoint;
+    }
+
+    public function relation()
+    {
+        $rest_api = Settings::get_setting('wpct-rcpt', 'rest-api', 'relations');
+        $rpc_api = Settings::get_setting('wpct-rcpt', 'rpc-api', 'relations');
+
+        $endpoint = null;
+        foreach ($rest_api as $rel) {
+            if ($rel['post_type'] === $this->post_type) {
+                return ['rel' => $rel, 'proto' => 'rest'];
+            }
+        }
+
+        if (empty($endpoint)) {
+            foreach ($rpc_api as $rel) {
+                if ($rel['post_type'] === $this->post_type) {
+                    return ['rel' => $rel, 'proto' => 'rpc'];
+                }
+            }
+        }
     }
 
     public function __get($attr)
     {
+        if ($attr === 'remote_id') {
+            if (empty($this->remote_id)) {
+                $this->remote_id = get_post_meta($this->post, '_rcpt_remote_id', true);
+            }
+
+            return $this->remote_id;
+        }
+
         $post_data = wp_slash((array) $this->post);
         if (isset($post_data[$attr])) {
             return $post_data[$attr];
@@ -66,5 +106,3 @@ class Model
         return get_post_meta($this->ID, $field, $single);
     }
 }
-
-Model::init();

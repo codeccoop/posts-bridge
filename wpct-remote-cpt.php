@@ -25,21 +25,15 @@ require_once 'wpct-i18n/wpct-i18n.php';
 
 require_once 'includes/class-api-client.php';
 require_once 'includes/class-model.php';
-// require_once 'includes/class-patterns.php';
-// require_once 'includes/class-templates.php';
 require_once 'includes/class-rest-controller.php';
 require_once 'includes/class-menu.php';
 require_once 'includes/class-settings.php';
+require_once 'includes/class-synchronizer.php';
 
 require_once 'includes/trait-cron.php';
 require_once 'includes/trait-translations.php';
 
 require_once 'custom-blocks/remote-field/remote-field.php';
-
-
-if (!defined('WPCT_RCPT_ENV')) {
-    define('WPCT_RCPT_ENV', 'production');
-}
 
 class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
 {
@@ -50,6 +44,8 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
 
     public static $name = 'Wpct Remote CPT';
     public static $textdomain = 'wpct-rcpt';
+
+    private $synchronizer = null;
 
     public static function activate()
     {
@@ -84,6 +80,17 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
         add_action('wp_insert_post', function ($post_id, $post, $update) {
             $this->on_insert_post($post_id, $post, $update);
         }, 90, 3);
+
+        add_action('admin_menu', function () {
+            foreach ($this->post_types as $post_type) {
+                $hide = apply_filters('wpct_rpct_hide_menu', true, $post_type);
+                if ($hide) {
+                    remove_menu_page('edit.php?post_type=' . $post_type);
+                }
+            }
+        });
+
+        $this->synchronizer = Synchronizer::get_instance();
     }
 
     public function init()
@@ -109,17 +116,6 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
 
             update_option('wpct-http-bridge_general', $http_setting);
         }, 10, 3);
-        // if (!wp_is_block_theme()) {
-        //     return;
-        // }
-
-        // $plugin_path = plugin_dir_path(__FILE__);
-        // Patterns::register_block_patterns($plugin_path);
-
-        // foreach ($this->post_types as $post_type) {
-        //     Templates::register_block_templates($post_type);
-        //     Model::register($post_type);
-        // }
     }
 
     private function register_shortcode()
@@ -215,15 +211,20 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
         if (empty($post) || !in_array($post->post_type, $this->post_types)) {
             $remote_cpt = null;
         } else {
-            $remote_cpt = new Model($post);
+            $remote_cpt = new Remote_CPT($post);
         }
     }
 
     public function __get($attr)
     {
         if ($attr === 'post_types') {
-            $setting = Settings::get_setting('wpct-rcpt', 'general');
-            return apply_filters('wpct_rcpt_post_types', $setting['post_types']);
+            $relations = array_merge(
+                [], // Settings::get_setting('wpct-rcpt', 'rest-api', 'relations'),
+                Settings::get_setting('wpct-rcpt', 'rpc-api', 'relations'),
+            );
+            return array_unique(array_map(function ($rel) {
+                return trim($rel['post_type']);
+            }, $relations));
         }
 
         return null;

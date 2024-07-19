@@ -23,7 +23,7 @@ trait Translations
                 $trans_id = apply_filters('wpct_i18n_translate_post', $post_id, $lang);
             }
 
-            $remote_cpt = new Model($trans_id);
+            $remote_cpt = new Remote_CPT($trans_id);
             do_action('wpct_rcpt_translation', [
                 'post_id' => $trans_id,
                 'lang' => $lang,
