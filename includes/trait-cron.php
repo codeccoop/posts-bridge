@@ -4,18 +4,19 @@ namespace WPCT_RCPT;
 
 use Error;
 
-trait Cron {
-    private static $schedule_opt = '_wpct_rcpt_schedule_contexts';
+trait Cron
+{
+    private static $cron_opt = '_wpct_rcpt_cron_contexts';
     public static $schedule_hook = '_wpct_rcpt_do_schedule';
+    public static $detach_hook = '_wpct_rcpt_do_detacheds';
 
-    public static function do_schedule()
+    public static function do_detacheds()
     {
-        $contexts = get_option(self::$schedule_opt, []);
+        $contexts = get_option(self::$cron_opt, []);
 
         $errors = [];
         foreach ($contexts as $context) {
-            $task = $context['task'];
-            $payload = $context['payload'];
+            extract($context);
             try {
                 $task($payload);
             } catch (Error $e) {
@@ -23,7 +24,7 @@ trait Cron {
             }
         }
 
-        delete_option(self::$schedule_opt);
+        delete_option(self::$cron_opt);
 
         if (count($errors) > 0) {
             $to = get_bloginfo('admin_email');
@@ -33,15 +34,16 @@ trait Cron {
         }
     }
 
-    public static function detach($task, $payload, $delay = 1) {
-        if (!wp_next_scheduled(self::$schedule_hook)) {
-            wp_schedule_single_event(time() + $delay, self::$schedule_hook, [], true);
+    public static function detach($task, $payload, $delay = 1)
+    {
+        if (!wp_next_scheduled(self::$detach_hook)) {
+            wp_schedule_single_event(time() + $delay, self::$detach_hook, [], true);
         }
 
-        $contexts = get_option(self::$schedule_opt, []);
+        $contexts = get_option(self::$cron_opt, []);
         $new_item = [
             'task' => $task,
-            'payload' => $payload
+            'payload' => $payload,
         ];
 
         $is_unique = array_reduce($contexts, function ($is_unique, $item) use ($new_item) {
@@ -52,6 +54,21 @@ trait Cron {
             $contexts[] = $new_item;
         }
 
-        update_option(self::$schedule_opt, $contexts, false);
+        update_option(self::$cron_opt, $contexts, false);
+    }
+
+    public static function schedule($timestamp, $recurrence, $payload)
+    {
+        if (!wp_next_scheduled(self::$schedule_hook)) {
+            wp_schedule_event($timestamp, $recurrence, self::$schedule_hook, $payload);
+        }
+    }
+
+    public static function unschedule()
+    {
+        $timestamp = wp_next_scheduled(self::$schedule_hook);
+        if ($timestamp) {
+            wp_unschedule_event($timestamp, self::$schedule_hook);
+        }
     }
 }

@@ -49,10 +49,12 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
 
     public static function activate()
     {
+        (Synchronizer::get_instance())->schedule();
     }
 
     public static function deactivate()
     {
+        self::unschedule();
     }
 
     public function __construct()
@@ -110,7 +112,7 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
             }
 
             $http_setting = Settings::get_setting('wpct-http-bridge', 'general');
-            foreach ($http_setting as $key => $val) {
+            foreach (array_keys($http_setting) as $key) {
                 $http_setting[$key] = $to[$key];
             }
 
@@ -219,7 +221,7 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
     {
         if ($attr === 'post_types') {
             $relations = array_merge(
-                [], // Settings::get_setting('wpct-rcpt', 'rest-api', 'relations'),
+                Settings::get_setting('wpct-rcpt', 'rest-api', 'relations'),
                 Settings::get_setting('wpct-rcpt', 'rpc-api', 'relations'),
             );
             return array_unique(array_map(function ($rel) {
@@ -266,8 +268,14 @@ add_action('plugins_loaded', function () {
 });
 
 
-add_action(Wpct_Remote_Cpt::$schedule_hook, function () {
-    Wpct_Remote_Cpt::do_schedule();
+add_action(Wpct_Remote_Cpt::$detach_hook, function () {
+    Wpct_Remote_Cpt::do_detacheds();
+});
+
+add_action(Wpct_Remote_Cpt::$schedule_hook, function ($post_types) {
+    $synchronizer = Synchronizer::get_instance();
+    $synchronizer->sync('rest', $post_types);
+    $synchronizer->sync('rpc', $post_types);
 });
 
 $remote_cpt = null;

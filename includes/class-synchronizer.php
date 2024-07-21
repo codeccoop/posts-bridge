@@ -2,6 +2,7 @@
 
 namespace WPCT_RCPT;
 
+use Exception;
 use WPCT_ABSTRACT\Singleton;
 use WP_Query;
 
@@ -19,7 +20,51 @@ class Synchronizer extends Singleton
             }
             return $output;
         }, 10, 1);
+
+        add_action('update_option', function ($option) {
+            if ($option === 'wpct-rcpt_general') {
+                $this->schedule();
+            }
+        }, 20, 1);
     }
+
+    private function schedule()
+    {
+        try {
+            $cron = Settings::get_setting('wpct-rcpt', 'general', 'cron');
+            extract($cron);
+            if (empty($enabled) || empty($recurrence) || empty($next_run)) {
+                throw new Exception();
+            }
+
+            $next_run = date_parse($next_run);
+            $timestamp = time();
+            $now = [
+                'hour' => (int) date('h'),
+                'minute' => (int) date('i')
+            ];
+            $delta = 0;
+
+            $dh = ($next_run['hour'] - $now['hour']) * 60 * 60;
+            if ($dh > 0) {
+                $delta += $dh;
+            } elseif ($dh < 0) {
+                $detla += 23 * 60 * 60 + $dh;
+            }
+
+            $dm = ($next_run['minute'] - $now['minute']) * 60;
+            if ($dm > 0) {
+                $delta += $dm;
+            } elseif ($dm < 0) {
+                $delta += 60 * 60 - $dm;
+            }
+
+            Wpct_Remote_Cpt::schedule($timestamp + $delta, $recurrence, []);
+        } catch (Exception) {
+            Wpct_Remote_Cpt::unschedule();
+        }
+    }
+
 
     private function ajax_callback()
     {
@@ -29,19 +74,24 @@ class Synchronizer extends Singleton
             return trim($post_type);
         }, explode(',', $_POST['post_types']));
 
+        $this->sync($proto, $post_types);
+    }
+
+    private function sync($proto, $post_types = [])
+    {
         $success = true;
         if ($proto === 'rest') {
             $rest_api = Settings::get_setting('wpct-rcpt', 'rest-api');
 
             foreach ($rest_api['relations'] as $rel) {
-                if (in_array($rel['post_type'], $post_types)) {
+                if (in_array($rel['post_type'], $post_types) || empty($post_types)) {
                     $success &= $this->rest_sync($rel['post_type'], $rel['endpoint'], $rel['field']);
                 }
             }
         } else {
             $rpc_api = Settings::get_setting('wpct-rcpt', 'rpc-api');
             foreach ($rpc_api['relations'] as $rel) {
-                if (in_array($rel['post_type'], $post_types)) {
+                if (in_array($rel['post_type'], $post_types) || empty($post_types)) {
                     $success &= $this->rpc_sync($rel['post_type'], $rpc_api['endpoint'], $rel['model']);
                 }
             }
@@ -62,7 +112,7 @@ class Synchronizer extends Singleton
             return $model[$rel];
         }, $models);
 
-        return $this->sync($post_type, $ids, function ($remote_id) use ($endpoint) {
+        return $this->sync_posts($post_type, $ids, function ($remote_id) use ($endpoint) {
             $endpoint = apply_filters('wpct_rcpt_endpoint', "{$endpoint}/{$remote_id}", $remote_id, null);
             return ApiClient::fetch($endpoint);
         });
@@ -75,12 +125,12 @@ class Synchronizer extends Singleton
             return false;
         }
 
-        return $this->sync($post_type, $ids, function ($remote_id) use ($endpoint, $model) {
+        return $this->sync_posts($post_type, $ids, function ($remote_id) use ($endpoint, $model) {
             return ApiClient::read($endpoint, $model, $remote_id);
         });
     }
 
-    private function sync($post_type, $ids, $fetch)
+    private function sync_posts($post_type, $ids, $fetch)
     {
         $locale = apply_filters('wpct_i18n_current_language', 'locale');
 
