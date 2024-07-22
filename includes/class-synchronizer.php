@@ -25,7 +25,7 @@ class Synchronizer extends Singleton
             if ($option === 'wpct-rcpt_general') {
                 $this->schedule();
             }
-        }, 20, 1);
+        }, 90, 1);
     }
 
     private function schedule()
