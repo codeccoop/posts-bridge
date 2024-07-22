@@ -78,7 +78,7 @@ msgstr ""
 msgid "wpct-rcpt_general__api_key--label"
 msgstr ""
 
-msgid "wpct-rcpt_general__post_types--label"
+msgid "wpct-rcpt_general__cron--label"
 msgstr ""
 
 msgid "wpct-rcpt_rest-api--title"

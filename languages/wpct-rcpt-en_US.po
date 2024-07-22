@@ -75,6 +75,9 @@ msgstr "Base URL of the backend to connect with"
 msgid "wpct-rcpt_general__api_key--label"
 msgstr "Backend API KEY"
 
+msgid "wpct-rcpt_general__cron--label"
+msgstr "Scheduled synchronization"
+
 msgid "wpct-rcpt_rest-api--title"
 msgstr "REST API"
 

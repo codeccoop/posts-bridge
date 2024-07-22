@@ -75,6 +75,9 @@ msgstr "URL base del backend"
 msgid "wpct-rcpt_general__api_key--label"
 msgstr "Calve API del backend"
 
+msgid "wpct-rcpt_general__cron--label"
+msgstr "Sincronización calendarizada"
+
 msgid "wpct-rcpt_rest-api--title"
 msgstr "REST API"
 
