@@ -1,27 +1,37 @@
 <?php
 
 /**
- * Plugin Name:     Wpct Remote CPT
- * Plugin URI:      https://git.coopdevs.org/coopdevs/website/wp/wp-plugins/wpct-remote-cpt
- * Description:     Custom Post Type with remote sourcing
+ * Plugin Name:     Posts Bridge
+ * Plugin URI:      https://git.coopdevs.org/coopdevs/website/wp/wp-plugins/bridges/posts-bridge
+ * Description:     Bridge backend data to WP posts collections
  * Author:          Còdec
  * Author URI:      https://www.codeccoop.org
- * Text Domain:     wpct-rcpt
+ * Text Domain:     posts-bridge
  * Domain Path:     /languages
- * Version:         2.0.2
- *
- * @package         Wpct_Remote_Cpt
+ * Version:         1.0.0
  */
 
-namespace WPCT_RCPT;
+namespace POSTS_BRIDGE;
 
 use ValueError;
+use WPCT_ABSTRACT\Plugin as BasePlugin;
+
+if (!defined('ABSPATH')) {
+    exit();
+}
+
+/**
+ * Handle plugin version.
+ *
+ * @var string POSTS_BRIDGE_VERSION Current plugin version.
+ */
+define('POSTS_BRIDGE_VERSION', '1.0.0');
 
 require_once 'abstracts/class-singleton.php';
 require_once 'abstracts/class-plugin.php';
 
-require_once 'wpct-http-bridge/wpct-http-bridge.php';
-require_once 'wpct-i18n/wpct-i18n.php';
+require_once 'deps/http/http-bridge.php';
+require_once 'deps/i18n/wpct-i18n.php';
 
 require_once 'includes/class-api-client.php';
 require_once 'includes/class-model.php';
@@ -35,15 +45,15 @@ require_once 'includes/trait-translations.php';
 
 require_once 'custom-blocks/remote-field/remote-field.php';
 
-class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
+class Posts_Bridge extends BasePlugin
 {
     use Translations;
     use Cron;
 
-    protected static $menu_class = '\WPCT_RCPT\Menu';
+    protected static $menu_class = '\POSTS_BRIDGE\Menu';
 
-    public static $name = 'Wpct Remote CPT';
-    public static $textdomain = 'wpct-rcpt';
+    public static $name = 'Posts Bridge';
+    public static $textdomain = 'posts-bridge';
 
     private $synchronizer = null;
 
@@ -85,7 +95,7 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
 
         add_action('admin_menu', function () {
             foreach ($this->post_types as $post_type) {
-                $hide = apply_filters('wpct_rpct_hide_menu', true, $post_type);
+                $hide = apply_filters('posts_bridge_hide_menu', true, $post_type);
                 if ($hide) {
                     remove_menu_page('edit.php?post_type=' . $post_type);
                 }
@@ -97,8 +107,8 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
 
     public function init()
     {
-        add_filter('option_wpct-rcpt_general', function ($value) {
-            $http_setting = Settings::get_setting('wpct-http-bridge', 'general');
+        add_filter('option_posts-bridge_general', function ($value) {
+            $http_setting = Settings::get_setting('http-bridge', 'general');
             foreach ($http_setting as $key => $val) {
                 $value[$key] = $val;
             }
@@ -107,16 +117,16 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
         });
 
         add_action('updated_option', function ($option, $from, $to) {
-            if ($option !== 'wpct-rcpt_general') {
+            if ($option !== 'posts-bridge_general') {
                 return;
             }
 
-            $http_setting = Settings::get_setting('wpct-http-bridge', 'general');
+            $http_setting = Settings::get_setting('http-bridge', 'general');
             foreach (array_keys($http_setting) as $key) {
                 $http_setting[$key] = $to[$key];
             }
 
-            update_option('wpct-http-bridge_general', $http_setting);
+            update_option('http-bridge_general', $http_setting);
         }, 10, 3);
     }
 
@@ -221,8 +231,8 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
     {
         if ($attr === 'post_types') {
             $relations = array_merge(
-                Settings::get_setting('wpct-rcpt', 'rest-api', 'relations'),
-                Settings::get_setting('wpct-rcpt', 'rpc-api', 'relations'),
+                Settings::get_setting('posts-bridge', 'rest-api', 'relations'),
+                Settings::get_setting('posts-bridge', 'rpc-api', 'relations'),
             );
             return array_unique(array_map(function ($rel) {
                 return trim($rel['post_type']);
@@ -253,26 +263,26 @@ class Wpct_Remote_Cpt extends \WPCT_ABSTRACT\Plugin
         }
 
         if ($post->post_status === 'publish') {
-            self::detach('\WPCT_RCPT\_wpct_rcpt_do_translations', $post_id);
+            self::detach('\POSTS_BRIDGE\_posts_bridge_do_translations', $post_id);
         }
     }
 }
 
-function _wpct_rcpt_do_translations($post_id)
+function _posts_bridge_do_translations($post_id)
 {
-    Wpct_Remote_Cpt::do_translations($post_id);
+    Posts_Bridge::do_translations($post_id);
 }
 
 add_action('plugins_loaded', function () {
-    $plugin = Wpct_Remote_Cpt::get_instance();
+    Posts_Bridge::start();
 });
 
 
-add_action(Wpct_Remote_Cpt::$detach_hook, function () {
-    Wpct_Remote_Cpt::do_detacheds();
+add_action(Posts_Bridge::$detach_hook, function () {
+    Posts_Bridge::do_detacheds();
 });
 
-add_action(Wpct_Remote_Cpt::$schedule_hook, function ($post_types) {
+add_action(Posts_Bridge::$schedule_hook, function ($post_types) {
     $synchronizer = Synchronizer::get_instance();
     $synchronizer->sync('rest', $post_types);
     $synchronizer->sync('rpc', $post_types);

@@ -1,6 +1,19 @@
-data
-.env
+.DS_Store
+phpcs.xml
+phpunit.xml
+Thumbs.db
+wp-cli.local.yml
+node_modules/
+*.sql
+*.tar.gz
+*.zip
+
+# local config
 .nvimrc
 .php-cs-fixer.cache
-node_modules
-custom-blocks/**/*/build
+.idea
+.vscode
+.wp-env.json
+
+# build
+plugin.bundle.*

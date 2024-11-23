@@ -1,16 +1,18 @@
 <?php
 
-namespace WPCT_RCPT;
+namespace POSTS_BRIDGE;
 
 use WPCT_ABSTRACT\Menu as BaseMenu;
 
 class Menu extends BaseMenu
 {
-    static protected $settings_class = '\WPCT_RCPT\Settings';
+    protected static $settings_class = '\POSTS_BRIDGE\Settings';
 
     protected function render_page($echo = true)
     {
-        $output = parent::render_page(false);
-        echo apply_filters('wpct_rcpt_menu_page_content', $output);
+        printf(
+            '<div class="wrap" id="posts-bridge">%s</div>',
+            esc_html__('Loading', 'posts-bridge'),
+        );
     }
 }

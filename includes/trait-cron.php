@@ -1,14 +1,14 @@
 <?php
 
-namespace WPCT_RCPT;
+namespace POSTS_BRIDGE;
 
 use Error;
 
 trait Cron
 {
-    private static $cron_opt = '_wpct_rcpt_cron_contexts';
-    public static $schedule_hook = '_wpct_rcpt_do_schedule';
-    public static $detach_hook = '_wpct_rcpt_do_detacheds';
+    private static $cron_opt = '_posts_bridge_cron_contexts';
+    public static $schedule_hook = '_posts_bridge_do_schedule';
+    public static $detach_hook = '_posts_bridge_do_detacheds';
 
     public static function do_detacheds()
     {
@@ -28,7 +28,7 @@ trait Cron
 
         if (count($errors) > 0) {
             $to = get_bloginfo('admin_email');
-            $subject = 'Wpct Remote Cpt cron task error';
+            $subject = 'Posts Bridge cron task error';
             $body = print_r($errors, true);
             wp_mail($to, $subject, $body);
         }

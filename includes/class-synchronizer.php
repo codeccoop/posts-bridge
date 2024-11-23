@@ -1,6 +1,6 @@
 <?php
 
-namespace WPCT_RCPT;
+namespace POSTS_BRIDGE;
 
 use Exception;
 use WPCT_ABSTRACT\Singleton;
@@ -14,15 +14,15 @@ class Synchronizer extends Singleton
             return $this->ajax_callback();
         });
 
-        add_filter('wpct_rcpt_menu_page_content', function ($output) {
-            if (isset($_GET['tab']) && $_GET['tab'] !== 'wpct-rcpt_general') {
+        add_filter('posts_bridge_menu_page_content', function ($output) {
+            if (isset($_GET['tab']) && $_GET['tab'] !== 'posts-bridge_general') {
                 $output .= $this->sync_widget();
             }
             return $output;
         }, 10, 1);
 
         add_action('update_option', function ($option) {
-            if ($option === 'wpct-rcpt_general') {
+            if ($option === 'posts-bridge_general') {
                 $this->schedule();
             }
         }, 90, 1);
@@ -31,7 +31,7 @@ class Synchronizer extends Singleton
     private function schedule()
     {
         try {
-            $cron = Settings::get_setting('wpct-rcpt', 'general', 'cron');
+            $cron = Settings::get_setting('posts-bridge', 'general', 'cron');
             extract($cron);
             if (empty($enabled) || empty($recurrence) || empty($next_run)) {
                 throw new Exception();
@@ -59,16 +59,16 @@ class Synchronizer extends Singleton
                 $delta += 60 * 60 - $dm;
             }
 
-            Wpct_Remote_Cpt::schedule($timestamp + $delta, $recurrence, []);
+            Remote_Cpt::schedule($timestamp + $delta, $recurrence, []);
         } catch (Exception) {
-            Wpct_Remote_Cpt::unschedule();
+            Remote_Cpt::unschedule();
         }
     }
 
 
     private function ajax_callback()
     {
-        check_ajax_referer('wpct-rcpt-syncronizer');
+        check_ajax_referer('posts-bridge-syncronizer');
         $proto = $_POST['proto'];
         $post_types = array_map(function ($post_type) {
             return trim($post_type);
@@ -81,7 +81,7 @@ class Synchronizer extends Singleton
     {
         $success = true;
         if ($proto === 'rest') {
-            $rest_api = Settings::get_setting('wpct-rcpt', 'rest-api');
+            $rest_api = Settings::get_setting('posts-bridge', 'rest-api');
 
             foreach ($rest_api['relations'] as $rel) {
                 if (in_array($rel['post_type'], $post_types) || empty($post_types)) {
@@ -89,7 +89,7 @@ class Synchronizer extends Singleton
                 }
             }
         } else {
-            $rpc_api = Settings::get_setting('wpct-rcpt', 'rpc-api');
+            $rpc_api = Settings::get_setting('posts-bridge', 'rpc-api');
             foreach ($rpc_api['relations'] as $rel) {
                 if (in_array($rel['post_type'], $post_types) || empty($post_types)) {
                     $success &= $this->rpc_sync($rel['post_type'], $rpc_api['endpoint'], $rel['model']);
@@ -113,7 +113,7 @@ class Synchronizer extends Singleton
         }, $models);
 
         return $this->sync_posts($post_type, $ids, function ($remote_id) use ($endpoint) {
-            $endpoint = apply_filters('wpct_rcpt_endpoint', "{$endpoint}/{$remote_id}", $remote_id, null);
+            $endpoint = apply_filters('posts-bridge_endpoint', "{$endpoint}/{$remote_id}", $remote_id, null);
             return ApiClient::fetch($endpoint);
         });
     }
@@ -159,7 +159,7 @@ class Synchronizer extends Singleton
         $remote_ids = array_keys($remote_ids);
         $remote_ids = array_slice($remote_ids, 0, 10);
         foreach ($remote_ids as $remote_id) {
-            $data = apply_filters('wpct_rcpt_fetch', $fetch($remote_id), null, $locale);
+            $data = apply_filters('posts-bridge_fetch', $fetch($remote_id), null, $locale);
             if (is_wp_error($data)) {
                 return false;
             }
@@ -178,10 +178,10 @@ class Synchronizer extends Singleton
 
     private function sync_widget()
     {
-        $nonce = wp_create_nonce('wpct-rcpt-syncronizer');
+        $nonce = wp_create_nonce('posts-bridge-syncronizer');
         $ajax_url = admin_url('admin-ajax.php');
-        $proto = $_GET['tab'] === 'wpct-rcpt_rest-api' ? 'rest' : 'rpc';
-        $relations = Settings::get_setting('wpct-rcpt', $proto . '-api', 'relations');
+        $proto = $_GET['tab'] === 'posts-bridge_rest-api' ? 'rest' : 'rpc';
+        $relations = Settings::get_setting('posts-bridge', $proto . '-api', 'relations');
 
         ob_start();
         ?>
@@ -196,7 +196,7 @@ class Synchronizer extends Singleton
                 <?php endfor; ?>
                 </fieldset>
                 <p class="submit">
-                    <button id="submit" type="submit" class="button button-primary"><?= __('synchronize', 'wpct-rcpt') ?></button>
+                    <button id="submit" type="submit" class="button button-primary"><?= __('synchronize', 'posts-bridge') ?></button>
                 </p>
             </form>
         </div>
@@ -217,7 +217,7 @@ class Synchronizer extends Singleton
 
                 const postTypes = [];
                 for (let i = 0; i < <?= count($relations) ?>; i++) {
-                    postTypes.push(formData.get(`post_type[${i}]`));           
+                    postTypes.push(formData.get(`post_type[${i}]`));
                 }
                 query.set("post_types", postTypes.join(","));
 
@@ -242,10 +242,10 @@ class Synchronizer extends Singleton
                     .then(({ success }) => {
                         if (!success) {
                             notice.classList = "notice notice-error";
-                            notice.innerText = "<?= __('Error on remote synchronization', 'wpct-rcpt') ?>";
+                            notice.innerText = "<?= __('Error on remote synchronization', 'posts-bridge') ?>";
                         } else {
                             notice.classList = "notice notice-success";
-                            notice.innerText = "<?= __('Successfully synchronized', 'wpct-rcpt') ?>";
+                            notice.innerText = "<?= __('Successfully synchronized', 'posts-bridge') ?>";
                         }
                     }).finally(() => (form.querySelector('button[type="submit"]').disabled = false));
             });

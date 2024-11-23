@@ -1,6 +1,6 @@
 <?php
 
-namespace WPCT_RCPT;
+namespace POSTS_BRIDGE;
 
 trait Translations
 {
@@ -24,7 +24,7 @@ trait Translations
             }
 
             $remote_cpt = new Remote_CPT($trans_id);
-            do_action('wpct_rcpt_translation', [
+            do_action('posts_bridge_translation', [
                 'post_id' => $trans_id,
                 'lang' => $lang,
                 'bound' => $post_id

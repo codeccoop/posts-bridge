@@ -1,6 +1,6 @@
 <?php
 
-namespace WPCT_RCPT;
+namespace POSTS_BRIDGE;
 
 use WPCT_ABSTRACT\Settings as BaseSettings;
 
@@ -127,10 +127,10 @@ class Settings extends BaseSettings
     private function recurrence_input_render($setting, $field, $value)
     {
         $options = [
-            'hourly' => __('Hourly', 'wpct-rcpt'),
-            'twicedaily' => __('Twice Daily', 'wpct-rcpt'),
-            'daily' => __('Daily', 'wpct-rcpt'),
-            'weekly' => __('Weekly', 'wpct-rcpt'),
+            'hourly' => __('Hourly', 'posts-bridge'),
+            'twicedaily' => __('Twice Daily', 'posts-bridge'),
+            'daily' => __('Daily', 'posts-bridge'),
+            'weekly' => __('Weekly', 'posts-bridge'),
         ];
 
         if (!isset($options[$value])) {

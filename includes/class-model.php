@@ -1,6 +1,6 @@
 <?php
 
-namespace WPCT_RCPT;
+namespace POSTS_BRIDGE;
 
 class Remote_CPT
 {
@@ -28,7 +28,7 @@ class Remote_CPT
             return $this->remote_data;
         }
 
-        $this->remote_data = apply_filters('wpct_rcpt_fetch', $this->api_client->get_data($locale), $this, $locale);
+        $this->remote_data = apply_filters('posts_bridge_fetch', $this->api_client->get_data($locale), $this, $locale);
         return $this->remote_data;
     }
 
@@ -38,9 +38,9 @@ class Remote_CPT
         if ($rel['type'] === 'rest') {
             $endpoint = $rel['endpoint'];
             $endpoint .= '/' . $this->remote_id;
-            $endpoint = apply_filters('wpct_rcpt_endpoint', $endpoint, $this->remote_id, $this);
+            $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, $this->remote_id, $this);
         } else {
-            $endpoint = Settings::get_setting('wpct-rcpt', 'rpc-api', 'endpoint');
+            $endpoint = Settings::get_setting('posts-bridge', 'rpc-api', 'endpoint');
         }
 
         return $endpoint;
@@ -48,8 +48,8 @@ class Remote_CPT
 
     public function relation()
     {
-        $rest_api = Settings::get_setting('wpct-rcpt', 'rest-api', 'relations');
-        $rpc_api = Settings::get_setting('wpct-rcpt', 'rpc-api', 'relations');
+        $rest_api = Settings::get_setting('posts-bridge', 'rest-api', 'relations');
+        $rpc_api = Settings::get_setting('posts-bridge', 'rpc-api', 'relations');
 
         $endpoint = null;
         foreach ($rest_api as $rel) {

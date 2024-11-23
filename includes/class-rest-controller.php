@@ -1,6 +1,6 @@
 <?php
 
-namespace WPCT_RCPT;
+namespace POSTS_BRIDGE;
 
 use WP_REST_Posts_Controller;
 use WP_REST_Post_Meta_Fields;
@@ -11,7 +11,7 @@ class REST_Controller extends WP_REST_Posts_Controller
     protected $post_type;
     protected $meta;
     protected $rest_base;
-    protected $namespace = 'wpct/v1';
+    protected $namespace = 'wp-bridges/v1';
 
     public function __construct($post_type)
     {
@@ -75,7 +75,7 @@ class REST_Controller extends WP_REST_Posts_Controller
         if (is_wp_error($attachment_id)) {
             throw new Exception('Error while uploading media');
         }
-        update_post_meta($attachment_id, '_wpct_remote_cpt_img_source', $src);
+        update_post_meta($attachment_id, '_posts_bridge_img_source', $src);
 
         require_once(ABSPATH . 'wp-admin/includes/image.php');
 

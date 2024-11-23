@@ -1,12 +1,14 @@
 <?php
 
-namespace WPCT_RCPT;
+namespace POSTS_BRIDGE;
 
-use WPCT_HTTP\Http_Client as Wpct_Http_Client;
 use Exception;
 use WP_Error;
 
-class ApiClient
+use function HTTP_BRIDGE\http_bridge_post;
+use function HTTP_BRIDGE\http_bridge_get;
+
+class HTTP_Client
 {
     private $rcpt = null;
 
@@ -22,7 +24,7 @@ class ApiClient
             ]
         ];
 
-        $response = Wpct_Http_Client::post($endpoint, $payload);
+        $response = http_bridge_post($endpoint, $payload);
         $data = (array) json_decode($response['body'], true);
         if (isset($data['error'])) {
             return new WP_Error(
@@ -37,14 +39,14 @@ class ApiClient
 
     private static function login($endpoint)
     {
-        global $_wpct_rcpt_rpc_uid;
-        if (!empty($_wpct_rcpt_rpc_uid)) {
-            return $_wpct_rcpt_rpc_uid;
+        global $_posts_bridge_rpc_uid;
+        if (!empty($_posts_bridge_rpc_uid)) {
+            return $_posts_bridge_rpc_uid;
         }
 
-        $opts = Settings::get_setting('wpct-rcpt', 'rpc-api');
-        $_wpct_rcpt_rpc_uid = self::json_rpc($endpoint, 'common', 'login', [$opts['database'], $opts['user'], $opts['password']]);
-        return $_wpct_rcpt_rpc_uid;
+        $opts = Settings::get_setting('posts-bridge', 'rpc-api');
+        $_posts_bridge_rpc_uid = self::json_rpc($endpoint, 'common', 'login', [$opts['database'], $opts['user'], $opts['password']]);
+        return $_posts_bridge_rpc_uid;
     }
 
     public static function search($endpoint, $model)
@@ -54,7 +56,7 @@ class ApiClient
             return $uid;
         }
 
-        $opts = Settings::get_setting('wpct-rcpt', 'rpc-api');
+        $opts = Settings::get_setting('posts-bridge', 'rpc-api');
         return self::json_rpc($endpoint, 'object', 'execute', [$opts['database'], $uid, $opts['password'], $model, 'search', []]);
     }
 
@@ -65,24 +67,13 @@ class ApiClient
             return $uid;
         }
 
-        $opts = Settings::get_setting('wpct-rcpt', 'rpc-api');
+        $opts = Settings::get_setting('posts-bridge', 'rpc-api');
         $result = self::json_rpc($endpoint, 'object', 'execute', [$opts['database'], $uid, $opts['password'], $model, 'read', [$id]]);
         if (is_wp_error($result)) {
             return $result;
         }
 
         return $result[0];
-    }
-
-    public static function fetch($endpoint)
-    {
-        $response = Wpct_Http_Client::get($endpoint);
-        if (is_wp_error($response)) {
-            return $response;
-        }
-
-        $data = (array) json_decode($response['body'], true);
-        return apply_filters('wpct_rcpt_rest_models', $data, $endpoint);
     }
 
     public function __construct($rcpt)
@@ -96,12 +87,12 @@ class ApiClient
         $endpoint = $this->rcpt->endpoint();
 
         if ($locale) {
-            add_option('wpct_rcpt_api_language', $locale);
+            add_option('posts_bridge_api_language', $locale);
             add_filter('wpct_i18n_current_language', [$this, 'language_interceptor'], 99);
         }
 
         if ($rel['type'] === 'rest') {
-            $response = Wpct_Http_Client::get($endpoint);
+            $response = http_bridge_get($endpoint);
         } else {
             $response = self::read($endpoint, $rel['model'], $this->rcpt->remote_id);
         }
@@ -115,13 +106,13 @@ class ApiClient
 
     public function language_interceptor($lang)
     {
-        $api_lang = get_option('wpct_rcpt_api_language');
+        $api_lang = get_option('http_bridge_api_language');
         if ($api_lang) {
             $lang = $api_lang;
         }
 
         remove_filter('wpct_i18n_current_language', [$this, 'language_interceptor'], 99);
-        delete_option('wpct_rcpt_api_language');
+        delete_option('http_bridge_api_language');
 
         return $lang;
     }
