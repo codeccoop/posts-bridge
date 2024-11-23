@@ -2,32 +2,38 @@
 
 Bridge backend data to WP posts collections.
 
-Plugin to allow remote managment of your posts. Use WordPress and it's block editor
-as a frontend of your backend database.
+Posts Bridge handle posts collections as indexes that represents your backend data and
+allows the use of Gutenberg, the powerfull page builder of WordPress, as your backend
+frontend builder.
 
 ## Installation
 
-Download the [latest release](https://git.coopdevs.org/codeccoop/wp/plugins/wpct-remote-cpt/-/releases/permalink/latest/downloads/plugins/wpct-remote-cpt.zip)
-as a zipfile. Once downloaded, decompress and place its content on your WP instance
-`wp-content/plugins`'s directory.
+Download the [latest release](https://git.coopdevs.org/codeccoop/wp/plugins/bridges/posts-bridge/-/releases/permalink/latest/downloads/plugins/bridges/posts-bridge.zip)
+as a zipfile. Once downloaded, go to your site plugins page and upload the zip file
+as a new plugin, WordPress will do the rest.
 
-> Go to the [releases](https://git.coopdevs.org/codeccoop/wp/plugins/wpct-remote-cpt/-/releases)
-> to find previous versions.
+> Go to the [releases](https://git.coopdevs.org/codeccoop/wp/plugins/bridges/posts-bridge/-/releases)
+to find previous versions.
 
-You can install it with `wp-cli` with the next command:
+If you have access to a console on your server, you can install it with `wp-cli` with
+the next command:
 
 ```shell
-wp plugin install https://git.coopdevs.org/codeccoop/wp/plugins/wpct-erp-forms/-/releases/permalink/latest/downloads/plugins/wpct-erp-forms.zip
+wp plugin install https://git.coopdevs.org/codeccoop/wp/plugins/bridges/posts-bridge/-/releases/permalink/latest/downloads/plugins/bridges/posts-bridge.zip
 ```
 
-## Settings
+## Getting started
 
-Once installed and activated, go to `Settings > Wpct Remote CPT` to manage plugin
-settings. The page has thre main sections:
+Once installed and activated, go to `Settings > Posts Bridge` to manage plugin
+settings. The page has three main sections:
 
 1. General
-   - **Backend base URL**:
-   - **Backend API key**:
+   - **Post types**: Select which post types do you want to connect with a remote source.
+   - **Synchronization**: Controls remote source synchronization strategy.
+   - **Whitelist backends**: Controls if Posts Bridge should block incomming connections
+     from other sources than the listed on de _backends_ setting.
+   - **Backends**: List of configured backend connections. Each backend needs a unique
+	name, a base URL, and, optional, a map of HTTP headers.
 2. REST API
    - **Relations**: A list of handled post types and it's relation with your backend
      endpoints. Each realtion needs a post type, an endpoint and the remote field to be
@@ -45,10 +51,10 @@ settings. The page has thre main sections:
 The plugin allows two content synchronization strategies between WordPress and the
 backend:
 
-- Pull: WordPress performs the synchronization fetching the backend models collections
+- Pull (Automatic): WordPress performs the synchronization fetching the backend models collections
   and matching them against its posts database. We can trigger the synchronization manualy
   from the plugin settings' page.
-- Push: WordpPress opens CRUD endpoints on it's REAST API and is the backend who has
+- Push: WordpPress opens CRUD endpoints on its REAST API and is the backend who has
   the responsability to inform WordPress each time an update ocurs on its database.
 
 ## Custom Blocks
@@ -66,6 +72,6 @@ values of each field on the payload fetched from the backend.
 The plugin opens endpoints on the WP REST API to allow CRUD operations against
 your Remote CPTs. Write operations are protected with authentication. To authenticate
 over the api you can use [native wp methods](https://developer.wordpress.org/rest-api/using-the-rest-api/authentication/)
-or use the [Wpct Http Bridge](https://git.cooopdevs.org/codeccoop/wp/plugins/wpct-http-brdige/)
+or use the [Http Bridge](https://git.cooopdevs.org/codeccoop/wp/plugins/bridges/http-brdige/)
 custom endpoints to gain access over JWT. \*\*This endpoints are the gateway your backend
 should use if you choose the _push synchronization strategy_.
