@@ -1,5 +1,5 @@
 // vendor
-import React from "react";
+import React, { useEffect } from "react";
 import {
   TextControl,
   Button,
@@ -8,6 +8,7 @@ import {
 import { useMemo } from "@wordpress/element";
 
 const postModel = {
+  post_ID: "ID",
   post_title: "Title",
   post_name: "Slug",
   post_excerpt: "Excerpt",
@@ -17,26 +18,23 @@ const postModel = {
   post_date: "Date",
 };
 
-export default function CustomFieldsTable({ fields, setFields }) {
+export default function CustomFieldsTable({ fields, setFields, done }) {
   const __ = wp.i18n.__;
 
-  const postFields = useMemo(() => {
-    const postFields = fields
-      .map((field, index) => ({ ...field, index }))
-      .filter(({ name }) => Object.hasOwnProperty.call(postModel, name));
+  useEffect(() => {
+    fields.forEach((field, i) => (field.index = i));
+  }, [fields]);
 
-    return postFields.concat(
-      Object.keys(postModel)
-        .filter((field) => !postFields.some(({ name }) => name === field))
-        .map((field) => ({ name: field, foreign: null, index: null }))
-    );
+  const postFields = useMemo(() => {
+    return Object.keys(postModel).map((key) => {
+      const field = fields.find(({ name }) => name === key);
+      return field || { name: key, value: null, index: null };
+    });
   }, [fields]);
 
   const customFields = useMemo(
     () =>
-      fields
-        .map((field, index) => ({ ...field, index }))
-        .filter(({ name }) => !Object.hasOwnProperty.call(postModel, name)),
+      fields.filter(({ name }) => !Object.hasOwnProperty.call(postModel, name)),
     [fields]
   );
 
@@ -70,7 +68,7 @@ export default function CustomFieldsTable({ fields, setFields }) {
   };
 
   return (
-    <div className="components-base-control__label">
+    <>
       <label
         className="components-base-control__label"
         style={{
@@ -82,7 +80,7 @@ export default function CustomFieldsTable({ fields, setFields }) {
       >
         {__("Post fields", "posts-bridge")}
       </label>
-      <table style={{ width: "100%" }}>
+      <table style={{ width: "100%", minWidth: "500px" }}>
         <tbody>
           {postFields.map(({ name, foreign, index }) => (
             <tr key={name}>
@@ -101,18 +99,32 @@ export default function CustomFieldsTable({ fields, setFields }) {
           ))}
         </tbody>
       </table>
-      <label
-        className="components-base-control__label"
-        style={{
-          fontSize: "11px",
-          textTransform: "uppercase",
-          fontWeight: 500,
-          marginBottom: "calc(8px)",
-        }}
-      >
-        {__("Custom fields", "posts-bridge")}
-      </label>
-      <table style={{ width: "100%" }}>
+      <Spacer paddingY="calc(3px)" />
+      <div style={{ display: "flex" }}>
+        <label
+          className="components-base-control__label"
+          style={{
+            fontSize: "11px",
+            textTransform: "uppercase",
+            fontWeight: 500,
+            lineHeight: "32px",
+          }}
+        >
+          {__("Custom fields", "posts-bridge")}
+        </label>
+        <Button
+          variant="secondary"
+          onClick={() => addField()}
+          style={{
+            marginLeft: "1em",
+            height: "32px",
+            marginBottom: "calc(8px)",
+          }}
+        >
+          {__("Add", "posts-bridge")}
+        </Button>
+      </div>
+      <table style={{ width: "100%", minWidth: "500px" }}>
         <tbody>
           {customFields.map(({ foreign, name, index }) => (
             <tr key={index}>
@@ -148,12 +160,12 @@ export default function CustomFieldsTable({ fields, setFields }) {
       </table>
       <Spacer paddingY="calc(3px)" />
       <Button
-        variant="secondary"
-        onClick={() => addField()}
+        variant="primary"
+        onClick={() => done()}
         style={{ height: "32px" }}
       >
-        {__("Add", "posts-bridge")}
+        {__("Done", "posts-bridge")}
       </Button>
-    </div>
+    </>
   );
 }

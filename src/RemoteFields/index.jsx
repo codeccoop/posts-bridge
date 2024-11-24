@@ -23,7 +23,11 @@ export default function RemoteFields({ fields, setFields }) {
           title={__("Remote fields", "posts-bridge")}
           onRequestClose={() => setOpen(false)}
         >
-          <RemoteFieldsTable fields={fields} setFields={setFields} />
+          <RemoteFieldsTable
+            fields={fields}
+            setFields={setFields}
+            done={() => setOpen(false)}
+          />
         </Modal>
       )}
     </>
