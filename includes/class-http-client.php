@@ -31,6 +31,7 @@ class HTTP_Client
      * @param array $args RPC call method.
      * @param array $args RPC call arguments.
      * @param array $headers HTTP headers.
+	 *
      * @return array|WP_Error RPC call result or WP_Error.
      */
     private static function json_rpc($endpoint, $service, $method, $args, $headers = [])
@@ -67,6 +68,7 @@ class HTTP_Client
      *
      * @param string $endpoint RPC API gateway endpoint.
      * @param array $headers HTTP headers.
+	 *
      * @return array|WP_Error RPC login call result or WP_Error.
      */
     private static function login($endpoint, $headers)
@@ -94,6 +96,7 @@ class HTTP_Client
      * @param string $endpoint RPC API gateway endpoint.
      * @param string $model Target model to search for.
      * @param array $headers HTTP headers.
+	 *
      * @return array<int>|WP_Error Collection of the backend models ids.
      */
     public static function search($endpoint, $model, $headers = [])
@@ -177,13 +180,14 @@ class HTTP_Client
      * Fetches the post remote data.
      *
      * @param string|null $locale Language of the API requests.
-     * @return array|WP_Error $data Remote_CPT data or WP_Error.
+	 *
+     * @return array|WP_Error Remote_CPT data or WP_Error.
      */
     public function get_data($locale = null)
     {
         $rel = $this->rcpt->get_relation();
         $endpoint = $this->rcpt->get_endpoint();
-        $backend = apply_filters('posts_bridge_backend', null, $rel['backend']);
+        $backend = $rel->get_backend();
 
         $url = $backend->get_endpoint_url($endpoint);
         $headers = $backend->get_headers();
@@ -194,7 +198,7 @@ class HTTP_Client
             add_filter('wpct_i18n_current_language', [$this, 'language_interceptor'], 99);
         }
 
-        if ($rel['type'] === 'rest') {
+        if ($rel->get_proto() === 'rest') {
             $response = http_bridge_get($url, ['headers' => $headers]);
             if (is_wp_error($response)) {
                 return $response;
@@ -202,7 +206,7 @@ class HTTP_Client
 
             $data = (array) json_decode($response['body'], true);
         } else {
-            $data = self::read($url, $rel['model'], $this->rcpt->get_foreign_id(), $headers);
+            $data = self::read($url, $rel->get_model(), $this->rcpt->get_foreign_id(), $headers);
         }
 
         return $data;
