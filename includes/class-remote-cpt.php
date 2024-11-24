@@ -72,7 +72,7 @@ class Remote_CPT
             return $this->remote_data;
         }
 
-        $locale = apply_filters('wpct_i18n_post_language', $this->ID, 'locale');
+        $locale = apply_filters('wpct_i18n_post_language', null, $this->ID, 'locale');
 
         $this->remote_data = apply_filters('posts_bridge_fetch', $this->http_client->get_data($locale), $this, $locale);
         return $this->remote_data;
@@ -104,6 +104,10 @@ class Remote_CPT
     public function get($attr, $default = null)
     {
         $data = $this->fetch();
+
+        if (is_wp_error($data)) {
+            return $default;
+        }
 
         if (isset($data[$attr])) {
             return $data[$attr];
@@ -154,7 +158,7 @@ class Remote_CPT
     public function get_foreign_id()
     {
         if (empty($this->foreign_id)) {
-            $this->foreign_id = get_post_meta($this->post, self::_foreign_key_handle, true);
+            $this->foreign_id = get_post_meta($this->post->ID, self::_foreign_key_handle, true);
         }
 
         return $this->foreign_id;
