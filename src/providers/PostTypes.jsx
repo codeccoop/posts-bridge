@@ -22,7 +22,7 @@ export default function PostTypesProvider({ children }) {
 
   useEffect(() => {
     apiFetch({
-      path: `${window.wpApiSettings.root}wp-bridges/v1/posts/types`,
+      path: `${window.wpApiSettings.root}wp-bridges/v1/posts-bridge/types`,
       headers: {
         "X-WP-Nonce": wpApiSettings.nonce,
       },

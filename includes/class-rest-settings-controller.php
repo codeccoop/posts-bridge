@@ -77,7 +77,7 @@ class REST_Settings_Controller extends Base_REST_Settings_Controller
         $version = self::$version;
         register_rest_route(
             "{$namespace}/v{$version}",
-            '/posts/types/',
+            '/posts-bridge/types/',
             [
                 'methods' => WP_REST_Server::READABLE,
                 'callback' => function () {
