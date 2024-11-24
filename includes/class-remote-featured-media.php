@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
  */
 class Remote_Featured_Media
 {
-    const _default_thumbnail_handle = '_posts_bridge_thumbnail';
+    public const _default_thumbnail_handle = '_posts_bridge_thumbnail';
 
     /**
      * Gets plugin's default thumbnail attachment ID.
@@ -68,6 +68,25 @@ class Remote_Featured_Media
         }
 
         return $filetype;
+    }
+
+    public static function handle($src)
+    {
+        if (!empty($src)) {
+            $type = self::get_src_type($src);
+            switch ($type) {
+                case 'url':
+                    return self::attach_url($src);
+                case 'base64':
+                    return self::attach_b64($src);
+                case 'id':
+                    return (int) $src;
+                default:
+                    return self::get_default_thumbnail_id();
+            }
+        } else {
+            return self::get_default_thumbnail_id();
+        }
     }
 
     /**

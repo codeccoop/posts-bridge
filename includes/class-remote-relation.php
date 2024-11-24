@@ -229,7 +229,14 @@ class Remote_Relation
         $remote_fields = $this->get_remote_fields();
 
         foreach ($remote_fields as $foreign => $name) {
-            $data[$name] = $data[$foreign];
+            if ($foreign === $name) {
+                continue;
+            }
+
+            if (!empty($data[$foreign])) {
+                $data[$name] = $data[$foreign];
+            }
+
             unset($data[$foreign]);
         }
 

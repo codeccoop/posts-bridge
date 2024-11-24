@@ -126,7 +126,7 @@ class Posts_Synchronizer extends Singleton
             $headers = $backend->get_headers();
 
             $data = HTTP_Client::fetch($url, $headers);
-            return $relation->map_remote_fields($data);
+            return [$relation->map_remote_fields($data), array_values($relation->get_remote_custom_fields())];
         });
     }
 
@@ -148,7 +148,7 @@ class Posts_Synchronizer extends Singleton
 
         return $this->sync_posts($relation->get_post_type(), $foreign_ids, function ($foreign_id) use ($relation) {
             $data = HTTP_Client::read($relation->get_url(), $relation->get_model(), $foreign_id, $relation->get_headers());
-            return $relation->map_remote_fields($data);
+            return [$relation->map_remote_fields($data), array_values($relation->get_remote_custom_fields())];
         });
     }
 
@@ -197,7 +197,7 @@ class Posts_Synchronizer extends Singleton
 
         $foreign_ids = array_keys($foreign_ids);
         foreach ($foreign_ids as $foreign_id) {
-            $data = $fetch_data($foreign_id);
+            [$data, $custom_fields] = $fetch_data($foreign_id);
             if (is_wp_error($data)) {
                 return false;
             }
@@ -209,6 +209,17 @@ class Posts_Synchronizer extends Singleton
             }
 
             update_post_meta($post_id, Remote_CPT::_foreign_key_handle, $foreign_id);
+
+            if (isset($data['featured_media'])) {
+                $featured_media = Remote_Featured_Media::handle($data['featured_media']);
+                set_post_thumbnail($post_id, $featured_media);
+            }
+
+            foreach ($custom_fields as $name) {
+                if (isset($data[$name])) {
+                    update_post_meta($post_id, $name, $data[$name]);
+                }
+            }
         }
     }
 }

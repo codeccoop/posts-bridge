@@ -75,26 +75,12 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
     {
         $relation = apply_filters('posts_bridge_relation', null, $this->post_type);
         $prepared_data = $relation->map_remote_fields($request->get_json_params());
-
-        foreach ($prepared_data as $key => $val) {
-            // clean up empties
-            if (empty($val)) {
-                unset($prepared_data[$key]);
-                continue;
-            }
-        }
-
         $prepared_post = array_merge((array) $prepared_post, $prepared_data);
 
         // lower case the ID
         if (isset($prepared_post['ID'])) {
             $prepared_post['id'] = $prepared_post['ID'];
             unset($prepared_post['ID']);
-        }
-
-        // fallback to default thumbnail
-        if (!isset($prepared_post['featured_media'])) {
-            $prepared_post['featured_media'] = Remote_Featured_Media::get_default_thumbnail_id();
         }
 
         return (object) $prepared_post;
@@ -164,25 +150,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
      */
     protected function handle_featured_media($featured_media, $post_id)
     {
-        if (!empty($featured_media)) {
-            $src_type = Remote_Featured_Media::get_src_type($featured_media);
-            switch ($src_type) {
-                case 'url':
-                    $featured_media = Remote_Featured_Media::attach_url($featured_media);
-                    break;
-                case 'base64':
-                    $featured_media = Remote_Featured_Media::attach_b64($featured_media);
-                    break;
-                case 'id':
-                    $featured_media = (int) $featured_media;
-                    break;
-                default:
-                    $featured_media = Remote_Featured_Media::get_default_thumbnail_id();
-            }
-        } else {
-            $featured_media = Remote_Featured_Media::get_default_thumbnail_id();
-        }
-
+        $featured_media = Remote_Featured_Media::handle($featured_media);
         parent::handle_featured_media($featured_media, $post_id);
     }
 

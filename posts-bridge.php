@@ -283,14 +283,14 @@ class Posts_Bridge extends BasePlugin
         }, 90, 3);
 
         // Hide remote cpts from admin menu
-        add_action('admin_menu', function () {
-            foreach (Settings::get_post_types() as $post_type) {
-                $hide = apply_filters('posts_bridge_hide_menu', true, $post_type);
-                if ($hide) {
-                    remove_menu_page('edit.php?post_type=' . $post_type);
-                }
-            }
-        });
+        // add_action('admin_menu', function () {
+        //     foreach (Settings::get_post_types() as $post_type) {
+        //         $hide = apply_filters('posts_bridge_hide_menu', true, $post_type);
+        //         if ($hide) {
+        //             remove_menu_page('edit.php?post_type=' . $post_type);
+        //         }
+        //     }
+        // });
 
         // Enqueue plugin admin client scripts
         add_action('admin_enqueue_scripts', function ($admin_page) {
