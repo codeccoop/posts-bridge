@@ -31,7 +31,7 @@ class HTTP_Client
      * @param array $args RPC call method.
      * @param array $args RPC call arguments.
      * @param array $headers HTTP headers.
-	 *
+     *
      * @return array|WP_Error RPC call result or WP_Error.
      */
     private static function json_rpc($endpoint, $service, $method, $args, $headers = [])
@@ -68,7 +68,7 @@ class HTTP_Client
      *
      * @param string $endpoint RPC API gateway endpoint.
      * @param array $headers HTTP headers.
-	 *
+     *
      * @return array|WP_Error RPC login call result or WP_Error.
      */
     private static function login($endpoint, $headers)
@@ -96,7 +96,7 @@ class HTTP_Client
      * @param string $endpoint RPC API gateway endpoint.
      * @param string $model Target model to search for.
      * @param array $headers HTTP headers.
-	 *
+     *
      * @return array<int>|WP_Error Collection of the backend models ids.
      */
     public static function search($endpoint, $model, $headers = [])
@@ -138,7 +138,7 @@ class HTTP_Client
             $endpoint,
             'object',
             'execute',
-            [$opts['database'], $uid, $opts['password'], $model, 'read', [$id]],
+            [$opts['database'], $uid, $opts['password'], $model, 'read', [(int) $id]],
             $headers,
         );
 
@@ -180,7 +180,7 @@ class HTTP_Client
      * Fetches the post remote data.
      *
      * @param string|null $locale Language of the API requests.
-	 *
+     *
      * @return array|WP_Error Remote_CPT data or WP_Error.
      */
     public function get_data($locale = null)
@@ -219,13 +219,13 @@ class HTTP_Client
      */
     public function language_interceptor($lang)
     {
-        $api_lang = get_option('http_bridge_api_language');
+        $api_lang = get_option('posts_bridge_api_language');
         if ($api_lang) {
             $lang = $api_lang;
         }
 
         remove_filter('wpct_i18n_current_language', [$this, 'language_interceptor'], 99);
-        delete_option('http_bridge_api_language');
+        delete_option('posts_bridge_api_language');
 
         return $lang;
     }
