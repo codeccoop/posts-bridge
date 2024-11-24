@@ -94,7 +94,7 @@ class HTTP_Client
      * @param string $endpoint RPC API gateway endpoint.
      * @param string $model Target model to search for.
      * @param array $headers HTTP headers.
-     * @return array<int|string> Collection of the backend models ids.
+     * @return array<int>|WP_Error Collection of the backend models ids.
      */
     public static function search($endpoint, $model, $headers = [])
     {
@@ -121,7 +121,7 @@ class HTTP_Client
      * @param string|int $id Target model ID.
      * @param array $headers HTTP headers.
      *
-     * @return array Target model data.
+     * @return array|WP_Error Target model data.
      */
     public static function read($endpoint, $model, $id, $headers = [])
     {
@@ -146,9 +146,17 @@ class HTTP_Client
         return $data[0];
     }
 
-    public static function fetch($endpoint, $headers = [])
+    /**
+     * Performs HTTP GET requests.
+     *
+     * @param string $url Target URL.
+     * @param array<string, string> $headers HTTP headers.
+     *
+     * @return array|WP_Error Request response.
+     */
+    public static function fetch($url, $headers = [])
     {
-        $response = http_bridge_get($endpoint, ['headers' => $headers]);
+        $response = http_bridge_get($url, ['headers' => $headers]);
         if (is_wp_error($response)) {
             return $response;
         }
@@ -194,7 +202,7 @@ class HTTP_Client
 
             $data = (array) json_decode($response['body'], true);
         } else {
-            $data = self::read($url, $rel['model'], $this->rcpt->remote_id, $headers);
+            $data = self::read($url, $rel['model'], $this->rcpt->get_foreign_id(), $headers);
         }
 
         return $data;

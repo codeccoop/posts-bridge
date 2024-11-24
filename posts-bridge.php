@@ -118,7 +118,7 @@ class Posts_Bridge extends BasePlugin
      */
     private static function setup_default_thumbnail()
     {
-        $attachment_id = get_option('posts_bridge_thumbnail');
+        $attachment_id = Remote_Featured_Media::get_default_thumbnail_id();
         if ($attachment_id) {
             $attachment = get_post($attachment_id);
             if ($attachment) {
@@ -160,7 +160,7 @@ class Posts_Bridge extends BasePlugin
         $attach_data = wp_generate_attachment_metadata($attachment_id, $filepath);
         wp_update_attachment_metadata($attachment_id, $attach_data);
 
-        add_option('posts_bridge_thumbnail', $attachment_id);
+        add_option(Remote_Featured_Media::_default_thumbnail_handle, $attachment_id);
     }
 
     /**
@@ -168,7 +168,7 @@ class Posts_Bridge extends BasePlugin
      */
     private static function remove_default_thumbnail()
     {
-        $attachment_id = get_option('posts_bridge_thumbnail');
+        $attachment_id = Remote_Featured_Media::get_default_thumbnail_id();
         if ($attachment_id) {
             $query = new WP_Query([
                 'meta_key' => '_thumbnail_id',
@@ -176,7 +176,7 @@ class Posts_Bridge extends BasePlugin
             ]);
             if (!$query->found_posts) {
                 wp_delete_attachment($attachment_id, true);
-                delete_option('posts_bridge_thumbnail');
+                delete_option(Remote_Featured_Media::_default_thumbnail_handle);
             }
         }
     }

@@ -14,6 +14,13 @@ if (!defined('ABSPATH')) {
 class Remote_CPT
 {
     /**
+     * Foreign key meta key handle.
+     *
+     * @var string Meta key.
+     */
+    public const _foreign_key_handle = '_posts_bridge_foreign_key';
+
+    /**
      * Handle instance of the HTTP_Client.
      *
      * @var HTTP_Client $http_client Own instance of the HTTP_Client;
@@ -23,9 +30,9 @@ class Remote_CPT
     /**
      * Handle value of the remote model foreign key.
      *
-     * @var string $remote_id Foreign key value.
+     * @var string $foreign_id Foreign key value.
      */
-    private $remote_id;
+    private $foreign_id;
 
     /**
      * Handle remote data as in memory cache.
@@ -115,7 +122,7 @@ class Remote_CPT
         $rel = $this->get_relation();
         if ($rel->get_proto() === 'rest') {
             $endpoint = preg_replace('/\/$/', '', $rel['endpoint']);
-            $endpoint .= '/' . $this->remote_id;
+            $endpoint .= '/' . $this->foreign_id;
             $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, $this);
         } else {
             $endpoint = Settings::get_setting('posts-bridge', 'rpc-api', 'endpoint');
@@ -144,13 +151,13 @@ class Remote_CPT
      *
      * @returns string|int Remote relation foreign key value.
      */
-    public function get_remote_id()
+    public function get_foreign_id()
     {
-        if (empty($this->remote_id)) {
-            $this->remote_id = get_post_meta($this->post, '_posts_bridge_remote_id', true);
+        if (empty($this->foreign_id)) {
+            $this->foreign_id = get_post_meta($this->post, self::_foreign_key_handle, true);
         }
 
-        return $this->remote_id;
+        return $this->foreign_id;
     }
 
     /**

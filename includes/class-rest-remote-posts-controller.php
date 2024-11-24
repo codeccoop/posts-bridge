@@ -71,9 +71,17 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
     {
         $relation = apply_filters('posts_bridge_relation', null, $this->post_type);
         $prepared_post = $relation->map_remote_fields((array) $prepared_post);
+
+        // fallback to default thumbnail
         if (!isset($prepared_post['featured_media'])) {
-            $prepared_post['featured_media'] = get_option('posts_bridge_thumbnail');
+            $prepared_post['featured_media'] = Remote_Featured_Media::get_default_thumbnail_id();
         }
+
+        // fallback to publish status
+        if (!isset($prepared_post['status'])) {
+            $prepared_post['status'] = 'publish';
+        }
+
         return (object) $prepared_post;
     }
 
@@ -104,67 +112,25 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
     protected function handle_featured_media($featured_media, $post_id)
     {
         if (!empty($featured_media)) {
-            if (filter_var($featured_media, FILTER_VALIDATE_URL)) {
-                $featured_media = $this->download_media($featured_media);
-            } elseif ((int) $featured_media == $featured_media) {
-                $featured_media = (int) $featured_media;
-            } else {
-                $featured_media = (int) get_option('posts_bridge_thumbnail');
+            $src_type = Remote_Featured_Media::get_src_type($featured_media);
+            switch ($src_type) {
+                case 'url':
+                    $featured_media = Remote_Featured_Media::attach_url($featured_media);
+                    break;
+                case 'base64':
+                    $featured_media = Remote_Featured_Media::attach_b64($featured_media);
+                    break;
+                case 'id':
+                    $featured_media = (int) $featured_media;
+                    break;
+                default:
+                    $featured_media = Remote_Featured_Media::get_default_thumbnail_id();
             }
+        } else {
+            $featured_media = Remote_Featured_Media::get_default_thumbnail_id();
         }
 
         parent::handle_featured_media($featured_media, $post_id);
-    }
-
-    /**
-     * Downloads media from URL and store it as a WP_Attachment.
-     *
-     * @param string $src Media URL source.
-     * @return int $attachment_id ID of the created attachment.
-     */
-    private function download_media($src)
-    {
-        if (empty($src)) {
-            return (int) get_option('posts_bridge_thumbnail');
-        }
-
-        $filename = basename($src);
-
-        $upload_dir = wp_upload_dir();
-        if (wp_mkdir_p($upload_dir['path'])) {
-            $filepath = $upload_dir['path'] . '/' . $filename;
-        } else {
-            $filepath = $upload_dir['basedir'] . '/' . $filename;
-        }
-
-        if (file_exists($filepath)) {
-            $ext = pathinfo($filepath)['extension'];
-            $filepath = dirname($filepath) . '/' . time() . '.' . $ext;
-        }
-
-        file_put_contents($filepath, file_get_contents($src));
-
-        $filetype = wp_check_filetype($filename, null);
-        if (!$filetype['type']) {
-            $filetype['type'] = mime_content_type($filepath);
-        }
-
-        $attachment_id = wp_insert_attachment([
-            'post_mime_type' => $filetype['type'],
-            'post_title' => sanitize_title($filename),
-            'post_content' => '',
-            'post_status' => 'inherit',
-        ], $filepath);
-
-        if (is_wp_error($attachment_id)) {
-            throw new Exception('Error while uploading media');
-        }
-
-        require_once(ABSPATH . 'wp-admin/includes/image.php');
-        $attach_data = wp_generate_attachment_metadata($attachment_id, $filepath);
-        wp_update_attachment_metadata($attachment_id, $attach_data);
-
-        return $attachment_id;
     }
 
     /**

@@ -62,7 +62,6 @@ class Posts_Synchronizer extends Singleton
             }
 
             Posts_Bridge::schedule($next_run, $recurrence, []);
-            self::sync();
         }
     }
 
@@ -114,13 +113,13 @@ class Posts_Synchronizer extends Singleton
             return false;
         }
 
-        $remote_ids = array_map(function ($model) use ($relation) {
+        $foreign_ids = array_map(function ($model) use ($relation) {
             return $model[$relation->get_foreign_key()];
         }, $models);
 
-        return $this->sync_posts($relation->get_post_type(), $remote_ids, function ($remote_id) use ($relation, $backend) {
+        return $this->sync_posts($relation->get_post_type(), $foreign_ids, function ($foreign_id) use ($relation, $backend) {
             $endpoint = preg_replace('/\/^/', '', $relation->get_endpoint());
-            $endpoint .= '/' . $remote_id;
+            $endpoint .= '/' . $foreign_id;
             $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, null);
 
             $url = $backend->get_endpoint_url($endpoint);
@@ -142,13 +141,13 @@ class Posts_Synchronizer extends Singleton
         $url = $relation->get_url();
         $headers = $relation->get_headers();
 
-        $remote_ids = HTTP_Client::search($url, $model, $headers);
-        if (is_wp_error($remote_ids)) {
+        $foreign_ids = HTTP_Client::search($url, $model, $headers);
+        if (is_wp_error($foreign_ids)) {
             return false;
         }
 
-        return $this->sync_posts($relation->get_post_type(), $remote_ids, function ($remote_id) use ($relation) {
-            $data = HTTP_Client::read($relation->get_url(), $relation->get_model(), $remote_id, $relation->get_headers());
+        return $this->sync_posts($relation->get_post_type(), $foreign_ids, function ($foreign_id) use ($relation) {
+            $data = HTTP_Client::read($relation->get_url(), $relation->get_model(), $foreign_id, $relation->get_headers());
             return $relation->map_remote_fields($data);
         });
     }
@@ -157,14 +156,14 @@ class Posts_Synchronizer extends Singleton
      * Synchronize post types collections.
      *
      * @param string $post_type Target post type collection.
-     * @param array<integer> $remote_ids Remote ids reference.
+     * @param array<integer> $foreign_ids Remote ids reference.
      * @param function $fetch_data Method to fetch remote models data.
      */
-    private function sync_posts($post_type, $remote_ids, $fetch_data)
+    private function sync_posts($post_type, $foreign_ids, $fetch_data)
     {
         global $remote_cpt;
 
-        $remote_ids = array_reduce($remote_ids, function ($carry, $id) {
+        $foreign_ids = array_reduce($foreign_ids, function ($carry, $id) {
             $carry[$id] = 1;
             return $carry;
         }, []);
@@ -174,8 +173,8 @@ class Posts_Synchronizer extends Singleton
             'posts_per_page' => -1,
             'post_status' => 'any',
             'meta_query' => [
-                'key' => '_posts_bridge_remote_id',
-                'value' => array_keys($remote_ids),
+                'key' => Remote_CPT::_foreign_key_handle,
+                'value' => array_keys($foreign_ids),
             ],
         ];
 
@@ -193,12 +192,12 @@ class Posts_Synchronizer extends Singleton
         $query = new WP_Query($args);
         while ($query->have_posts()) {
             $query->the_post();
-            unset($remote_ids[$remote_cpt->remote_id]);
+            unset($foreign_ids[$remote_cpt->get_foreign_id()]);
         }
 
-        $remote_ids = array_keys($remote_ids);
-        foreach ($remote_ids as $remote_id) {
-            $data = $fetch_data($remote_id);
+        $foreign_ids = array_keys($foreign_ids);
+        foreach ($foreign_ids as $foreign_id) {
+            $data = $fetch_data($foreign_id);
             if (is_wp_error($data)) {
                 return false;
             }
@@ -209,7 +208,7 @@ class Posts_Synchronizer extends Singleton
                 return false;
             }
 
-            update_post_meta($post_id, '_posts_bridge_remote_id', $remote_id);
+            update_post_meta($post_id, Remote_CPT::_foreign_key_handle, $foreign_id);
         }
     }
 }
