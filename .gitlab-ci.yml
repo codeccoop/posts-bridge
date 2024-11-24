@@ -1,19 +1,20 @@
 workflow:
   rules:
     - if: $CI_COMMIT_BRANCH
-      changes: 
+      changes:
         - README.md
         - .gitlab-ci.yml
-      when: never
-          # Do no allow manually triggered pipelines to prevent duplicates!
-          # Instead rerun the pipeline created with the last push
+      when:
+        never
+        # Do no allow manually triggered pipelines to prevent duplicates!
+        # Instead rerun the pipeline created with the last push
     - if: $CI_PIPELINE_SOURCE != "push"
       when: never
     # Only execute when a valid version tag like 1.0, 2.3-dev or similar is given
     # Required is always one point like 1.0
     - if: $CI_COMMIT_TAG =~ /^[0-9]+[.][0-9]+([.][0-9]+)?([-a-z])*$/
 
-stages:          # List of stages for jobs, and their order of execution
+stages: # List of stages for jobs, and their order of execution
   - build
   - package
   - upload
@@ -34,31 +35,30 @@ variables:
 build:
   stage: build
   image: node:latest
-  rules:
-    - if: $CI_COMMIT_TAG
   script:
-    - cd custom-blocks/remote-field && npm install && npm run build
-    - rm -rf custom-blocks/remote-field/node_modules
+    - npm install && npm run build
+    - find . -name node_modules -type d | xargs rm -rf
   artifacts:
     paths:
-      - custom-blocks/remote-field
+      - assets
 
-package: 
+package:
   image: javieraviles/zip:latest
   stage: package
-  script:      
-    - 'zip -r $ZIP * -x "*CODE_OF_CONDUCT.md" -x "*node_modules*" -x "./data/*" -x "*bin/*" -x "*tests/*" -x "*.gitignore" -x "*.gitlab-ci.yml" -x "*.gitmodules" -x "*phpunit.xml.dist" -x "*Gruntfile.js" -x "*package.json" -x "*package-lock.json" -x "*.travis.yml" -x "*.editorconfig" -x "*.distignore" -x "*src/*"'
-    - ls -lah
+  script:
+    - 'zip -r $ZIP * -x "*CODE_OF_CONDUCT.md" -x "*node_modules*" -x "*bin/*" -x "*tests/*" -x "*.git*" -x "*.php-cs-fixer.cache" -x "*phpunit.xml.dist" -x "*.phpcs.xml.dist" -x "*package.json" -x "*package-lock.json" -x "*.editorconfig" -x "*.distignore" -x "*src/*" -x "*.husky*" -x "*.lintstagedrc.js" -x "*.prettie*" -x "*eslint.config.js" -x "*.nvimrc*"'
+    - "ls -lah"
   artifacts:
     paths:
       - $ZIP
+
 upload:
   stage: upload
   image: curlimages/curl:latest
   script:
     - |
       curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file ${ZIP} ${PACKAGE_REGISTRY_URL}/${ZIP}
-      
+
 release:
   # Caution, as of 2021-02-02 these assets links require a login, see:
   # https://gitlab.com/gitlab-org/gitlab/-/issues/299384
@@ -67,4 +67,4 @@ release:
   script:
     - |
       release-cli create --name "Release $CI_COMMIT_TAG" --tag-name $CI_COMMIT_TAG \
-        --assets-link "{\"name\":\"${ZIP}\",\"url\":\"${PACKAGE_REGISTRY_URL}\/${ZIP}\",\"link_type\":\"package\",\"filepath\":\"\/plugins\/${ZIP}\"}"
+        --assets-link "{\"name\":\"${ZIP}\",\"url\":\"${PACKAGE_REGISTRY_URL}\/${ZIP}\",\"link_type\":\"package\",\"filepath\":\"\/plugins\/bridges\/${ZIP}\"}"

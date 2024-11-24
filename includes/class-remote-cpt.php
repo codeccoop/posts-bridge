@@ -1,0 +1,178 @@
+<?php
+
+namespace POSTS_BRIDGE;
+
+use WP_Post;
+
+if (!defined('ABSPATH')) {
+    exit();
+}
+
+/**
+ * Remote_CPT post wrapper.
+ */
+class Remote_CPT
+{
+    /**
+     * Handle instance of the HTTP_Client.
+     *
+     * @var HTTP_Client $http_client Own instance of the HTTP_Client;
+     */
+    private $http_client;
+
+    /**
+     * Handle value of the remote model foreign key.
+     *
+     * @var string $remote_id Foreign key value.
+     */
+    private $remote_id;
+
+    /**
+     * Handle remote data as in memory cache.
+     *
+     * @var array|null $remote_data Cached remote data.
+     */
+    private $remote_data = null;
+
+    /**
+     * Handle the wrapped WP_Post instance.
+     *
+     * @var WP_Post $post WP_Post instance.
+     */
+    private $post;
+
+    /**
+     * Wraps the post and gets its own HTTP_Client instance.
+     */
+    public function __construct($post)
+    {
+        if (is_int($post)) {
+            $post = get_post($post);
+        }
+
+        $this->post = $post;
+        $this->http_client = new HTTP_Client($this);
+    }
+
+    /**
+     * Fetches post remote data.
+     *
+     * @return array|null $remote_data Remote data.
+     */
+    public function fetch()
+    {
+        if ($this->remote_data) {
+            return $this->remote_data;
+        }
+
+        $locale = apply_filters('wpct_i18n_post_language', $this->ID, 'locale');
+
+        $this->remote_data = apply_filters('posts_bridge_fetch', $this->http_client->get_data($locale), $this, $locale);
+        return $this->remote_data;
+    }
+
+    /**
+     * Proxy of the wrapped posts attributes.
+     *
+     * @param string $attr Attribute name.
+     * @return any $value Attribute value or null if attribute does not exists.
+     */
+    public function __get($attr)
+    {
+        $post_data = wp_slash((array) $this->post);
+        if (isset($post_data[$attr])) {
+            return $post_data[$attr];
+        }
+
+        return null;
+    }
+
+    /**
+     * Remote data attributes getter.
+     *
+     * @param string $attr Remote attribute name.
+     * @para any $default Default value if attribute does not have value.
+     * @return any $value Remote value.
+     */
+    public function get($attr, $default = null)
+    {
+        $data = $this->fetch();
+
+        if (isset($data[$attr])) {
+            return $data[$attr];
+        }
+
+        return $default;
+    }
+
+    /**
+     * Gets the post's remote relation endpoint.
+     *
+     * @return string $endpoint Post's relation endpoint.
+     */
+    public function get_endpoint()
+    {
+        $rel = $this->get_relation();
+        if ($rel['proto'] === 'rest') {
+            $endpoint = preg_replace('/\/$/', '', $rel['endpoint']);
+            $endpoint .= '/' . $this->remote_id;
+            $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, $this);
+        } else {
+            $endpoint = Settings::get_setting('posts-bridge', 'rpc-api', 'endpoint');
+        }
+
+        return $endpoint;
+    }
+
+    /**
+     * Gets remote relation data.
+     *
+     * @return array $relation Remote relation data.
+     */
+    public function get_relation()
+    {
+        $relations = Settings::get_relations();
+        foreach ($relations as $rel) {
+            if ($rel['post_type'] === $this->post_type) {
+                return $rel;
+            }
+        }
+    }
+
+    /**
+     * Foreign key value getter.
+     *
+     * @returns string|int Remote relation foreign key value.
+     */
+    public function get_remote_id()
+    {
+        if (empty($this->remote_id)) {
+            $this->remote_id = get_post_meta($this->post, '_posts_bridge_remote_id', true);
+        }
+
+        return $this->remote_id;
+    }
+
+    /**
+     * Wrapped post taxonomy terms getter.
+     *
+     * @param string $tax Taxonomy name.
+     * @return array<WP_Term>|WP_Error $terms Terms of the taxonomy attacheds to the post.
+     */
+    public function get_terms($tax)
+    {
+        return get_the_terms($this->ID, $tax);
+    }
+
+    /**
+     * Wrapped post custom fields getter.
+     *
+     * @param string $field Custom field name.
+     * @param boolean $single Retrive a single value.
+     * @return any Custom field value or false.
+     */
+    public function get_meta($field, $single = true)
+    {
+        return get_post_meta($this->ID, $field, $single);
+    }
+}
