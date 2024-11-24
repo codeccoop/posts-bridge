@@ -168,31 +168,20 @@ class Posts_Synchronizer extends Singleton
             return $carry;
         }, []);
 
-        $args = [
+        $query = new WP_Query([
             'post_type' => $post_type,
             'posts_per_page' => -1,
             'post_status' => 'any',
-            'meta_query' => [
-                'key' => Remote_CPT::_foreign_key_handle,
-                'value' => array_keys($foreign_ids),
-            ],
-        ];
-
-        $args['meta_query']['compare'] = 'NOT IN';
-        $query = new WP_Query($args);
+        ]);
 
         while ($query->have_posts()) {
             $query->the_post();
-            wp_delete_post(get_the_ID(), true);
-        }
-
-        wp_reset_postdata();
-
-        $args['meta_query']['compare'] = 'IN';
-        $query = new WP_Query($args);
-        while ($query->have_posts()) {
-            $query->the_post();
-            unset($foreign_ids[$remote_cpt->get_foreign_id()]);
+            $foreign_id = $remote_cpt->get_foreign_id();
+            if (!isset($foreign_ids[$foreign_id])) {
+                wp_delete_post(get_the_ID());
+            } else {
+                unset($foreign_ids[$foreign_id]);
+            }
         }
 
         $foreign_ids = array_keys($foreign_ids);
