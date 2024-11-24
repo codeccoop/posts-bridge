@@ -5,7 +5,9 @@ import {
   ToggleControl,
   PanelRow,
   SelectControl,
+  Button,
 } from "@wordpress/components";
+import { useState } from "@wordpress/element";
 
 const recurrenceOptions = [
   {
@@ -39,10 +41,44 @@ export default function Synchronize({ synchronize, setSynchronize }) {
 
   const { enabled, recurrence } = synchronize;
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
   const update = (field) => setSynchronize({ ...synchronize, ...field });
+
+  const ajaxSync = () => {
+    setLoading(true);
+    const body = new URLSearchParams();
+    body.set("_ajax_nonce", _postsBridgeAjax.nonce);
+    body.set("action", _postsBridgeAjax.action);
+
+    fetch(_postsBridgeAjax.url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: body.toString(),
+    })
+      .then(() => setLoading(false))
+      .catch(() => setError(true));
+  };
 
   return (
     <>
+      <Spacer paddingY="calc(8px)" />
+      <PanelRow>
+        <Button
+          variant="primary"
+          isBusy={loading}
+          disabled={error}
+          isDestructive={error}
+          onClick={ajaxSync}
+          __next40pxDefaultSize
+        >
+          {__("Synchronize", "posts-bridge")}
+        </Button>
+      </PanelRow>
+      <Spacer paddingY="calc(8px)" />
       <PanelRow>
         <ToggleControl
           label={__("Automatic syncrhonization", "posts-bridge")}

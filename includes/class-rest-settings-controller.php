@@ -92,8 +92,8 @@ class REST_Settings_Controller extends Base_REST_Settings_Controller
 
     private function get_post_types()
     {
-        return array_filter(array_values(get_post_types()), function ($post_type) {
+        return array_values(array_filter(array_values(get_post_types()), function ($post_type) {
             return !in_array($post_type, self::$_excluded_post_types);
-        });
+        }));
     }
 }

@@ -14,9 +14,9 @@ if (!defined('ABSPATH')) {
  */
 class Posts_Synchronizer extends Singleton
 {
-	/*
-	 * Binds schedules to general settings updates.
-	 */
+    /*
+     * Binds schedules to general settings updates.
+     */
     public function __construct()
     {
         add_action('update_option', function ($option) {
@@ -24,11 +24,15 @@ class Posts_Synchronizer extends Singleton
                 $this->schedule();
             }
         }, 90, 1);
+
+        add_action('wp_ajax_posts_bridge_sync', function () {
+            $this->sync_callback();
+        });
     }
 
-	/**
-	 * Gets syncronize general setting field and toggles schedule state.
-	 */
+    /**
+     * Gets syncronize general setting field and toggles schedule state.
+     */
     private function schedule()
     {
         ['enabled' => $enabled, 'recurrence' => $recurrence] = Settings::get_setting('posts-bridge', 'general', 'synchronize');
@@ -62,9 +66,9 @@ class Posts_Synchronizer extends Singleton
         }
     }
 
-	/**
-	 * Synchronize posts with remote sources.
-	 */
+    /**
+     * Synchronize posts with remote sources.
+     */
     public function sync()
     {
         $relations = apply_filters('posts_bridge_relations', [], 'rest');
@@ -79,11 +83,26 @@ class Posts_Synchronizer extends Singleton
         }
     }
 
-	/**
-	 * Synchronize REST API remote relation posts.
-	 *
-	 * @param Remote_Relation $relation REST remote relation.
-	 */
+    /**
+     * Ajax synchronization callback.
+     */
+    private function sync_callback()
+    {
+        check_ajax_referer('posts-bridge-ajax-sync');
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $this->sync();
+
+        wp_send_json(['success' => true], 200);
+    }
+
+    /**
+     * Synchronize REST API remote relation posts.
+     *
+     * @param Remote_Relation $relation REST remote relation.
+     */
     private function rest_sync($relation)
     {
         $url = $relation->get_url();
@@ -96,10 +115,10 @@ class Posts_Synchronizer extends Singleton
         }
 
         $remote_ids = array_map(function ($model) use ($relation) {
-            return $model[$relation['foreign_key']];
+            return $model[$relation->get_foreign_key()];
         }, $models);
 
-        return $this->sync_posts($relation['post_type'], $remote_ids, function ($remote_id) use ($relation, $backend) {
+        return $this->sync_posts($relation->get_post_type(), $remote_ids, function ($remote_id) use ($relation, $backend) {
             $endpoint = preg_replace('/\/^/', '', $relation->get_endpoint());
             $endpoint .= '/' . $remote_id;
             $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, null);
@@ -112,11 +131,11 @@ class Posts_Synchronizer extends Singleton
         });
     }
 
-	/**
-	 * Synchronize RPC API remote relation posts.
-	 *
-	 * @param Remote_Relation $relation RPC remote relation.
-	 */
+    /**
+     * Synchronize RPC API remote relation posts.
+     *
+     * @param Remote_Relation $relation RPC remote relation.
+     */
     private function rpc_sync($relation)
     {
         $model = $relation->get_model();
@@ -134,13 +153,13 @@ class Posts_Synchronizer extends Singleton
         });
     }
 
-	/**
-	 * Synchronize post types collections.
-	 *
-	 * @param string $post_type Target post type collection.
-	 * @param array<integer> $remote_ids Remote ids reference.
-	 * @param function $fetch_data Method to fetch remote models data.
-	 */
+    /**
+     * Synchronize post types collections.
+     *
+     * @param string $post_type Target post type collection.
+     * @param array<integer> $remote_ids Remote ids reference.
+     * @param function $fetch_data Method to fetch remote models data.
+     */
     private function sync_posts($post_type, $remote_ids, $fetch_data)
     {
         global $remote_cpt;
@@ -156,7 +175,7 @@ class Posts_Synchronizer extends Singleton
             'post_status' => 'any',
             'meta_query' => [
                 'key' => '_posts_bridge_remote_id',
-                'value' => $remote_ids,
+                'value' => array_keys($remote_ids),
             ],
         ];
 
@@ -178,7 +197,6 @@ class Posts_Synchronizer extends Singleton
         }
 
         $remote_ids = array_keys($remote_ids);
-        $remote_ids = array_slice($remote_ids, 0, 10);
         foreach ($remote_ids as $remote_id) {
             $data = $fetch_data($remote_id);
             if (is_wp_error($data)) {

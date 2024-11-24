@@ -351,6 +351,16 @@ class Posts_Bridge extends BasePlugin
             plugin_dir_path(__FILE__) . 'languages'
         );
 
+        wp_localize_script(
+            $this->get_textdomain(),
+            '_postsBridgeAjax',
+            [
+                'url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('posts-bridge-ajax-sync'),
+				'action' => 'posts_bridge_sync',
+            ],
+        );
+
         wp_enqueue_style('wp-components');
     }
 

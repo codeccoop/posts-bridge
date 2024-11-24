@@ -29,7 +29,7 @@ function NewRelation({ add }) {
     }))
   );
 
-  const [postType, setPostType] = postTypes[0] || "";
+  const [postType, setPostType] = useState(postTypes[0] || "");
   const [backend, setBackend] = useState(backendOptions[0]?.value || "");
   const [endpoint, setEndpoint] = useState("");
   const [foreignKey, setForeignKey] = useState("");

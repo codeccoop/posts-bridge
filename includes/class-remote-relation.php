@@ -13,11 +13,11 @@ if (!defined('ABSPATH')) {
  */
 class Remote_Relation
 {
-	/**
-	 * Handle WP_Post model fields.
-	 *
-	 * @var array<string> WP_Post model fields.
-	 */
+    /**
+     * Handle WP_Post model fields.
+     *
+     * @var array<string> WP_Post model fields.
+     */
     private static $post_model = [
         'post_title',
         'post_name',
@@ -28,139 +28,157 @@ class Remote_Relation
         'post_status',
     ];
 
-	/**
-	 * Handle relation's post type slug.
-	 *
-	 * @var string $post_type Post type slug.
-	 */
+    /**
+     * Handle relation's post type slug.
+     *
+     * @var string $post_type Post type slug.
+     */
     private $post_type;
 
-	/**
-	 * Handle relation's backend name.
-	 *
-	 * @var string $backend Backend name.
-	 */
+    /**
+     * Handle relation's backend name.
+     *
+     * @var string $backend Backend name.
+     */
     private $backend;
 
-	/**
-	 * Handle relation's model name.
-	 *
-	 * @var string $model Model name.
-	 */
+    /**
+     * Handle relation's model name.
+     *
+     * @var string $model Model name.
+     */
     private $model;
 
-	/**
-	 * Handle relation's API endpoint path.
-	 *
-	 * @var string $endpoint Endpoint path.
-	 */
+    /**
+     * Handle relation's API endpoint path.
+     *
+     * @var string $endpoint Endpoint path.
+     */
     private $endpoint;
 
-	/**
-	 * Handle relation's remote fields maps.
-	 *
-	 * @var array $fields Remote fields list.
-	 */
+    /**
+     * Handle relation's foreign key.
+     *
+     * @var string $foreing_key Relation foreign key.
+     */
+    private $foreign_key;
+
+    /**
+     * Handle relation's remote fields maps.
+     *
+     * @var array $fields Remote fields list.
+     */
     private $fields = [];
 
-	/**
-	 * Binds the relation data to the instance.
-	 */
+    /**
+     * Binds the relation data to the instance.
+     */
     public function __construct($data)
     {
         $this->post_type = $data['post_type'];
         $this->backend = $data['backend'];
         $this->model = isset($data['model']) ? $data['model'] : null;
         $this->endpoint = isset($data['endpoint']) ? $data['endpoint'] : Settings::get_setting('posts-bridge', 'rpc-api', 'endpoint');
+        $this->foreign_key = $data['foreign_key'];
         $this->fields = $data['fields'];
     }
 
-	/**
-	 * Realtion's API protocol getter.
-	 *
-	 * @return string API protocol.
-	 */
+    /**
+     * Realtion's API protocol getter.
+     *
+     * @return string API protocol.
+     */
     public function get_proto()
     {
         return empty($this->model) ? 'rest' : 'rpc';
     }
 
-	/**
-	 * Relation's post type getter.
-	 *
-	 * @return string Post type slug.
-	 */
+    /**
+     * Relation's post type getter.
+     *
+     * @return string Post type slug.
+     */
     public function get_post_type()
     {
         return $this->post_type;
     }
 
-	/**
-	 * Relation's backend getter.
-	 *
-	 * @return Http_Backend Http_Backend instance.
-	 */
+    /**
+     * Relation's backend getter.
+     *
+     * @return Http_Backend Http_Backend instance.
+     */
     public function get_backend()
     {
         return apply_filters('posts_bridge_backend', null, $this->backend);
     }
 
-	/**
-	 * Relation's model getter.
-	 *
-	 * @return string Model name.
-	 */
+    /**
+     * Relation's model getter.
+     *
+     * @return string Model name.
+     */
     public function get_model()
     {
         return $this->model;
     }
 
-	/**
-	 * Relation's endpoint getter.
-	 *
-	 * @return string Endpoint path.
-	 */
+    /**
+     * Relation's foreign key getter.
+     *
+     * @return string Foreign key.
+     */
+    public function get_foreign_key()
+    {
+        return $this->foreign_key;
+    }
+
+    /**
+     * Relation's endpoint getter.
+     *
+     * @return string Endpoint path.
+     */
     public function get_endpoint()
     {
         return $this->endpoint;
     }
 
-	/**
-	 * Relation's endpoint URL getter.
-	 *
-	 * @return string Endpoint full URL.
-	 */
+    /**
+     * Relation's endpoint URL getter.
+     *
+     * @return string Endpoint full URL.
+     */
     public function get_url()
     {
         $backend = $this->get_backend();
         return $backend->get_endpoint_url($this->endpoint);
     }
 
-	/**
-	 * Proxy HTTP_Backend headers getter.
-	 *
-	 * @return array Backend HTTP headers.
-	 */
-	public function get_headers()
-	{
-		return ($this->get_backend())->get_headers();
-	}
+    /**
+     * Proxy HTTP_Backend headers getter.
+     *
+     * @return array Backend HTTP headers.
+     */
+    public function get_headers()
+    {
+        return ($this->get_backend())->get_headers();
+    }
 
-	/**
-	 * Relation's remote fields getter.
-	 *
-	 * @return array<string, string> Map of remote fields with foreign as keys and names as values.
-	 */
+    /**
+     * Relation's remote fields getter.
+     *
+     * @return array<string, string> Map of remote fields with foreign as keys and names as values.
+     */
     public function get_remote_fields()
     {
         return array_merge($this->get_remote_custom_fields(), $this->get_remote_post_fields());
     }
 
-	/**
-	 * Relation's remote post fields getter.
-	 *
-	 * @return array<string, string> Map of remote fields with foreign as keys and names as values.
-	 */
+    /**
+     * Relation's remote post fields getter.
+     *
+     * @return array<string, string> Map of remote fields with foreign as keys and names as values.
+     */
     public function get_remote_post_fields()
     {
         $fields = [];
@@ -174,11 +192,11 @@ class Remote_Relation
         return $fields;
     }
 
-	/**
-	 * Relation's remote custom fields getter.
-	 *
-	 * @return array<string, string> Map of remote fields with foreign as keys and names as values.
-	 */
+    /**
+     * Relation's remote custom fields getter.
+     *
+     * @return array<string, string> Map of remote fields with foreign as keys and names as values.
+     */
     public function get_remote_custom_fields()
     {
         $fields = [];
@@ -192,13 +210,13 @@ class Remote_Relation
         return $fields;
     }
 
-	/**
-	 * Apply fields mapping to a given data.
-	 *
-	 * @param array $data Data to apply fields mappings.
-	 *
-	 * @return array Data with remote fields mappeds.
-	 */
+    /**
+     * Apply fields mapping to a given data.
+     *
+     * @param array $data Data to apply fields mappings.
+     *
+     * @return array Data with remote fields mappeds.
+     */
     public function map_remote_fields($data)
     {
         $remote_fields = $this->get_remote_fields();
@@ -208,6 +226,6 @@ class Remote_Relation
             unset($data[$foreign]);
         }
 
-		return $data;
+        return $data;
     }
 }
