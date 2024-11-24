@@ -15,6 +15,7 @@ namespace POSTS_BRIDGE;
 
 use ValueError;
 use WPCT_ABSTRACT\Plugin as BasePlugin;
+use WP_Query;
 
 if (!defined('ABSPATH')) {
     exit();
@@ -38,6 +39,7 @@ require_once 'includes/class-menu.php';
 require_once 'includes/class-posts-synchronizer.php';
 require_once 'includes/class-rest-remote-posts-controller.php';
 require_once 'includes/class-remote-relation.php';
+require_once 'includes/class-remote-featured-media.php';
 
 require_once 'includes/trait-cron.php';
 require_once 'includes/trait-translations.php';
@@ -197,11 +199,19 @@ class Posts_Bridge extends BasePlugin
     {
         parent::__construct();
 
+        // Initalize REST controllers on API init
         add_action('rest_api_init', function () {
             foreach (Settings::get_post_types() as $post_type) {
                 $this->rest_controllers[$post_type] = new REST_Remote_Posts_Controller($post_type);
             }
         });
+
+        // Filter REST Requests before dispatch
+        add_filter('rest_pre_dispatch', function ($result, $server, $request) {
+            foreach (array_values($this->rest_controllers) as $controller) {
+                $controller->rest_pre_dispatch($result, $server, $request);
+            }
+        }, 10, 3);
 
         $this->synchronizer = Posts_Synchronizer::get_instance();
         $this->sync_http_settings();
@@ -214,7 +224,7 @@ class Posts_Bridge extends BasePlugin
      */
     private function sync_http_settings()
     {
-        // Patch http bridge settings to erp forms settings
+        // Patch http bridge settings to plugin settings
         add_filter('option_posts-bridge_general', function ($value) {
             $http_setting = Settings::get_setting('http-bridge', 'general');
             foreach (['backends', 'whitelist'] as $key) {
@@ -224,7 +234,7 @@ class Posts_Bridge extends BasePlugin
             return $value;
         });
 
-        // Syncronize erp form settings with http bridge settings
+        // Syncronize plugin settings with http bridge settings
         add_action('updated_option', function ($option, $from, $to) {
             if ($option !== 'posts-bridge_general') {
                 return;

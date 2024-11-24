@@ -33,7 +33,7 @@ class Posts_Synchronizer extends Singleton
     /**
      * Gets syncronize general setting field and toggles schedule state.
      */
-    private function schedule()
+    public function schedule()
     {
         ['enabled' => $enabled, 'recurrence' => $recurrence] = Settings::get_setting('posts-bridge', 'general', 'synchronize');
         if (empty($enabled) || empty($recurrence)) {

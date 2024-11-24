@@ -18,14 +18,21 @@ class Remote_Relation
      *
      * @var array<string> WP_Post model fields.
      */
-    private static $post_model = [
+    public const post_model = [
+        'post_ID',
         'post_title',
         'post_name',
         'post_excerpt',
         'post_content',
-        'post_date',
-        'featured_media',
+        'post_content_filtered',
         'post_status',
+        'post_mime_type',
+        'post_date',
+        'post_date_gmt',
+        'post_modified',
+        'post_modified_gmt',
+        'post_parent',
+        'featured_media',
     ];
 
     /**
@@ -171,7 +178,7 @@ class Remote_Relation
      */
     public function get_remote_fields()
     {
-        return array_merge($this->get_remote_custom_fields(), $this->get_remote_post_fields());
+        return array_merge($this->get_remote_post_fields(), $this->get_remote_custom_fields());
     }
 
     /**
@@ -184,7 +191,7 @@ class Remote_Relation
         $fields = [];
         foreach ($this->fields as $field) {
             extract($field);
-            if (isset(self::$post_model[$name])) {
+            if (in_array($name, self::post_model)) {
                 $fields[$foreign] = $name;
             }
         }
@@ -202,7 +209,7 @@ class Remote_Relation
         $fields = [];
         foreach ($this->fields as $field) {
             extract($field);
-            if (!isset(self::$post_model[$name])) {
+            if (!in_array($name, self::post_model)) {
                 $fields[$foreign] = $name;
             }
         }
@@ -224,6 +231,20 @@ class Remote_Relation
         foreach ($remote_fields as $foreign => $name) {
             $data[$name] = $data[$foreign];
             unset($data[$foreign]);
+        }
+
+        // standarize ID field
+        if (isset($data['post_ID'])) {
+            $data['ID'] = $data['post_ID'];
+            unset($data['post_ID']);
+        }
+
+        // post type should not be user declarable
+        unset($data['post_type']);
+
+        // fallback to publish status
+        if (!isset($data['post_status'])) {
+            $data['post_status'] = 'publish';
         }
 
         return $data;

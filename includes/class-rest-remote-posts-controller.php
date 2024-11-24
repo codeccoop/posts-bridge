@@ -51,16 +51,20 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         $this->register_routes();
 
         add_filter("rest_pre_insert_{$post_type}", function ($prepared_post, $request) {
-            $this->filter_prepared_post($prepared_post, $request);
+            return $this->filter_prepared_post($prepared_post, $request);
         }, 10, 2);
 
         add_action("rest_insert_{$post_type}", function ($post, $request, $is_new) {
             $this->on_rest_insert($post, $request, $is_new);
         }, 10, 3);
+
+        add_filter('rest_pre_dispatch', function ($result, $server, $request) {
+            return $this->rest_pre_dispatch($result, $server, $request);
+        }, 10, 3);
     }
 
     /**
-     * Updates the prepared post mapping to it the relation remote fields.
+     * Filters the rest insert prepared post with relation fields.
      *
      * @param object $prepared_post Prepared post data before inserts.
      * @param WP_REST_Request $request Current request.
@@ -70,23 +74,35 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
     private function filter_prepared_post($prepared_post, $request)
     {
         $relation = apply_filters('posts_bridge_relation', null, $this->post_type);
-        $prepared_post = $relation->map_remote_fields((array) $prepared_post);
+        $prepared_data = $relation->map_remote_fields($request->get_json_params());
+
+        foreach ($prepared_data as $key => $val) {
+            // clean up empties
+            if (empty($val)) {
+                unset($prepared_data[$key]);
+                continue;
+            }
+        }
+
+        $prepared_post = array_merge((array) $prepared_post, $prepared_data);
+
+        // lower case the ID
+        if (isset($prepared_post['ID'])) {
+            $prepared_post['id'] = $prepared_post['ID'];
+            unset($prepared_post['ID']);
+        }
 
         // fallback to default thumbnail
         if (!isset($prepared_post['featured_media'])) {
             $prepared_post['featured_media'] = Remote_Featured_Media::get_default_thumbnail_id();
         }
 
-        // fallback to publish status
-        if (!isset($prepared_post['status'])) {
-            $prepared_post['status'] = 'publish';
-        }
-
         return (object) $prepared_post;
     }
 
     /**
-     * Updates post custom fields after REST API inserts based on relation custom fields.
+     * Updates post custom fields after REST API inserts based on relation custom fields and
+     * maps featured_media custom fields to the request params.
      *
      * @param WP_Post $post Writed post.
      * @param WP_REST_Request $request Current request.
@@ -100,6 +116,43 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
                 update_post_meta($post->ID, $name, $request[$foreign]);
             }
         }
+
+        // Map custom featured media to the request before media handler execution
+        foreach ($relation->get_remote_post_fields() as $foreign => $name) {
+            if ($name === 'featured_media') {
+                $request->set_param('featured_media', $request[$foreign]);
+            }
+        }
+    }
+
+    /**
+     * Check request params before rest dispatches to prevent schema conflicts.
+     *
+     * @param mixed $result Response to replace the requested version with.
+     * @param WP_REST_Server $server Server instance.
+     * @param WP_REST_Request $request Request instance.
+     *
+     * @return mixed Unaltered result.
+     */
+    public function rest_pre_dispatch($result, $server, $request)
+    {
+        $own_routes = $this->namespace . '/' . $this->rest_base;
+        if (!preg_match('/' . preg_quote($own_routes, '/') . '/', $request->get_route())) {
+            return $result;
+        }
+
+        if (strstr($server::CREATABLE, $request->get_method())) {
+            if (isset($request['id'])) {
+                $request->set_param('id', null);
+            }
+        }
+
+        // post type not writable from the body
+        if (isset($request['post_type'])) {
+            $request->set_param('post_type', null);
+        }
+
+        return $result;
     }
 
     /**
