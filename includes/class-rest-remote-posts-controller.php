@@ -46,7 +46,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
     public function __construct($post_type)
     {
         $this->post_type = $post_type;
-        $this->rest_base = 'posts/' . $post_type;
+        $this->rest_base = 'posts-bridge/' . $post_type;
         $this->meta = new WP_REST_Post_Meta_Fields($this->post_type);
         $this->register_routes();
 
@@ -71,6 +71,9 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
     {
         $relation = apply_filters('posts_bridge_relation', null, $this->post_type);
         $prepared_post = $relation->map_remote_fields((array) $prepared_post);
+        if (!isset($prepared_post['featured_media'])) {
+            $prepared_post['featured_media'] = get_option('posts_bridge_thumbnail');
+        }
         return (object) $prepared_post;
     }
 
