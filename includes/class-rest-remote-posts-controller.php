@@ -63,6 +63,12 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         }, 10, 3);
     }
 
+    private function is_own_route($request)
+    {
+        $own_routes = $this->namespace . '/' . $this->rest_base;
+        return preg_match('/' . preg_quote($own_routes, '/') . '/', $request->get_route());
+    }
+
     /**
      * Filters the rest insert prepared post with relation fields.
      *
@@ -73,6 +79,10 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
      */
     private function filter_prepared_post($prepared_post, $request)
     {
+        if (!$this->is_own_route($request)) {
+            return $prepared_post;
+        }
+
         $relation = apply_filters('posts_bridge_relation', null, $this->post_type);
         $prepared_data = $relation->map_remote_fields($request->get_json_params());
         $prepared_post = array_merge((array) $prepared_post, $prepared_data);
@@ -96,6 +106,10 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
      */
     private function on_rest_insert($post, $request, $is_new)
     {
+        if (!$this->is_own_route($request)) {
+            return;
+        }
+
         $relation = apply_filters('posts_bridge_relation', null, $this->post_type);
         foreach ($relation->get_remote_custom_fields() as $foreign => $name) {
             if (isset($request[$foreign])) {
@@ -122,9 +136,8 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
      */
     public function rest_pre_dispatch($result, $server, $request)
     {
-        $own_routes = $this->namespace . '/' . $this->rest_base;
-        if (!preg_match('/' . preg_quote($own_routes, '/') . '/', $request->get_route())) {
-            return $result;
+        if (!$this->is_own_route($request)) {
+            return;
         }
 
         if (strstr($server::CREATABLE, $request->get_method())) {

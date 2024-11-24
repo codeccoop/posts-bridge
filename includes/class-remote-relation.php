@@ -86,7 +86,7 @@ class Remote_Relation
         $this->backend = $data['backend'];
         $this->model = isset($data['model']) ? $data['model'] : null;
         $this->endpoint = isset($data['endpoint']) ? $data['endpoint'] : Settings::get_setting('posts-bridge', 'rpc-api', 'endpoint');
-        $this->foreign_key = $data['foreign_key'];
+        $this->foreign_key = isset($data['foreign_key']) ? $data['foreign_key'] : 'id';
         $this->fields = $data['fields'];
     }
 
