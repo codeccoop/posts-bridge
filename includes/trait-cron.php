@@ -41,6 +41,7 @@ trait Cron
     {
         $contexts = get_option(self::$cron_opt, []);
 
+        $now = time();
         $delay = 0;
         $errors = [];
         foreach ($contexts as $context) {

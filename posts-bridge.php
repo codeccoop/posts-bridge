@@ -30,8 +30,8 @@ define('POSTS_BRIDGE_VERSION', '1.0.0');
 
 require_once 'abstracts/class-plugin.php';
 
-require_once 'deps/http/http-bridge.php';
 require_once 'deps/i18n/wpct-i18n.php';
+require_once 'deps/http/http-bridge.php';
 
 require_once 'includes/class-http-client.php';
 require_once 'includes/class-remote-cpt.php';
@@ -398,9 +398,9 @@ class Posts_Bridge extends BasePlugin
         }
 
         // Single field shortcode as proxy to the plural shortcode
-        add_shortcode('remote_field', function ($atts, $content) {
+        add_shortcode('remote_field', function ($atts, $content = '') {
             if (!isset($atts['field'])) {
-                return '';
+                return $content;
             }
             $atts['fields'] = $atts['field'];
             unset($atts['field']);
@@ -408,31 +408,31 @@ class Posts_Bridge extends BasePlugin
         });
 
         // Multi field shortcode
-        add_shortcode('remote_fields', function ($atts, $content) {
+        add_shortcode('remote_fields', function ($atts, $content = '') {
             return $this->do_shortcode($atts, $content);
         });
 
         // Callback shortcode, allow execution of arbitrary global functions
         // as shortcode callback, passing as arguments the remote post instance.
-        add_shortcode('remote_callback', function ($atts) {
+        add_shortcode('remote_callback', function ($atts, $content = '') {
             global $remote_cpt;
             if (empty($remote_cpt)) {
-                return '';
+                return $content;
             }
 
             $callback = isset($atts['fn']) ? $atts['fn'] : null;
 
             if (empty($callback)) {
-                return '';
+                return $content;
             } else {
                 unset($atts['fn']);
             }
 
             if (!function_exists($callback)) {
-                return '';
+                return $content;
             }
 
-            return $callback($remote_cpt, $atts);
+            return $callback($remote_cpt, $atts, $content);
         });
     }
 
@@ -449,14 +449,14 @@ class Posts_Bridge extends BasePlugin
 
         // Exit if global post is not Remote CPT
         if (empty($remote_cpt)) {
-            return '';
+            return $content;
         }
 
         $fields = isset($atts['fields']) ? $atts['fields'] : null;
 
         // Exit if no fields is defined
         if (empty($fields)) {
-            return  '';
+            return  $content;
         } else {
             $fields = array_map(function ($field) {
                 return trim($field);
@@ -469,7 +469,7 @@ class Posts_Bridge extends BasePlugin
 
         // Exit if no field values
         if ($is_empty) {
-            return '';
+            return $content;
         }
 
         // Get remote field values

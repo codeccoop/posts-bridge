@@ -158,8 +158,9 @@ class Remote_Featured_Media
         // Prevent filename collisions
         if (file_exists($filepath)) {
             $filepath = dirname($filepath) . '/' . time();
-            if ($ext = pathinfo($filepath)['extension']) {
-                $filepath .= '.' . $ext;
+            $pathinfo = pathinfo($filepath);
+            if (isset($pathinfo['extension'])) {
+                $filepath .= '.' . $pathinfo['extension'];
             }
         }
 
