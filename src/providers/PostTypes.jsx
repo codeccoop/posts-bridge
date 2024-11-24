@@ -11,6 +11,7 @@ import {
 
 // source
 import Loading from "../Loading";
+import useRelationPostTypes from "../hooks/useRelationPostTypes";
 
 const PostTypesContext = createContext([]);
 
@@ -37,6 +38,12 @@ export default function PostTypesProvider({ children }) {
   );
 }
 
-export function usePostTypes() {
-  return useContext(PostTypesContext);
+export function usePostTypes({ filter } = { filter: false }) {
+  const postTypes = useContext(PostTypesContext);
+  if (filter) {
+    const relationPostTypes = useRelationPostTypes();
+    return postTypes.filter((pt) => !relationPostTypes.has(pt));
+  }
+
+  return postTypes;
 }

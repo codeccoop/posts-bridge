@@ -9,12 +9,13 @@ export default function Relations({ relations, setRelations }) {
   const __ = wp.i18n.__;
 
   const tabs = relations
-    .map(({ backend, post_type, model }) => ({
+    .map(({ backend, post_type, model, fields = [] }) => ({
       name: post_type,
       title: post_type,
       post_type,
       model,
       backend,
+      fields,
     }))
     .concat([
       {
@@ -51,7 +52,7 @@ export default function Relations({ relations, setRelations }) {
           marginBottom: "calc(8px)",
         }}
       >
-        {__("Post remote relations", "posts-bridge")}
+        {__("Posts remote relations", "posts-bridge")}
       </label>
       <TabPanel tabs={tabs}>
         {(relation) => (
@@ -61,7 +62,7 @@ export default function Relations({ relations, setRelations }) {
             update={(data) =>
               updateRelation(
                 relations.findIndex(
-                  ({ post_type }) => post_type === hook.post_type
+                  ({ post_type }) => post_type === relation.post_type
                 ),
                 data
               )

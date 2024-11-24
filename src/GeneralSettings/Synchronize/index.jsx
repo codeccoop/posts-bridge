@@ -9,27 +9,27 @@ import {
 
 const recurrenceOptions = [
   {
-    name: "Minutly",
+    label: "Minutly",
     value: "minutly",
   },
   {
-    name: "Twice Hourly",
+    label: "Twice Hourly",
     value: "twicehourly",
   },
   {
-    name: "Hourly",
+    label: "Hourly",
     value: "hourly",
   },
   {
-    name: "Twice Daily",
+    label: "Twice Daily",
     value: "twicedaily",
   },
   {
-    name: "Daily",
+    label: "Daily",
     value: "daily",
   },
   {
-    name: "Weekly",
+    label: "Weekly",
     value: "weekly",
   },
 ];
@@ -63,7 +63,7 @@ export default function Synchronize({ synchronize, setSynchronize }) {
           onChange={(recurrence) => update({ recurrence })}
           options={recurrenceOptions.map((opt) => ({
             value: opt.value,
-            name: __(opt, "posts-bridge"),
+            label: __(opt.label, "posts-bridge"),
           }))}
           __nextHasNoMarginBottom
         />

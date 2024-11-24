@@ -8,7 +8,6 @@ import {
   PanelBody,
   PanelRow,
   ToggleControl,
-  SelectControl,
   __experimentalSpacer as Spacer,
 } from "@wordpress/components";
 
@@ -25,10 +24,10 @@ export default function GeneralSettings() {
     label: postType,
     value: postType,
   }));
-  const [{ whitelist, backends, synchronize, postTypes }, save] = useGeneral();
+  const [{ whitelist, backends, synchronize }, save] = useGeneral();
 
   const update = (field) =>
-    save({ synchronize, postTypes, whitelist, backends, ...field });
+    save({ synchronize, whitelist, backends, ...field });
 
   return (
     <Card size="large" style={{ height: "fit-content" }}>
@@ -36,18 +35,7 @@ export default function GeneralSettings() {
         <Heading level={3}>{__("General", "posts-bridge")}</Heading>
       </CardHeader>
       <CardBody>
-        <PanelBody title={__("Indexes", "posts-bridge")}>
-          <Spacer paddingY="calc(8px)" />
-          <PanelRow>
-            <SelectControl
-              label={__("Post types", "posts-bridge")}
-              value={postTypes}
-              onChange={(postTypes) => update({ postTypes })}
-              options={postTypeOptions}
-              __nextHasNoMarginBottom
-            />
-          </PanelRow>
-          <Spacer paddingY="calc(8px)" />
+        <PanelBody title={__("Syncrhonization", "posts-bridge")}>
           <Synchronize
             synchronize={synchronize}
             setSynchronize={(synchronize) => update({ synchronize })}

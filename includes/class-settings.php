@@ -4,40 +4,135 @@ namespace POSTS_BRIDGE;
 
 use WPCT_ABSTRACT\Settings as BaseSettings;
 
+if (!defined('ABSPATH')) {
+    exit();
+}
+
+require_once 'class-rest-settings-controller.php';
+
+/**
+ * Plugin settings.
+ */
 class Settings extends BaseSettings
 {
+    /**
+     * Handle REST Settings Controller class name.
+     *
+     * @var string $rest_controller_class REST Settings Controller class name.
+     */
+    protected static $rest_controller_class = '\POSTS_BRIDGE\REST_Settings_Controller';
+
+    /**
+     * Plugin handled post types getter.
+     *
+	 * @param string|null $proto Filter post types by API protocol.
+	 *
+     * @return array<string> Handled post type slugs.
+     */
+    public static function get_post_types($proto = null)
+    {
+        $relations = self::get_relations($proto);
+        return array_values(array_unique(array_map(function ($rel) {
+            return $rel->get_post_type();
+        }, $relations)));
+    }
+
+    /**
+     * Plugin's remote relations getter.
+     *
+	 * @param string|null $proto Filter post types by API protocol.
+	 *
+     * @return array<Remote_Relation> Remote relations.
+     */
+    public static function get_relations($proto = null)
+    {
+        $rest_rels = Settings::get_setting('posts-bridge', 'rest-api', 'relations');
+        $rpc_rels = Settings::get_setting('posts-bridge', 'rpc-api', 'relations');
+        $relations = array_map(function ($rel) {
+            return new Remote_Relation($rel);
+        }, array_merge($rest_rels, $rpc_rels));
+
+		if ($proto) {
+			$relations = array_filter($relations, function ($rel) use ($proto) {
+				return $rel->get_proto() === $proto;
+			});
+		}
+
+		return $relations;
+    }
+
+    /**
+     * Register plugin settings.
+     */
     public function register()
     {
         $host = parse_url(get_bloginfo('url'))['host'];
+
+        // Register general settings
         $this->register_setting(
             'general',
             [
-                'base_url' => [
-                    'type' => 'string',
+                'whitelist' => ['type' => 'boolean'],
+                'backends' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'name' => ['type' => 'string'],
+                            'base_url' => ['type' => 'string'],
+                            'headers' => [
+                                'type' => 'array',
+                                'items' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'name' => ['type' => 'string'],
+                                        'value' => ['type' => 'string'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
                 ],
-                'api_key' => [
-                    'type' => 'string',
-                ],
-                'cron' => [
+                'synchronize' => [
                     'type' => 'object',
                     'properties' => [
                         'enabled' => ['type' => 'boolean'],
-                        'recurrence' => ['type' => 'string'],
-                        'next_run' => ['type' => 'string'],
+                        'recurrence' => [
+                            'type' => 'string',
+                            'enum' => [
+                                'minutly',
+                                'twicehourly',
+                                'hourly',
+                                'twicedaily',
+                                'daily',
+                                'weekly',
+                            ],
+                        ],
                     ],
                 ],
             ],
             [
-                'base_url' => 'https://erp.' . $host,
-                'api_key' => '',
-                'cron' => [
+                'whitelist' => false,
+                'backends' => [
+                    [
+                        'name' => 'ERP',
+                        'base_url' => 'https://erp.' . $host,
+                        'headers' => [
+                            [
+                                'name' => 'Authorization',
+                                'value' => 'Bearer <erp-api-token>'
+                            ]
+                        ],
+                    ],
+                ],
+                'synchronize' => [
                     'enabled' => false,
-                    'recurrence' => '',
-                    'time' => '',
+                    'recurrence' => 'hourly',
                 ],
             ],
         );
 
+        // Register REST API settings
         $this->register_setting(
             'rest-api',
             [
@@ -48,7 +143,18 @@ class Settings extends BaseSettings
                         'properties' => [
                             'post_type' => ['type' => 'string'],
                             'endpoint' => ['type' => 'string'],
-                            'field' => ['type' => 'string'],
+                            'foreign_key' => ['type' => 'string'],
+                            'backend' => ['type' => 'string'],
+                            'fields' => [
+                                'type' => 'array',
+                                'items' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'meta' => ['type' => 'string'],
+                                        'foreign' => ['type' => 'string'],
+                                    ],
+                                ],
+                            ],
                         ],
                     ],
                 ],
@@ -56,29 +162,24 @@ class Settings extends BaseSettings
             [
                 'relations' => [
                     [
-                        'post_type' => 'remote-cpt',
-                        'endpoint' => '/remote-cpt',
-                        'field' => 'id',
+                        'post_type' => 'post',
+                        'endpoint' => '/api/posts',
+                        'foreign_key' => 'id',
+                        'backend' => 'ERP',
+                        'fields' => [],
                     ],
                 ],
             ],
         );
 
+        // Register RPC API settings
         $this->register_setting(
             'rpc-api',
             [
-                'endpoint' => [
-                    'type' => 'string',
-                ],
-                'user' => [
-                    'type' => 'string',
-                ],
-                'password' => [
-                    'type' => 'string',
-                ],
-                'database' => [
-                    'type' => 'string',
-                ],
+                'endpoint' => ['type' => 'string'],
+                'user' => ['type' => 'string'],
+                'password' => ['type' => 'string'],
+                'database' => ['type' => 'string'],
                 'relations' => [
                     'type' => 'array',
                     'items' => [
@@ -86,6 +187,17 @@ class Settings extends BaseSettings
                         'properties' => [
                             'post_type' => ['type' => 'string'],
                             'model' => ['type' => 'string'],
+                            'backend' => ['type' => 'string'],
+                            'fields' => [
+                                'type' => 'array',
+                                'items' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'meta' => ['type' => 'string'],
+                                        'foreign' => ['type' => 'string'],
+                                    ],
+                                ],
+                            ],
                         ],
                     ],
                 ],
@@ -97,59 +209,13 @@ class Settings extends BaseSettings
                 'database' => 'erp',
                 'relations' => [
                     [
-                        'post_type' => 'remote-cpt',
-                        'model' => 'remote-model',
+                        'post_type' => 'post',
+                        'model' => 'blog.post',
+                        'backend' => 'ERP',
+                        'fields' => [],
                     ],
                 ],
             ],
         );
-    }
-
-    protected function input_render($setting, $field, $value)
-    {
-        if (preg_match('/password$/', $field)) {
-            return $this->password_input_render($setting, $field, $value);
-        } elseif (preg_match('/recurrence$/', $field)) {
-            return $this->recurrence_input_render($setting, $field, $value);
-        } elseif (preg_match('/next_run$/', $field)) {
-            return $this->time_input_render($setting, $field, $value);
-        }
-
-        return parent::input_render($setting, $field, $value);
-    }
-
-    private function password_input_render($setting, $field, $value)
-    {
-        $setting_name = $this->setting_name($setting);
-        return "<input type='password' name='{$setting_name}[{$field}]' value='{$value}' />";
-    }
-
-    private function recurrence_input_render($setting, $field, $value)
-    {
-        $options = [
-            'hourly' => __('Hourly', 'posts-bridge'),
-            'twicedaily' => __('Twice Daily', 'posts-bridge'),
-            'daily' => __('Daily', 'posts-bridge'),
-            'weekly' => __('Weekly', 'posts-bridge'),
-        ];
-
-        if (!isset($options[$value])) {
-            $value = '';
-        }
-
-        $setting_name = $this->setting_name($setting);
-        $input = "<select name='{$setting_name}[{$field}]'>";
-        foreach ($options as $opt => $label) {
-            $input .= "<option value='{$opt}'" . ($opt === $value ? ' selected' : '') . ">{$label}</option>";
-        }
-
-        $input .= '</select>';
-        return $input;
-    }
-
-    private function time_input_render($setting, $field, $value)
-    {
-        $setting_name = $this->setting_name($setting);
-        return "<input type='time' name='{$setting_name}[{$field}]' value='{$value}' />";
     }
 }

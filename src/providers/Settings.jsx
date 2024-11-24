@@ -16,7 +16,6 @@ const noop = () => {};
 
 const defaultSettings = {
   "general": {
-    post_types: ["post"],
     backends: [],
     whitelist: false,
     synchronize: {
@@ -72,6 +71,10 @@ export default function SettingsProvider({ children }) {
         "rest-api": restApi,
         "rpc-api": rpcApi,
       },
+    }).then((settings) => {
+      setGeneral(settings.general);
+      setRestApi(settings["rest-api"]);
+      setRpcApi(settings["rpc-api"]);
     });
   };
 
@@ -98,17 +101,16 @@ export default function SettingsProvider({ children }) {
 export function useGeneral() {
   const [{ general, setGeneral }] = useContext(SettingsContext);
 
-  const { whitelist, synchronize, backends, post_types: postTypes } = general;
+  const { whitelist, synchronize, backends } = general;
 
-  const update = ({ whitelist, backends, synchronize, postTypes }) =>
+  const update = ({ whitelist, backends, synchronize }) =>
     setGeneral({
       whitelist,
       synchronize,
       backends,
-      post_types: postTypes,
     });
 
-  return [{ whitelist, synchronize, backends, postTypes }, update];
+  return [{ whitelist, synchronize, backends }, update];
 }
 
 export function useRestApi() {

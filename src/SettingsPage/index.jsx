@@ -52,7 +52,10 @@ function SaveButton() {
     setLoading(true);
     submit()
       .then(() => setLoading(false))
-      .catch(() => setError(true));
+      .catch((err) => {
+        console.error(err);
+        setError(true);
+      });
   };
 
   return (

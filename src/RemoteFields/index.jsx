@@ -4,9 +4,9 @@ import { Button, Modal } from "@wordpress/components";
 import { useState } from "@wordpress/element";
 
 // source
-import PipesTable from "./Table";
+import RemoteFieldsTable from "./Table";
 
-export default function FormPipes({ formId, pipes, setPipes }) {
+export default function RemoteFields({ fields, setFields }) {
   const __ = wp.i18n.__;
   const [open, setOpen] = useState(false);
   return (
@@ -16,14 +16,14 @@ export default function FormPipes({ formId, pipes, setPipes }) {
         onClick={() => setOpen(true)}
         style={{ width: "130px", justifyContent: "center", height: "32px" }}
       >
-        {__("Pipes", "forms-bridge")}
+        {__("Remote fields", "posts-bridge")}
       </Button>
       {open && (
         <Modal
-          title={__("Form pipes", "forms-bridge")}
+          title={__("Remote fields", "posts-bridge")}
           onRequestClose={() => setOpen(false)}
         >
-          <PipesTable formId={formId} pipes={pipes} setPipes={setPipes} />
+          <RemoteFieldsTable fields={fields} setFields={setFields} />
         </Modal>
       )}
     </>

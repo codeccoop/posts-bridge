@@ -8,14 +8,17 @@ import Relation from "./Relation";
 export default function Relations({ relations, setRelations }) {
   const __ = wp.i18n.__;
   const tabs = relations
-    .map(({ backend, endpoint, post_type, foreign_key }) => ({
-      name: post_type,
-      title: post_type,
-      post_type,
-      backend,
-      endpoint,
-      foreign_key,
-    }))
+    .map(
+      ({ backend, endpoint, post_type, foreign_key = "id", fields = [] }) => ({
+        name: post_type,
+        title: post_type,
+        post_type,
+        backend,
+        endpoint,
+        foreign_key,
+        fields,
+      })
+    )
     .concat([
       {
         title: __("Add relation", "posts-bridge"),
@@ -60,7 +63,9 @@ export default function Relations({ relations, setRelations }) {
             remove={removeRelation}
             update={(data) =>
               updateRelation(
-                relations.findIndex(({ name }) => name === hook.name),
+                relations.findIndex(
+                  ({ post_type }) => post_type === relation.post_type
+                ),
                 data
               )
             }
