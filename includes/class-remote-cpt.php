@@ -113,7 +113,7 @@ class Remote_CPT
     public function get_endpoint()
     {
         $rel = $this->get_relation();
-        if ($rel['proto'] === 'rest') {
+        if ($rel->get_proto() === 'rest') {
             $endpoint = preg_replace('/\/$/', '', $rel['endpoint']);
             $endpoint .= '/' . $this->remote_id;
             $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, $this);
@@ -127,13 +127,13 @@ class Remote_CPT
     /**
      * Gets remote relation data.
      *
-     * @return array $relation Remote relation data.
+     * @return Remote_Relation $relation Remote relation data.
      */
     public function get_relation()
     {
         $relations = Settings::get_relations();
         foreach ($relations as $rel) {
-            if ($rel['post_type'] === $this->post_type) {
+            if ($rel->get_post_type() === $this->post_type) {
                 return $rel;
             }
         }
