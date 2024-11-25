@@ -94,6 +94,22 @@ If you choose the _push_ synchronization strategy and control how and when your 
 WordPress about changes, you should use Posts Bridge custom endpoints to perform this syncrhonizations.
 See the [REST API documentation](./docs/REST-API.md) for more details.
 
+### Local development
+
+The repository handles dependencies as [git submodules](https://www.atlassian.com/git/tutorials/git-submodule).
+In order to work local, you have to clone this repository and initialize its submodules with this
+command:
+
+```bash
+git submodule update --init --recursive
+```
+
+Once done, you will need to install frontend dependencies with `npm install`. To build the admin's react client,
+run `npm run dev` for development, or `npm run build` for production builts.
+
+> We work WordPress with docker. See our [development setup](https://github.com/codeccoop/wp-development/)
+> if you are interested.
+
 ## Dependencies
 
 This plugin relays on [HTTP Bridge](https://git.coopdevs.org/codeccoop/wp/plugins/bridges/http-bridge/)
