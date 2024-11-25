@@ -1,5 +1,7 @@
 # Posts Bridge
 
+![Posts Bridge]()
+
 Bridge backend data to WP posts collections.
 
 Posts Bridge handle posts collections as indexes that represents your backend data and
@@ -69,8 +71,8 @@ from having to transform your backend API to fit the WP REST API schemas.
 ## Custom Blocks
 
 Posts Bridge comes packed with a **Remote Field** custom block. This custom block enables
-Gutenberg editor to render remote data fields. The block, once inserted into our content,
-enables the editor to freely build it's content. There where you want to render your remote
+Gutenberg editor to render remote data fields. The block, once inserted into the post content,
+enables the editor to freely build its contents. There where you want to render your remote
 data you have to use the `{{fieldName}}` mark as a replacement mark. On render time, Posts
 Bridge will replace this marks with the values of each field on the payload fetched from
 the backend.
