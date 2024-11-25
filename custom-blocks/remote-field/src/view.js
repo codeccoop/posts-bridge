@@ -21,5 +21,5 @@
  */
 
 /* eslint-disable no-console */
-console.log( 'Hello World! (from wpct-rest-ce-landings-landing-card block)' );
+console.log("Hello World! (from posts-bridge-remote-post_block)");
 /* eslint-enable no-console */

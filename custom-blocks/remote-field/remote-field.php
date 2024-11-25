@@ -1,16 +1,16 @@
 <?php
 /**
- * Plugin Name:       Wpct RCPT Remote Field
+ * Plugin Name:       Posts Bridge Remote Field
  * Description:       Remote field custom block
  * Requires at least: 6.1
  * Requires PHP:      7.0
- * Version:           0.1.0
+ * Version:           1.0.0
  * Author:            Còdec Cooperativa
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       wpct-rcpt
+ * Text Domain:       posts-bridge
  *
- * @package           wpct-rcpt-remote-field
+ * @package           posts-bridge-remote-field
  */
 
 /**
@@ -20,7 +20,8 @@
  *
  * @see https://developer.wordpress.org/reference/functions/register_block_type/
  */
-add_action( 'init', 'wpct_ce_remote_field_block_init' );
-function wpct_ce_remote_field_block_init() {
-	register_block_type( __DIR__ . '/build' );
+add_action('init', 'wpct_ce_remote_field_block_init');
+function wpct_ce_remote_field_block_init()
+{
+    register_block_type(__DIR__ . '/build');
 }

@@ -189,6 +189,7 @@ class Posts_Bridge extends BasePlugin
     public function init()
     {
         $this->register_shortcodes();
+        $this->register_meta();
     }
 
     /**
@@ -482,12 +483,20 @@ class Posts_Bridge extends BasePlugin
             for ($i = 0; $i < count($fields); $i++) {
                 $field = $fields[$i];
                 $value = $values[$i];
-                $content = preg_replace('/_' . preg_quote($field, '/') . '_/', $value, $content);
+                $content = preg_replace('/{{' . preg_quote($field, '/') . '}}/', $value, $content);
             }
 
             return $content;
         } catch (ValueError $e) {
             return $e->getMessage();
+        }
+    }
+
+    private function register_meta()
+    {
+        $relations = Settings::get_relations();
+        foreach ($relations as $rel) {
+            $rel->register_meta();
         }
     }
 

@@ -256,4 +256,21 @@ class Remote_Relation
 
         return $data;
     }
+
+    public function register_meta()
+    {
+        $fields = $this->get_remote_fields();
+        foreach (array_keys($fields) as $foreign) {
+            register_post_meta(
+                $this->get_post_type(),
+                $foreign,
+                [
+                    'show_in_rest' => true,
+                    'single' => true,
+                    'type' => 'string',
+                    'sanitize_callback' => 'wp_kses_post',
+                ],
+            );
+        }
+    }
 }

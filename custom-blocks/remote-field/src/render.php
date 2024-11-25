@@ -7,15 +7,14 @@
 */
 
 $is_remote_frontend = shortcode_exists('remote_field');
-$field = $attributes['remoteField'];
-$is_multi = count(explode(',', $field)) > 1;
-
-if ($is_remote_frontend) {
-    if ($is_multi) {
-        echo do_shortcode("[remote_fields fields='{$field}']{$content}[/remote_fields]");
+if ($is_remote_frontend && isset($attributes['remotes'])) {
+    preg_match_all('{{([^]+)}}', $content, $matches);
+    if (!$matches) {
+        echo $content;
     } else {
-        echo do_shortcode("[remote_field field='{$field}']{$content}[/remote_field]");
+        $remotes = implode(',', array_map(function ($match) {
+            return trim($match);
+        }, $matches[1]));
+        echo do_shortcode("[remote_fields fields='{$remotes}']{$content}[/remote_fields]");
     }
-} else {
-    echo $content;
 }

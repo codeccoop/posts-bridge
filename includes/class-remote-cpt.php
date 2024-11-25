@@ -82,7 +82,7 @@ class Remote_CPT
      * Proxy of the wrapped posts attributes.
      *
      * @param string $attr Attribute name.
-     * @return any $value Attribute value or null if attribute does not exists.
+     * @return mixed $value Attribute value or null if attribute does not exists.
      */
     public function __get($attr)
     {
@@ -98,8 +98,8 @@ class Remote_CPT
      * Remote data attributes getter.
      *
      * @param string $attr Remote attribute name.
-     * @para any $default Default value if attribute does not have value.
-     * @return any $value Remote value.
+     * @para mixed $default Default value if attribute does not have value.
+     * @return mixed $value Remote value.
      */
     public function get($attr, $default = null)
     {
@@ -180,7 +180,7 @@ class Remote_CPT
      *
      * @param string $field Custom field name.
      * @param boolean $single Retrive a single value.
-     * @return any Custom field value or false.
+     * @return mixed Custom field value or false.
      */
     public function get_meta($field, $single = true)
     {
