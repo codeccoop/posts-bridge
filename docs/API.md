@@ -1,5 +1,135 @@
 # API
 
+## Getters
+
+### `posts_bridge_is_remote`
+
+Checks if the current global post is a Remote CPT handled by Posts Bridge.
+
+#### Arguments
+
+1. `boolean $default`: Default value.
+
+#### Returns
+
+1. `boolean $is_remote`: Boolean value.
+
+#### Example
+
+```php
+$is_remote = apply_filters('posts_bridge_is_remote', false);
+if ($is_remote) {
+	// do something
+}
+```
+
+### `posts_bridge_backend`
+
+Returns an instance of the Remote_Backend object by name.
+
+#### Arguments
+
+1. `mixed $default`: Default value.
+2. `string $backend_name`: Name of the backend.
+
+#### Returns
+
+1. `Remote_Backend|null $backend`: Instance of the backend.
+
+#### Example
+
+```php
+$backend = apply_filters('posts_bridge_backend', null, 'Odoo');
+if ($backend) {
+	// do something
+}
+```
+
+### `posts_bridge_backends`
+
+Returns the collection of configured backends as Remote_Backend instances.
+
+#### Arguments
+
+1. `array $default`: Default value.
+
+#### Returns
+
+1. `array $backends`: Array of Remote_Backend instances.
+
+#### Example
+
+```php
+$backends = apply_filters('posts_bridge_backends', []);
+foreach ($backends as $backend) {
+	// do something
+}
+```
+
+### `posts_bridge_relation`
+
+Returns an instance of the Remote_Relation object by post type.
+
+#### Arguments
+
+1. `mixed $default`: Default value.
+2. `string $post_type`: Post type slug.
+
+#### Returns
+
+1. `Remote_Relation|null`: Instance of the relation.
+
+#### Example
+
+```php
+$relation = apply_filters('posts_bridge_relation', null, 'product');
+if ($relation) {
+	// do something
+}
+```
+
+### `posts_bridge_relations`
+
+Returns the collection of configured remote relations as Remote_Relation instances.
+
+#### Arguments
+
+1. `array $default`: Default value.
+
+#### Returns
+
+1. `array $relations`: Array of Remote_Relation instances.
+
+#### Example
+
+```php
+$relations = apply_filters('posts_bridge_relations', []);
+foreach ($relations as $relation) {
+	// do something
+}
+```
+
+### `posts_bridge_remote_cpts`
+
+Returns the list of post type linked to remote backends.
+
+#### Arguments
+
+1. `array $default`: Default value.
+
+#### Returns
+
+1. `array $post_types`: Array of post type slugs.
+
+#### Example
+
+```php
+$remote_cpts = apply_filters('posts_bridge_remote_cpts', []);
+foreach ($remote_cpts as $remote_cpt) {
+	// do something
+}
+```
+
 ## Filters
 
 ### `posts_bridge_fetch`
@@ -10,7 +140,7 @@ response does not looks like this, preformat it on this filter.
 
 #### Arguments
 
-1. `array $data`: Array containing the backend response json data.
+1. `array $data`: Array containing the backend response JSON data.
 2. `object $remote_cpt`: Instance of the current Remote CPT.
 3. `string $locale`: Language code of the current post.
 
@@ -30,55 +160,45 @@ if your API is not standard.
 #### Arguments
 
 1. `string $endpoint`: Default endpoint to send GET requests to crawl post's remote data.
-2. `string $remote_id`: ID of post's pair model on the backend.
 3. `object $remote_cpt`: Instance of the current Remote_CPT.
 
 #### Example
 
 ```php
-add_filter('posts_bridge_endpoint', function ($endpoint, $remote_id, $rcpt) {
+add_filter('posts_bridge_endpoint', function ($endpoint, $rcpt) {
     return $endpoint;
-}, 10, 3);
-```
-
-### `wpct_http_headers`
-
-Use this hook to filters the headers of the HTTP requests. Use it to
-match your backend api requirements. For example, insert the `Authorization`
-header.
-
-#### Arguments
-
-1. `array $headers`: Associative array with key values containing request header's.
-2. `string $method`: Request method.
-3. `string $url`: Request URL.
-
-#### Example
-
-```php
-add_filter('wpct_http_headers', function ($headers, $method, $url) {
-    return $headers;
-}, 10, 3);
-```
-
-### `posts_bridge_rest_models`
-
-Filters the list of records recovereds from the backend on pull synchronization over
-REST protocol. The plugin waits for a flat collection of models, each of them with
-the required data to be inserted as a post.
-
-#### Arguments
-
-1. `array $response`: Array containing the backend response to the models list request.
-2. `string $endpoint`: Origin endpoint.
-
-#### Example
-
-```php
-add_filter('posts_bridge_rest_models', function ($response, $endpoint) {
-    return $response;
 }, 10, 2);
 ```
+
+
+## Actions
+
+### `posts_bridge_translation`
+
+Fired each time a remote cpt translation hase been done.
+
+#### Arguments
+
+1. `array $translation`: Array with the translation data:
+the bounded translation ID and the language code.
+    - `lang`: Language code
+    - `bound`: Source post ID
+    - `post_id`: Translation  ID
+
+#### Example
+
+```php
+add_action('posts_bridge_translation', function () {
+    // do something
+}, 10);
+```
+
+# Some other usful WP standard hooks
+
+A part from the custom hooks Posts Bridge offers, its worth to mention some other
+hooks you, as a develper, may want to use to control the lifecycle of your remote cpts.
+
+## Filters
 
 ### `rest_pre_insert_{$post_type}`
 
@@ -88,14 +208,14 @@ this hook to preformat your backend payloads.
 
 #### Arguments
 
-1. `object $post_data`: An object representing a single post prepared for inserting
+1. `object $prepared_post`: An object representing a single post prepared for inserting
 or updating the database. Modify it with your request object.
-2. `object $request`: Request object.
+2. `WP_REST_Request $request`: Current request instance.
 
 #### Example
 
 ```php
-add_filter('rest_pre_insert_{$post_type}', function ($post_data, $request) {
+add_filter('rest_pre_insert_{$post_type}', function ($prepared_post, $request) {
     return $prepared_post;
 }, 10, 2);
 ```
@@ -121,26 +241,6 @@ add_filter('wp_insert_post_data', function ($data, $postarr, $unsanitized_postar
 ```
 
 ## Actions
-
-### `posts_bridge_translation`
-
-Fired each time a remote cpt translation hase been done.
-
-#### Arguments
-
-1. `array $translation`: Array with the translation data:
-the bounded translation ID and the language code.
-    - `lang`: Language code
-    - `bound`: Source post ID
-    - `post_id`: Translation  ID
-
-#### Example
-
-```php
-add_action('posts_bridge_translation', function () {
-    // do something
-}, 10);
-```
 
 ### `rest_insert_{$post_type}`
 

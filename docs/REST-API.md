@@ -3,13 +3,13 @@
 The plugin opens endpoints on the WP REST API to allow CRUD operations against
 your Remote CPTs. Write operations are protected with authentication. To authenticate
 over the api you can use [native wp methods](https://developer.wordpress.org/rest-api/using-the-rest-api/authentication/)
-or use the [Wpct Http Bridge](https://git.cooopdevs.org/codeccoop/wp/plugins/wpct-http-brdige/)
+or use the [HTTP Bridge](https://git.cooopdevs.org/codeccoop/wp/plugins/bridges/http-bridge/)
 custom endpoints to gain access over JWT. \*\*This endpoints are the gateway your backend
 should use if you choose the _push synchronization strategy_.
 
 ## Get posts
 
-**URL**: `wp-json/wp-bridges/v1/posts/<post_type>`
+**URL**: `wp-json/wp-bridges/v1/posts-bridge/<post_type>`
 
 **Method**: `GET`
 
@@ -108,7 +108,7 @@ should use if you choose the _push synchronization strategy_.
 
 ## Get post data
 
-**URL**: `/wp-json/wp-bridges/v1/posts/<post_type>/<post_id>`
+**URL**: `/wp-json/wp-bridges/v1/posts-bridge/<post_type>/<post_id>`
 
 **Method**: `GET`
 
@@ -205,7 +205,7 @@ should use if you choose the _push synchronization strategy_.
 
 ## Post creation
 
-**URL**: `/wp-json/wp-bridges/v1/posts/<post_type>`
+**URL**: `/wp-json/wp-bridges/v1/posts-bridge/<post_type>`
 
 **Method**: `POST`
 
@@ -321,7 +321,7 @@ should use if you choose the _push synchronization strategy_.
 
 ## Post delete
 
-**URL**: `wp-json/wp-bridges/v1/posts/<post_type>/<post_id>`
+**URL**: `wp-json/wp-bridges/v1/posts-bridge/<post_type>/<post_id>`
 
 **Method**: `DELETE`
 
