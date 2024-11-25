@@ -25,8 +25,8 @@ class Settings extends BaseSettings
     /**
      * Plugin handled post types getter.
      *
-	 * @param string|null $proto Filter post types by API protocol.
-	 *
+     * @param string|null $proto Filter post types by API protocol.
+     *
      * @return array<string> Handled post type slugs.
      */
     public static function get_post_types($proto = null)
@@ -40,8 +40,8 @@ class Settings extends BaseSettings
     /**
      * Plugin's remote relations getter.
      *
-	 * @param string|null $proto Filter post types by API protocol.
-	 *
+     * @param string|null $proto Filter post types by API protocol.
+     *
      * @return array<Remote_Relation> Remote relations.
      */
     public static function get_relations($proto = null)
@@ -52,13 +52,13 @@ class Settings extends BaseSettings
             return new Remote_Relation($rel);
         }, array_merge($rest_rels, $rpc_rels));
 
-		if ($proto) {
-			$relations = array_filter($relations, function ($rel) use ($proto) {
-				return $rel->get_proto() === $proto;
-			});
-		}
+        if ($proto) {
+            $relations = array_filter($relations, function ($rel) use ($proto) {
+                return $rel->get_proto() === $proto;
+            });
+        }
 
-		return $relations;
+        return $relations;
     }
 
     /**
@@ -217,5 +217,94 @@ class Settings extends BaseSettings
                 ],
             ],
         );
+    }
+
+    /**
+     * Sanitize setting data before database inserts.
+     *
+     * @param string $option Setting name.
+     * @param array $value Setting data.
+     *
+     * @return array $value Sanitized setting data.
+     */
+    protected function sanitize_setting($option, $value)
+    {
+        [$group, $setting] = explode('_', $option);
+        switch ($setting) {
+            case 'general':
+                $value = $this->validate_general($value);
+                break;
+            case 'rest-api':
+            case 'rpc-api':
+                $value = $this->validate_api($value);
+                break;
+        }
+
+        return parent::sanitize_setting($option, $value);
+    }
+
+    /**
+     * Apply updates on APIs settings on general setting updates.
+     *
+     * @param array $setting General setting data.
+     *
+     * @return array General setting data.
+     */
+    private function validate_general($setting)
+    {
+        $rest = self::get_setting($this->get_group_name(), 'rest-api');
+        $rpc = self::get_setting($this->get_group_name(), 'rpc-api');
+
+        $relations = $this->validate_relations($rest['relations'], $setting['backends']);
+        if (count($relations) !== count($rest['relations'])) {
+            $rest['relations'] = $relations;
+            update_option($this->get_group_name() . '_' . 'rest-api', $rest);
+        }
+
+        $relations = $this->validate_relations($rpc['relations'], $setting['backends']);
+        if (count($relations) !== count($rpc['relations'])) {
+            $rpc['relations'] = $relations;
+            update_option($this->get_group_name() . '_' . 'rpc-api', $rpc);
+        }
+
+        return $setting;
+    }
+
+    /*+
+     * Apply API setting validations before db updates.
+     *
+     * @param array $setting API setting data.
+     *
+     * @return array Validated API setting data.
+     */
+    private function validate_api($setting)
+    {
+        $backends = Settings::get_setting($this->get_group_name(), 'general', 'backends');
+        $setting['relations'] = $this->validate_relations($setting['relations'], $backends);
+        return $setting;
+    }
+
+    /**
+     * Validate API setting remote relations.
+     *
+     * @param array $relations List of API remote relations.
+     * @param array $backends List of available backends.
+     *
+     * @return array List of valid API remote relations.
+     */
+    private function validate_relations($relations, $backends)
+    {
+        $post_types = get_post_types();
+        $valid_relations = [];
+        for ($i = 0; $i < count($relations); $i++) {
+            $rel = $relations[$i];
+            $is_valid = array_reduce($backends, function ($is_valid, $backend) use ($rel) {
+                return $rel['backend'] === $backend['name'] || $is_valid;
+            }, false) && in_array($rel['post_type'], $post_types);
+            if ($is_valid) {
+                $valid_relations[] = $rel;
+            }
+        }
+        return $valid_relations;
     }
 }
