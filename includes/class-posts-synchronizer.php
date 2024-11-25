@@ -14,6 +14,14 @@ if (!defined('ABSPATH')) {
  */
 class Posts_Synchronizer extends Singleton
 {
+    /**
+     * Handle full synchronization mode. Full synchronization will fetch remote data of all remote models.
+     * Light mode does only fetch differences between the posts collection and the foreign ids.
+     *
+     * @var string $sync_mode Full or light mode.
+     */
+    private $sync_mode = 'light';
+
     /*
      * Binds schedules to general settings updates.
      */
@@ -92,6 +100,7 @@ class Posts_Synchronizer extends Singleton
             return;
         }
 
+        $this->sync_mode = isset($_POST['sync_mode']) ? $_POST['sync_mode'] : 'light';
         $this->sync();
 
         wp_send_json(['success' => true], 200);
@@ -164,7 +173,7 @@ class Posts_Synchronizer extends Singleton
         global $remote_cpt;
 
         $foreign_ids = array_reduce($foreign_ids, function ($carry, $id) {
-            $carry[$id] = 1;
+            $carry[$id] = 0;
             return $carry;
         }, []);
 
@@ -180,18 +189,25 @@ class Posts_Synchronizer extends Singleton
             if (!isset($foreign_ids[$foreign_id])) {
                 wp_delete_post(get_the_ID());
             } else {
-                unset($foreign_ids[$foreign_id]);
+                if ($this->sync_mode === 'light') {
+                    unset($foreign_ids[$foreign_id]);
+                } else {
+                    $foreign_ids[$foreign_id] = get_the_ID();
+                }
             }
         }
 
-        $foreign_ids = array_keys($foreign_ids);
-        foreach ($foreign_ids as $foreign_id) {
+        foreach ($foreign_ids as $foreign_id => $post_id) {
             [$data, $custom_fields] = $fetch_data($foreign_id);
             if (is_wp_error($data)) {
                 return false;
             }
 
             $data['post_type'] = $post_type;
+            if ($post_id !== 0) {
+                $data['ID'] = $post_id;
+            }
+
             $post_id = wp_insert_post($data);
             if (is_wp_error($post_id) || !$post_id) {
                 return false;

@@ -43,6 +43,7 @@ export default function Synchronize({ synchronize, setSynchronize }) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [fullMode, setFullMode] = useState(false);
 
   const update = (field) => setSynchronize({ ...synchronize, ...field });
 
@@ -51,6 +52,7 @@ export default function Synchronize({ synchronize, setSynchronize }) {
     const body = new URLSearchParams();
     body.set("_ajax_nonce", _postsBridgeAjax.nonce);
     body.set("action", _postsBridgeAjax.action);
+    body.set("sync_mode", fullMode ? "full" : "light");
 
     fetch(_postsBridgeAjax.url, {
       method: "POST",
@@ -60,12 +62,13 @@ export default function Synchronize({ synchronize, setSynchronize }) {
       body: body.toString(),
     })
       .then(() => setLoading(false))
-      .catch(() => setError(true));
+      .catch(() => setError(true))
+      .finally(() => setFullMode(false));
   };
 
   return (
     <>
-      <Spacer paddingY="calc(8px)" />
+      <Spacer paddingY="calc(3px)" />
       <PanelRow>
         <Button
           variant="primary"
@@ -81,14 +84,29 @@ export default function Synchronize({ synchronize, setSynchronize }) {
       <Spacer paddingY="calc(8px)" />
       <PanelRow>
         <ToggleControl
+          label={__("Run a full synchronization", "posts-bridge")}
+          help={__(
+            "Normal, or light, synchronizations only fetches new remote models data. If do you want to update all your content, you should trigger a full synchronization. This may take a while.",
+            "posts-bridge"
+          )}
+          checked={fullMode}
+          onChange={() => setFullMode(!fullMode)}
+          __nextHasNoMarginBottom
+        />
+      </PanelRow>
+      <Spacer paddingY="calc(8px)" />
+      <hr />
+      <p>Schedule</p>
+      <PanelRow>
+        <ToggleControl
           label={__("Automatic syncrhonization", "posts-bridge")}
+          help={__(
+            "Allow scheduled pull strategy syncrhonization. WordPress will check the remote sources for updates and update its indices. This strategy can cause performance issues if you have large backend models collections",
+            "posts-bridge"
+          )}
           checked={enabled}
           onChange={() => update({ enabled: !enabled })}
           __nextHasNoMarginBottom
-          help={__(
-            "Allow pull strategy syncrhonization. WordPress will check the remote sources for updates and update its indices. This strategy can cause performance issues if you have large backend models collections",
-            "posts-bridge"
-          )}
         />
       </PanelRow>
       <Spacer paddingY="calc(8px)" />
