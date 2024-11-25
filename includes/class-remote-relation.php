@@ -257,6 +257,10 @@ class Remote_Relation
         return $data;
     }
 
+    /**
+     * Register remote fields as post's meta and show on the REST API. This is
+     * needed to load this fields on the editor.
+     */
     public function register_meta()
     {
         $fields = $this->get_remote_fields();

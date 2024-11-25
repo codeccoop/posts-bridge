@@ -82,7 +82,8 @@ class Remote_CPT
      * Proxy of the wrapped posts attributes.
      *
      * @param string $attr Attribute name.
-     * @return mixed $value Attribute value or null if attribute does not exists.
+     * 
+     * @return mixed Attribute value or null if attribute does not exists.
      */
     public function __get($attr)
     {
@@ -98,8 +99,9 @@ class Remote_CPT
      * Remote data attributes getter.
      *
      * @param string $attr Remote attribute name.
-     * @para mixed $default Default value if attribute does not have value.
-     * @return mixed $value Remote value.
+     * @param mixed $default Default value if attribute does not have value.
+     * 
+     * @return mixed Remote value.
      */
     public function get($attr, $default = null)
     {
@@ -119,7 +121,7 @@ class Remote_CPT
     /**
      * Gets the post's remote relation endpoint.
      *
-     * @return string $endpoint Post's relation endpoint.
+     * @return string Post's relation endpoint.
      */
     public function get_endpoint()
     {
@@ -138,7 +140,7 @@ class Remote_CPT
     /**
      * Gets remote relation data.
      *
-     * @return Remote_Relation $relation Remote relation data.
+     * @return Remote_Relation Remote relation data.
      */
     public function get_relation()
     {
@@ -153,7 +155,7 @@ class Remote_CPT
     /**
      * Foreign key value getter.
      *
-     * @returns string|int Remote relation foreign key value.
+     * @return string|int Remote relation foreign key value.
      */
     public function get_foreign_id()
     {
@@ -168,7 +170,8 @@ class Remote_CPT
      * Wrapped post taxonomy terms getter.
      *
      * @param string $tax Taxonomy name.
-     * @return array<WP_Term>|WP_Error $terms Terms of the taxonomy attacheds to the post.
+     * 
+     * @return array<WP_Term>|WP_Error Terms of the taxonomy attacheds to the post.
      */
     public function get_terms($tax)
     {
@@ -180,6 +183,7 @@ class Remote_CPT
      *
      * @param string $field Custom field name.
      * @param boolean $single Retrive a single value.
+     * 
      * @return mixed Custom field value or false.
      */
     public function get_meta($field, $single = true)

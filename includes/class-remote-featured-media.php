@@ -54,7 +54,7 @@ class Remote_Featured_Media
      *
      * @param string $filepath Path of the file.
      *
-     * @returns array|null File type data.
+     * @return array|null File type data.
      */
     public static function get_file_type($filepath)
     {

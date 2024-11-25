@@ -139,6 +139,7 @@ trait Cron
      * Registers custom wp schedules.
      *
      * @param array<string, array> $schedules New schedules to register.
+     * 
      * @return Array with custom schedules registerefs.
      */
     public static function register_custom_schedules($schedules)
