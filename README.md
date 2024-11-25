@@ -40,10 +40,10 @@ settings. The page has three main sections:
    - **Relations**: A list of handled post types and it's relation with your backend
      endpoints. Each realtion needs a post type, a backend, an endpoint and the remote
      field to be used as foreign key.
-3. RPC API
-   - **RPC API endpoint**: Entry point of your ERP's RPC external API.
-   - **API user login**: Login of the ERP's user to use use on the API authentication requests.
-   - **User password**: Password of the user.
+3. Odoo JSON-RPC
+   - **RPC API endpoint**: Entry point of your Odoo's JSON-RPC external API.
+   - **API user login**: Login of the Odoo's user to use use on the API authentication requests.
+   - **User password**: Password or APIKEY of the user.
    - **Database name**: Database name to be used.
    - **Relations**: A list of handled post types and it's relation with your backend
      models. Each relation needs a post type, a backend and a model.
