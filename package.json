@@ -8,6 +8,7 @@
     "start": "npm run dev",
     "dev": "npx esbuild ./src/index.jsx --bundle --outfile=./assets/plugin.bundle.js --watch",
     "build": "npx esbuild ./src/index.jsx --bundle --minify --outfile=./assets/plugin.bundle.js",
+    "postbuild": "sh ./.postbuild",
     "prepare": "husky"
   },
   "devDependencies": {
