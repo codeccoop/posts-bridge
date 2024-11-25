@@ -27,6 +27,7 @@ class HTTP_Client
      * Performs a RPC call.
      *
      * @param string $endpoint RPC API gateway endpoint.
+     * @param string $session_id RPC API session id.
      * @param array $args RPC call target service.
      * @param array $args RPC call method.
      * @param array $args RPC call arguments.
@@ -34,11 +35,12 @@ class HTTP_Client
      *
      * @return array|WP_Error RPC call result or WP_Error.
      */
-    private static function json_rpc($endpoint, $service, $method, $args, $headers = [])
+    private static function json_rpc($endpoint, $session_id, $service, $method, $args, $headers = [])
     {
         $payload = [
             'jsonrpc' => '2.0',
             'method' => 'call',
+            'id' => $session_id,
             'params' => [
                 'service' => $service,
                 'method' => $method,
@@ -60,7 +62,7 @@ class HTTP_Client
             );
         }
 
-        return $data['result'];
+        return [$data['id'], $data['result']];
     }
 
     /**
@@ -73,21 +75,29 @@ class HTTP_Client
      */
     private static function login($endpoint, $headers)
     {
-        global $_posts_bridge_rpc_uid;
-        if (!empty($_posts_bridge_rpc_uid)) {
-            return $_posts_bridge_rpc_uid;
+        global $_posts_bridge_rpc_sid;
+        if (!empty($_posts_bridge_rpc_sid)) {
+            return $_posts_bridge_rpc_sid;
         }
 
+        $session_id = 'posts-bridge-' . time();
         $opts = Settings::get_setting('posts-bridge', 'rpc-api');
-        $_posts_bridge_rpc_uid = self::json_rpc(
+
+        $response = self::json_rpc(
             $endpoint,
+            $session_id,
             'common',
             'login',
             [$opts['database'], $opts['user'], $opts['password']],
             $headers,
         );
 
-        return $_posts_bridge_rpc_uid;
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $_posts_bridge_rpc_sid = $response;
+        return $_posts_bridge_rpc_sid;
     }
 
     /**
@@ -101,19 +111,29 @@ class HTTP_Client
      */
     public static function search($endpoint, $model, $headers = [])
     {
-        $uid = self::login($endpoint, $headers);
-        if (is_wp_error($uid)) {
-            return $uid;
+        $login = self::login($endpoint, $headers);
+        if (is_wp_error($login)) {
+            return $login;
         }
 
+        [$sid, $uid] = $login;
+
         $opts = Settings::get_setting('posts-bridge', 'rpc-api');
-        return self::json_rpc(
+        $response = self::json_rpc(
             $endpoint,
+            $sid,
             'object',
             'execute',
             [$opts['database'], $uid, $opts['password'], $model, 'search', []],
             $headers,
         );
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        [$sid, $result] = $response;
+        return $result;
     }
 
     /**
@@ -128,25 +148,29 @@ class HTTP_Client
      */
     public static function read($endpoint, $model, $id, $headers = [])
     {
-        $uid = self::login($endpoint, $headers);
-        if (is_wp_error($uid)) {
-            return $uid;
+        $login = self::login($endpoint, $headers);
+        if (is_wp_error($login)) {
+            return $login;
         }
 
+        [$sid, $uid] = $login;
+
         $opts = Settings::get_setting('posts-bridge', 'rpc-api');
-        $data = self::json_rpc(
+        $response = self::json_rpc(
             $endpoint,
+            $sid,
             'object',
             'execute',
             [$opts['database'], $uid, $opts['password'], $model, 'read', [(int) $id]],
             $headers,
         );
 
-        if (is_wp_error($data)) {
-            return $data;
+        if (is_wp_error($response)) {
+            return $response;
         }
 
-        return $data[0];
+        [$sid, $result] = $response;
+        return $result[0];
     }
 
     /**
@@ -234,4 +258,4 @@ class HTTP_Client
 /**
  * Handle RPC session id.
  */
-$_posts_bridge_rpc_uid = null;
+$_posts_bridge_rpc_sid = null;
