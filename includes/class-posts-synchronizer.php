@@ -134,8 +134,11 @@ class Posts_Synchronizer extends Singleton
             $url = $backend->get_endpoint_url($endpoint);
             $headers = $backend->get_headers();
 
+            $locale = apply_filters('wpct_i18n_current_language', null, 'locale');
             $data = HTTP_Client::fetch($url, $headers);
-            return [$relation->map_remote_fields($data), array_values($relation->get_remote_custom_fields())];
+            $data = $relation->map_remote_fields($data);
+            $data = apply_filters('posts_bridge_fetch', $data, null, $locale);
+            return [$data, array_values($relation->get_remote_custom_fields())];
         });
     }
 
@@ -156,8 +159,11 @@ class Posts_Synchronizer extends Singleton
         }
 
         return $this->sync_posts($relation->get_post_type(), $foreign_ids, function ($foreign_id) use ($relation) {
+            $locale = apply_filters('wpct_i18n_current_language', null, 'locale');
             $data = HTTP_Client::read($relation->get_url(), $relation->get_model(), $foreign_id, $relation->get_headers());
-            return [$relation->map_remote_fields($data), array_values($relation->get_remote_custom_fields())];
+            $data = $relation->map_remote_fields($data);
+            $data = apply_filters('posts_bridge_fetch', $data, null, $locale);
+            return [$data, array_values($relation->get_remote_custom_fields())];
         });
     }
 

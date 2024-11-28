@@ -134,7 +134,7 @@ foreach ($remote_cpts as $remote_cpt) {
 
 ### `posts_bridge_fetch`
 
-Fired on render time when WP fetches the remote data of your posts. To work properly,
+Fired each time WP fetches the remote data of your posts. To work properly,
 the Remote Field Custom Blocks needs a plain object of key values. If your backend
 response does not looks like this, preformat it on this filter.
 
