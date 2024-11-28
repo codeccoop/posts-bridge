@@ -126,7 +126,7 @@ class Posts_Synchronizer extends Singleton
             return $model[$relation->get_foreign_key()];
         }, $models);
 
-        return $this->sync_posts($relation->get_post_type(), $foreign_ids, function ($foreign_id) use ($relation, $backend) {
+        return $this->sync_posts($relation->get_post_type(), $foreign_ids, function ($foreign_id, $remote_cpt) use ($relation, $backend) {
             $endpoint = preg_replace('/\/^/', '', $relation->get_endpoint());
             $endpoint .= '/' . $foreign_id;
             $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, null);
@@ -137,7 +137,7 @@ class Posts_Synchronizer extends Singleton
             $locale = apply_filters('wpct_i18n_current_language', null, 'locale');
             $data = HTTP_Client::fetch($url, $headers);
             $data = $relation->map_remote_fields($data);
-            $data = apply_filters('posts_bridge_fetch', $data, null, $locale);
+            $data = apply_filters('posts_bridge_fetch', $data, $remote_cpt, $locale);
             return [$data, array_values($relation->get_remote_custom_fields())];
         });
     }
@@ -158,11 +158,11 @@ class Posts_Synchronizer extends Singleton
             return false;
         }
 
-        return $this->sync_posts($relation->get_post_type(), $foreign_ids, function ($foreign_id) use ($relation) {
+        return $this->sync_posts($relation->get_post_type(), $foreign_ids, function ($foreign_id, $remote_cpt) use ($relation) {
             $locale = apply_filters('wpct_i18n_current_language', null, 'locale');
             $data = HTTP_Client::read($relation->get_url(), $relation->get_model(), $foreign_id, $relation->get_headers());
             $data = $relation->map_remote_fields($data);
-            $data = apply_filters('posts_bridge_fetch', $data, null, $locale);
+            $data = apply_filters('posts_bridge_fetch', $data, $remote_cpt, $locale);
             return [$data, array_values($relation->get_remote_custom_fields())];
         });
     }
@@ -198,13 +198,15 @@ class Posts_Synchronizer extends Singleton
                 if ($this->sync_mode === 'light') {
                     unset($foreign_ids[$foreign_id]);
                 } else {
-                    $foreign_ids[$foreign_id] = get_the_ID();
+                    $foreign_ids[$foreign_id] = get_post();
                 }
             }
         }
 
-        foreach ($foreign_ids as $foreign_id => $post_id) {
-            [$data, $custom_fields] = $fetch_data($foreign_id);
+        wp_reset_postdata();
+
+        foreach ($foreign_ids as $foreign_id => $post) {
+            [$data, $custom_fields] = $fetch_data($foreign_id, new RemoteCPT($post);
             if (is_wp_error($data)) {
                 return false;
             }
