@@ -11,7 +11,18 @@ if (!defined('ABSPATH')) {
  */
 class Remote_Featured_Media
 {
+    /**
+     * Handle default thumbnail id plugin's option name.
+     *
+     * @var string _default_thumbnail_handle Option name.
+     */
     public const _default_thumbnail_handle = '_posts_bridge_thumbnail';
+
+    /**
+     * Handle featured media memory meta key.
+     *
+     * @var string _memory_meta_key Meta key.
+     */
     private const _memory_meta_key = '_posts_bridge_attachment_src';
 
     /**
@@ -36,6 +47,10 @@ class Remote_Featured_Media
 
     /**
      * Gets the featured media source type
+     *
+     * @param mixed $src Featured media source.
+     *
+     * @return string Source type.
      */
     public static function get_src_type($src)
     {
@@ -71,6 +86,13 @@ class Remote_Featured_Media
         return $filetype;
     }
 
+    /**
+     * Public remote featured media handle method.
+     *
+     * @param mixed $src Featured media source.
+     *
+     * @return int Generated attachment ID.
+     */
     public static function handle($src)
     {
         if (!empty($src)) {
@@ -224,6 +246,13 @@ class Remote_Featured_Media
         return $attachment_id;
     }
 
+    /**
+     * Try to recover attachment id from posts meta.
+     *
+     * @param string $src Media source.
+     *
+     * @return int|null Found ID.
+     */
     private static function memory($src)
     {
         $attachments = get_posts([

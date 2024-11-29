@@ -71,6 +71,9 @@ class REST_Settings_Controller extends Base_REST_Settings_Controller
         });
     }
 
+    /**
+     * Registers the post types REST API route.
+     */
     private function register_post_types_route()
     {
         $namespace = self::$namespace;
@@ -90,6 +93,11 @@ class REST_Settings_Controller extends Base_REST_Settings_Controller
         );
     }
 
+    /**
+     * Get available post types on the WP instance excluding WP internal posts.
+     *
+     * @return array Array of post type slugs.
+     */
     private function get_post_types()
     {
         return array_values(array_filter(array_values(get_post_types()), function ($post_type) {

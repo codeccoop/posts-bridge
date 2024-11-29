@@ -50,6 +50,8 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
     /**
      * Binds the controlled post type, setup the rest_base, registers the
      * WP_REST_Post_Meta_Fields controller and registers the REST API routes.
+     *
+     * @param string $post_type Post type to be handled.
      */
     public function __construct($post_type)
     {
@@ -71,6 +73,13 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         }, 10, 3);
     }
 
+    /**
+     * Checks if the requests falls into the controller API namespace.
+     *
+     * @param WP_REST_Request $request Request instance.
+     *
+     * @return boolean True if the request is owned.
+     */
     private function is_own_route($request)
     {
         $own_routes = $this->namespace . '/' . $this->rest_base;
@@ -211,16 +220,37 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         return $result;
     }
 
-    private function alias($field_name)
+    /**
+     * Aliases a field name.
+     *
+     * @param string $name Original field name.
+     *
+     * @return string Aliased field name.
+     */
+    private function alias($field)
     {
-        return self::_rest_alias_prefix . $field_name;
+        return self::_rest_alias_prefix . $field;
     }
 
+    /**
+     * Reverses field name alias.
+     *
+     * @param string $alias Aliased field name.
+     *
+     * @return string Original field name.
+     */
     private function unalias($alias)
     {
         return str_replace(self::_rest_alias_prefix, '', $alias);
     }
 
+    /**
+     * Checks if field name aliased.
+     *
+     * @param string $name Name of the field.
+     *
+     * return boolean True if name is an alias.
+     */
     private function is_alias($name)
     {
         return (bool) strstr($name, self::_rest_alias_prefix);
