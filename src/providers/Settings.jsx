@@ -53,7 +53,9 @@ export default function SettingsProvider({ setLoading, children }) {
       .finally(() => setLoading(false));
   };
 
-  useEffect(fetchSettings, []);
+  useEffect(() => {
+    fetchSettings();
+  }, []);
 
   const saveSettings = () => {
     setLoading(true);
