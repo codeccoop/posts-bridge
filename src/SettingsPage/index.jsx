@@ -6,7 +6,7 @@ import {
   Button,
   __experimentalSpacer as Spacer,
 } from "@wordpress/components";
-import { useState } from "@wordpress/element";
+import { useState, useEffect } from "@wordpress/element";
 
 // source
 import SettingsProvider, { useSubmitSettings } from "../providers/Settings";
@@ -14,6 +14,7 @@ import PostTypesProvider from "../providers/PostTypes";
 import GeneralSettings from "../GeneralSettings";
 import RestApiSettings from "../RestApiSettings";
 import RpcApiSettings from "../RpcApiSettings";
+import Spinner from "../Spinner";
 
 const tabs = [
   {
@@ -41,11 +42,10 @@ function Content({ tab }) {
   }
 }
 
-function SaveButton() {
+function SaveButton({ loading, setLoading }) {
   const __ = wp.i18n.__;
   const submit = useSubmitSettings();
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
   const onClick = () => {
@@ -73,8 +73,20 @@ function SaveButton() {
 
 export default function SettingsPage() {
   const __ = wp.i18n.__;
+
+  const [loaders, setLoaders] = useState([]);
+
+  const loading = loaders.length > 0;
+  const setLoading = (state) => {
+    const newLoaders = loaders
+      .slice(1)
+      .concat(state)
+      .filter((state) => state);
+    setLoaders(newLoaders);
+  };
+
   return (
-    <SettingsProvider>
+    <SettingsProvider setLoading={setLoading}>
       <Heading level={1}>Posts Bridge</Heading>
       <TabPanel
         initialTabName="general"
@@ -84,14 +96,15 @@ export default function SettingsPage() {
         }))}
       >
         {(tab) => (
-          <PostTypesProvider>
+          <PostTypesProvider setLoading={setLoading}>
             <Spacer />
             <Content tab={tab} />
           </PostTypesProvider>
         )}
       </TabPanel>
       <Spacer />
-      <SaveButton />
+      <SaveButton loading={loading} setLoading={setLoading} />
+      <Spinner show={loading} />
     </SettingsProvider>
   );
 }

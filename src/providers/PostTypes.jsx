@@ -10,17 +10,15 @@ import {
 } from "@wordpress/element";
 
 // source
-import Loading from "../Loading";
 import useRelationPostTypes from "../hooks/useRelationPostTypes";
 
 const PostTypesContext = createContext([]);
 
-export default function PostTypesProvider({ children }) {
+export default function PostTypesProvider({ setLoading, children }) {
   const [postTypes, setPostTypes] = useState([]);
 
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
+    setLoading(true);
     apiFetch({
       path: `${window.wpApiSettings.root}wp-bridges/v1/posts-bridge/types`,
       headers: {
@@ -33,7 +31,7 @@ export default function PostTypesProvider({ children }) {
 
   return (
     <PostTypesContext.Provider value={postTypes}>
-      {(loading && <Loading message={__("Loading")} />) || children}
+      {children}
     </PostTypesContext.Provider>
   );
 }

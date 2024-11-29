@@ -24,7 +24,12 @@ function NewBackend({ add }) {
     setName(name.trim());
   };
 
-  const onClick = () => add({ name, base_url: baseUrl, headers: [] });
+  const onClick = () => {
+    add({ name, base_url: baseUrl, headers: [] });
+    setName("");
+    setBaseUrl("");
+    setNameConflict(false);
+  };
 
   const disabled = !(name && baseUrl && !nameConflict);
 

@@ -13,17 +13,12 @@ import {
 
 // source
 import { useGeneral } from "../providers/Settings";
-import { usePostTypes } from "../providers/PostTypes";
 import Backends from "./Backends";
 import Synchronize from "./Synchronize";
 
 export default function GeneralSettings() {
   const __ = wp.i18n.__;
 
-  const postTypeOptions = usePostTypes().map((postType) => ({
-    label: postType,
-    value: postType,
-  }));
   const [{ whitelist, backends, synchronize }, save] = useGeneral();
 
   const update = (field) =>

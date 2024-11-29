@@ -16,10 +16,12 @@ import RemoteFields from "../../RemoteFields";
 function NewRelation({ add }) {
   const __ = wp.i18n.__;
   const [{ backends }] = useGeneral();
-  const backendOptions = backends.map(({ name }) => ({
-    label: name,
-    value: name,
-  }));
+  const backendOptions = [{ label: "", value: "" }].concat(
+    backends.map(({ name }) => ({
+      label: name,
+      value: name,
+    }))
+  );
 
   const postTypes = usePostTypes({ filter: true });
   const postTypeOptions = [{ label: "", value: "" }].concat(
@@ -29,12 +31,12 @@ function NewRelation({ add }) {
     }))
   );
 
-  const [postType, setPostType] = useState(postTypes[0] || "");
-  const [backend, setBackend] = useState(backendOptions[0]?.value || "");
+  const [postType, setPostType] = useState("");
+  const [backend, setBackend] = useState("");
   const [endpoint, setEndpoint] = useState("");
   const [foreignKey, setForeignKey] = useState("");
 
-  const onClick = () =>
+  const onClick = () => {
     add({
       post_type: postType,
       backend,
@@ -42,6 +44,11 @@ function NewRelation({ add }) {
       foreigh_key: foreignKey,
       fields: [],
     });
+    setPostType("");
+    setBackend("");
+    setEndpoint("");
+    setForeignKey("");
+  };
 
   const disabled = !(postType && backend && endpoint && foreignKey);
 
@@ -136,19 +143,23 @@ export default function Relation({ update, remove, ...data }) {
 
   const __ = wp.i18n.__;
   const [{ backends }] = useGeneral();
-  const backendOptions = backends.map(({ name }) => ({
-    label: name,
-    value: name,
-  }));
+  const backendOptions = [{ label: "", value: "" }].concat(
+    backends.map(({ name }) => ({
+      label: name,
+      value: name,
+    }))
+  );
 
   const postTypes = usePostTypes({ filter: true });
-  const postTypeOptions = postTypes
-    .filter((postType) => postType !== data.post_type)
-    .map((postType) => ({
-      label: postType,
-      value: postType,
-    }))
-    .concat([{ label: data.post_type, value: data.post_type }]);
+  const postTypeOptions = [{ label: "", value: "" }].concat(
+    postTypes
+      .filter((postType) => postType !== data.post_type)
+      .map((postType) => ({
+        label: postType,
+        value: postType,
+      }))
+      .concat([{ label: data.post_type, value: data.post_type }])
+  );
 
   return (
     <div

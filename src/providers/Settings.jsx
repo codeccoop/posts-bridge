@@ -9,11 +9,6 @@ import {
   useEffect,
 } from "@wordpress/element";
 
-// source
-import Loading from "../Loading";
-
-const noop = () => {};
-
 const defaultSettings = {
   "general": {
     backends: [],
@@ -35,17 +30,16 @@ const defaultSettings = {
   },
 };
 
-const SettingsContext = createContext([defaultSettings, noop]);
+const SettingsContext = createContext([defaultSettings, () => {}]);
 
-export default function SettingsProvider({ children }) {
+export default function SettingsProvider({ setLoading, children }) {
   const [general, setGeneral] = useState({ ...defaultSettings.general });
   const [restApi, setRestApi] = useState({ ...defaultSettings["rest-api"] });
   const [rpcApi, setRpcApi] = useState({ ...defaultSettings["rpc-api"] });
 
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    apiFetch({
+  const fetchSettings = () => {
+    setLoading(true);
+    return apiFetch({
       path: `${window.wpApiSettings.root}wp-bridges/v1/posts-bridge/settings`,
       headers: {
         "X-WP-Nonce": wpApiSettings.nonce,
@@ -57,9 +51,12 @@ export default function SettingsProvider({ children }) {
         setRpcApi(settings["rpc-api"]);
       })
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(fetchSettings, []);
 
   const saveSettings = () => {
+    setLoading(true);
     return apiFetch({
       path: `${window.wpApiSettings.root}wp-bridges/v1/posts-bridge/settings`,
       method: "POST",
@@ -71,11 +68,9 @@ export default function SettingsProvider({ children }) {
         "rest-api": restApi,
         "rpc-api": rpcApi,
       },
-    }).then((settings) => {
-      setGeneral(settings.general);
-      setRestApi(settings["rest-api"]);
-      setRpcApi(settings["rpc-api"]);
-    });
+    })
+      .then(fetchSettings)
+      .finally(() => setLoading(false));
   };
 
   return (
@@ -92,8 +87,7 @@ export default function SettingsProvider({ children }) {
         saveSettings,
       ]}
     >
-      {(loading && <Loading message={__("Loading", "posts-bridge")} />) ||
-        children}
+      {children}
     </SettingsContext.Provider>
   );
 }
