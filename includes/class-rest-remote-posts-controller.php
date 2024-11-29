@@ -17,7 +17,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
      *
      * @var string $rest_id_alias Alias name.
      */
-    public const _rest_id_alias = '_posts_bridge_rest_id';
+    private const _rest_alias_prefix = '_posts_bridge_rest_';
 
     /**
      * Handle the controlled post type.
@@ -93,12 +93,11 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
 
         $relation = apply_filters('posts_bridge_relation', null, $this->post_type);
         $payload = $request->get_json_params();
-
-        // Unalias foreign id before post preparation
-        $foreign_key = $relation->get_foreign_key();
-        if ($foreign_key === 'id') {
-            $payload['id'] = $request[self::_rest_id_alias];
-            unset($payload[self::_rest_id_alias]);
+        foreach ($payload as $field => $value) {
+            if ($this->is_alias($field)) {
+                unset($payload[$field]);
+                $payload[$this->unalias($field)] = $value;
+            }
         }
 
         $prepared_data = $relation->map_remote_fields($payload);
@@ -135,11 +134,19 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             }
         }
 
+        // Unalias featured media if exists
+        $media_alias = $this->alias('featured_media');
+        if (isset($request[$media_alias])) {
+            $request->set_param('featured_media', $request[$media_alias]);
+            unset($request[$media_alias]);
+        }
+
         $foreign_key = $relation->get_foreign_key();
 
         // Unalias foreign key on the request
-        if ($foreign_key === 'id') {
-            $foreign_key = self::_rest_id_alias;
+        $schema_properties = $this->get_item_schema()['properties'];
+        if (isset($schema_properties[$foreign_key])) {
+            $foreign_key = $this->alias($foreign_key);
         }
 
         update_post_meta($post->ID, Remote_CPT::_foreign_key_handle, $request[$foreign_key]);
@@ -167,8 +174,14 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             return $result;
         }
 
-        // Exits if request has been sanitized
-        if (isset($request[self::_rest_id_alias])) {
+        // check schema conflict ressolutions
+        $schema_properties = array_keys($this->get_item_schema()['properties']);
+        $is_processed = array_reduce($schema_properties, function ($is_processed, $property) use ($request) {
+            return $is_processed || !empty($request[$this->alias($property)]);
+        }, false);
+
+        // Exits if request has been processed
+        if ($is_processed) {
             return $result;
         }
 
@@ -180,25 +193,37 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             return new WP_Error('required_foreign_key', __('Remote CPT foreign key is unkown', 'posts-bridge'));
         }
 
-        // WP REST API works heavy with the ID field. Alias it on the request before dispatch
-        // to prevent collisions between the backend payload and the WP schema.
-        if (isset($request['id'])) {
-            $id = $request['id'];
-            $request->set_param(self::_rest_id_alias, $id);
-
-            // WP_REST_Requests returns body params before query or route params. If method is PUT or PATCH,
-            // with ID on the URL, it can conflict URL id with body id. Does resolve this collision.
-            preg_match('/\d+$/', $request->get_route(), $matches);
-            if (count($matches)) {
-                $wp_id = $matches[0];
-                $request->set_param('id', (int) $wp_id);
-            } else {
-                // On posts requests, WP doesn't like IDs.
-                $request->set_param('id', null);
+        // Resolve schema conflicts
+        foreach ($schema_properties as $property) {
+            if (!empty($request[$property])) {
+                $value = $request[$property];
+                $request->set_param($this->alias($property), $value);
+                unset($request[$property]);
             }
         }
 
+        // Restore request id if comes from the URL
+        if (preg_match('/\d+$/', $request->get_route(), $matches)) {
+            $wp_id = $matches[0];
+            $request->set_param('id', (int) $wp_id);
+        }
+
         return $result;
+    }
+
+    private function alias($field_name)
+    {
+        return self::_rest_alias_prefix . $field_name;
+    }
+
+    private function unalias($alias)
+    {
+        return str_replace(self::_rest_alias_prefix, '', $alias);
+    }
+
+    private function is_alias($name)
+    {
+        return (bool) strstr($name, self::_rest_alias_prefix);
     }
 
     /**
