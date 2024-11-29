@@ -298,10 +298,18 @@ class Settings extends BaseSettings
         $valid_relations = [];
         for ($i = 0; $i < count($relations); $i++) {
             $rel = $relations[$i];
+
+            // Valid only if backend and post type exists
             $is_valid = array_reduce($backends, function ($is_valid, $backend) use ($rel) {
                 return $rel['backend'] === $backend['name'] || $is_valid;
             }, false) && in_array($rel['post_type'], $post_types);
+
             if ($is_valid) {
+                // filter empty fields
+                $rel['fields'] = array_values(array_filter($rel['fields'], function ($field) {
+                    return boolval($field['foreign']);
+                }));
+
                 $valid_relations[] = $rel;
             }
         }
