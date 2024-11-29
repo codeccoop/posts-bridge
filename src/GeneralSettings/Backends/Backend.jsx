@@ -27,7 +27,7 @@ function NewBackend({ add }) {
   const onClick = () => {
     add({ name, base_url: baseUrl, headers: [] });
     setName("");
-    setBaseUrl("");
+    setBaseUrl("https://");
     setNameConflict(false);
   };
 
