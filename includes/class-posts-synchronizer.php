@@ -129,7 +129,7 @@ class Posts_Synchronizer extends Singleton
         return $this->sync_posts($relation->get_post_type(), $foreign_ids, function ($foreign_id, $remote_cpt) use ($relation, $backend) {
             $endpoint = preg_replace('/\/^/', '', $relation->get_endpoint());
             $endpoint .= '/' . $foreign_id;
-            $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, null);
+            $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, $remote_cpt);
 
             $url = $backend->get_endpoint_url($endpoint);
             $headers = $backend->get_headers();
@@ -206,14 +206,18 @@ class Posts_Synchronizer extends Singleton
         wp_reset_postdata();
 
         foreach ($foreign_ids as $foreign_id => $post) {
+            if (!empty($post)) {
+                $post = (object) ['ID' => 0];
+            }
+
             [$data, $custom_fields] = $fetch_data($foreign_id, new RemoteCPT($post);
             if (is_wp_error($data)) {
                 return false;
             }
 
             $data['post_type'] = $post_type;
-            if ($post_id !== 0) {
-                $data['ID'] = $post_id;
+            if ($post->ID !== 0) {
+                $data['ID'] = $post->ID;
             }
 
             $post_id = wp_insert_post($data);
