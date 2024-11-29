@@ -2,6 +2,7 @@
 
 namespace POSTS_BRIDGE;
 
+use WP_Error;
 use WP_REST_Posts_Controller;
 use WP_REST_Post_Meta_Fields;
 use Exception;
@@ -11,6 +12,13 @@ use Exception;
  */
 class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
 {
+    /**
+     * Handle alias for id field on rest payloads that prevents collisions with WP schema.
+     *
+     * @var string $rest_id_alias Alias name.
+     */
+    public const _rest_id_alias = '_posts_bridge_rest_id';
+
     /**
      * Handle the controlled post type.
      *
@@ -84,14 +92,17 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         }
 
         $relation = apply_filters('posts_bridge_relation', null, $this->post_type);
-        $prepared_data = $relation->map_remote_fields($request->get_json_params());
-        $prepared_post = array_merge((array) $prepared_post, $prepared_data);
+        $payload = $request->get_json_params();
 
-        // lower case the ID
-        if (isset($prepared_post['ID'])) {
-            $prepared_post['id'] = $prepared_post['ID'];
-            unset($prepared_post['ID']);
+        // Unalias foreign id before post preparation
+        $foreign_key = $relation->get_foreign_key();
+        if ($foreign_key === 'id') {
+            $payload['id'] = $request[self::_rest_id_alias];
+            unset($payload[self::_rest_id_alias]);
         }
+
+        $prepared_data = $relation->map_remote_fields($payload);
+        $prepared_post = array_merge((array) $prepared_post, $prepared_data);
 
         return (object) $prepared_post;
     }
@@ -123,10 +134,20 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
                 $request->set_param('featured_media', $request[$foreign]);
             }
         }
+
+        $foreign_key = $relation->get_foreign_key();
+
+        // Unalias foreign key on the request
+        if ($foreign_key === 'id') {
+            $foreign_key = self::_rest_id_alias;
+        }
+
+        update_post_meta($post->ID, Remote_CPT::_foreign_key_handle, $request[$foreign_key]);
     }
 
     /**
-     * Check request params before rest dispatches to prevent schema conflicts.
+     * Sanitize and validates request params before rest dispatches to prevent schema conflicts and uncompleted
+     * payloads.
      *
      * @param mixed $result Response to replace the requested version with.
      * @param WP_REST_Server $server Server instance.
@@ -136,19 +157,45 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
      */
     public function rest_pre_dispatch($result, $server, $request)
     {
+        // Exits if request is not for the own remote cpt
         if (!$this->is_own_route($request)) {
-            return;
+            return $result;
         }
 
-        if (strstr($server::CREATABLE, $request->get_method())) {
-            if (isset($request['id'])) {
+        // Exits on read requests
+        if (!strstr($server::EDITABLE, $request->get_method())) {
+            return $result;
+        }
+
+        // Exits if request has been sanitized
+        if (isset($request[self::_rest_id_alias])) {
+            return $result;
+        }
+
+        $relation = apply_filters('posts_bridge_relation', null, $this->post_type);
+        $foreign_key = $relation->get_foreign_key();
+
+        // Exits if no foreign key on the payload
+        if (!isset($request[$foreign_key])) {
+            return new WP_Error('required_foreign_key', __('Remote CPT foreign key is unkown', 'posts-bridge'));
+        }
+
+        // WP REST API works heavy with the ID field. Alias it on the request before dispatch
+        // to prevent collisions between the backend payload and the WP schema.
+        if (isset($request['id'])) {
+            $id = $request['id'];
+            $request->set_param(self::_rest_id_alias, $id);
+
+            // WP_REST_Requests returns body params before query or route params. If method is PUT or PATCH,
+            // with ID on the URL, it can conflict URL id with body id. Does resolve this collision.
+            preg_match('/\d+$/', $request->get_route(), $matches);
+            if (count($matches)) {
+                $wp_id = $matches[0];
+                $request->set_param('id', (int) $wp_id);
+            } else {
+                // On posts requests, WP doesn't like IDs.
                 $request->set_param('id', null);
             }
-        }
-
-        // post type not writable from the body
-        if (isset($request['post_type'])) {
-            $request->set_param('post_type', null);
         }
 
         return $result;
