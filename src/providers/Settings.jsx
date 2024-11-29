@@ -7,6 +7,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useRef,
 } from "@wordpress/element";
 
 const defaultSettings = {
@@ -33,6 +34,8 @@ const defaultSettings = {
 const SettingsContext = createContext([defaultSettings, () => {}]);
 
 export default function SettingsProvider({ setLoading, children }) {
+  const persisted = useRef(true);
+
   const [general, setGeneral] = useState({ ...defaultSettings.general });
   const [restApi, setRestApi] = useState({ ...defaultSettings["rest-api"] });
   const [rpcApi, setRpcApi] = useState({ ...defaultSettings["rpc-api"] });
@@ -50,12 +53,29 @@ export default function SettingsProvider({ setLoading, children }) {
         setRestApi(settings["rest-api"]);
         setRpcApi(settings["rpc-api"]);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setTimeout(() => {
+          persisted.current = true;
+        }, 500);
+      });
   };
+
+  const beforeUnload = useRef((ev) => {
+    if (!persisted.current) {
+      ev.preventDefault();
+      ev.returnValue = true;
+    }
+  }).current;
 
   useEffect(() => {
     fetchSettings();
+    window.addEventListener("beforeunload", (ev) => beforeUnload(ev));
   }, []);
+
+  useEffect(() => {
+    persisted.current = false;
+  }, [general, restApi, rpcApi]);
 
   const saveSettings = () => {
     setLoading(true);
@@ -70,9 +90,7 @@ export default function SettingsProvider({ setLoading, children }) {
         "rest-api": restApi,
         "rpc-api": rpcApi,
       },
-    })
-      .then(fetchSettings)
-      .finally(() => setLoading(false));
+    }).then(fetchSettings);
   };
 
   return (
