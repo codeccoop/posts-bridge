@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 class Remote_Featured_Media
 {
     public const _default_thumbnail_handle = '_posts_bridge_thumbnail';
+    private const _memory_meta_key = '_posts_bridge_attachment_src';
 
     /**
      * Gets plugin's default thumbnail attachment ID.
@@ -76,9 +77,11 @@ class Remote_Featured_Media
             $type = self::get_src_type($src);
             switch ($type) {
                 case 'url':
-                    return self::attach_url($src);
+                    $attachment_id = self::attach_url($src);
+                    break;
                 case 'base64':
-                    return self::attach_b64($src);
+                    $attachment_id =  self::attach_b64($src);
+                    break;
                 case 'id':
                     return (int) $src;
                 default:
@@ -87,6 +90,9 @@ class Remote_Featured_Media
         } else {
             return self::get_default_thumbnail_id();
         }
+
+        update_post_meta($attachment_id, self::_memory_meta_key, $src);
+        return $attachment_id;
     }
 
     /**
@@ -101,6 +107,10 @@ class Remote_Featured_Media
     {
         if (self::get_src_type($src) !== 'base64') {
             return null;
+        }
+
+        if ($attachment_id = self::memory($src)) {
+            return $attachment_id;
         }
 
         $content = base64_decode($src);
@@ -132,6 +142,14 @@ class Remote_Featured_Media
             return null;
         }
 
+        if ($attachment_id = self::memory($src)) {
+            return $attachment_id;
+        }
+
+        $url = parse_url($src);
+        if (isset($url['query'])) {
+            $src = str_replace('?' . $url['query'], '', $src);
+        }
         return self::attach($src, file_get_contents($src));
     }
 
@@ -204,5 +222,19 @@ class Remote_Featured_Media
         wp_update_attachment_metadata($attachment_id, $attach_data);
 
         return $attachment_id;
+    }
+
+    private static function memory($src)
+    {
+        $attachments = get_posts([
+            'post_type' => 'attachment',
+            'posts_per_page' => 1,
+            'meta_key' => self::_memory_meta_key,
+            'meta_value' => $src,
+        ]);
+
+        if (count($attachments)) {
+            return $attachments[0]->ID;
+        }
     }
 }
