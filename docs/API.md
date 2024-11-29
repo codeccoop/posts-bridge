@@ -160,16 +160,16 @@ if your API is not standard.
 #### Arguments
 
 1. `string $endpoint`: Default endpoint to send GET requests to crawl post's remote data.
+2. `string $foreign_id`: Remote CPT foreig key value.
 3. `object $remote_cpt`: Instance of the current Remote_CPT.
 
 #### Example
 
 ```php
-add_filter('posts_bridge_endpoint', function ($endpoint, $rcpt) {
+add_filter('posts_bridge_endpoint', function ($endpoint, $foreign_id, $rcpt) {
     return $endpoint;
 }, 10, 2);
 ```
-
 
 ## Actions
 
@@ -179,11 +179,7 @@ Fired each time a remote cpt translation hase been done.
 
 #### Arguments
 
-1. `array $translation`: Array with the translation data:
-the bounded translation ID and the language code.
-    - `lang`: Language code
-    - `bound`: Source post ID
-    - `post_id`: Translation  ID
+1. `array $translation`: Array with the translation data.
 
 #### Example
 
@@ -209,7 +205,7 @@ this hook to preformat your backend payloads.
 #### Arguments
 
 1. `object $prepared_post`: An object representing a single post prepared for inserting
-or updating the database. Modify it with your request object.
+   or updating the database. Modify it with your request object.
 2. `WP_REST_Request $request`: Current request instance.
 
 #### Example
@@ -229,7 +225,7 @@ preformat your payload.
 
 1. `array $data`: An array of slashed, sanitized, and processed post data.
 2. `array $postarr`: An array of sanitized (and slashed) but otherwise unmodified post data recovered from backend response on each remote cpt synchronization.
-3. `array $unsanitized_postarr`: An array of slashed yet *unsanitized* and unprocessed post data as originally passed to wp_insert_post().
+3. `array $unsanitized_postarr`: An array of slashed yet _unsanitized_ and unprocessed post data as originally passed to wp_insert_post().
 4. `bool $update`: True if it's an update operation of an existing post.
 
 #### Example

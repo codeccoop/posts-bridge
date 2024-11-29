@@ -50,6 +50,8 @@ class Remote_CPT
 
     /**
      * Wraps the post and gets its own HTTP_Client instance.
+     *
+     * @param WP_Post|int $post Instance of the post.
      */
     public function __construct($post)
     {
@@ -82,7 +84,7 @@ class Remote_CPT
      * Proxy of the wrapped posts attributes.
      *
      * @param string $attr Attribute name.
-     * 
+     *
      * @return mixed Attribute value or null if attribute does not exists.
      */
     public function __get($attr)
@@ -100,7 +102,7 @@ class Remote_CPT
      *
      * @param string $attr Remote attribute name.
      * @param mixed $default Default value if attribute does not have value.
-     * 
+     *
      * @return mixed Remote value.
      */
     public function get($attr, $default = null)
@@ -127,9 +129,9 @@ class Remote_CPT
     {
         $rel = $this->get_relation();
         if ($rel->get_proto() === 'rest') {
-            $endpoint = preg_replace('/\/$/', '', $rel['endpoint']);
+            $endpoint = preg_replace('/\/$/', '', $rel->get_endpoint());
             $endpoint .= '/' . $this->foreign_id;
-            $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, $this);
+            $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, $this->foreign_id, $this);
         } else {
             $endpoint = Settings::get_setting('posts-bridge', 'rpc-api', 'endpoint');
         }
@@ -170,7 +172,7 @@ class Remote_CPT
      * Wrapped post taxonomy terms getter.
      *
      * @param string $tax Taxonomy name.
-     * 
+     *
      * @return array<WP_Term>|WP_Error Terms of the taxonomy attacheds to the post.
      */
     public function get_terms($tax)
@@ -183,7 +185,7 @@ class Remote_CPT
      *
      * @param string $field Custom field name.
      * @param boolean $single Retrive a single value.
-     * 
+     *
      * @return mixed Custom field value or false.
      */
     public function get_meta($field, $single = true)

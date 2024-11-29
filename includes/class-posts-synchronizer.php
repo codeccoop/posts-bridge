@@ -126,10 +126,10 @@ class Posts_Synchronizer extends Singleton
             return $model[$relation->get_foreign_key()];
         }, $models);
 
-        return $this->sync_posts($relation->get_post_type(), $foreign_ids, function ($foreign_id, $remote_cpt) use ($relation, $backend) {
-            $endpoint = preg_replace('/\/^/', '', $relation->get_endpoint());
+        return $this->sync_posts($relation->get_post_type(), $foreign_ids, static function ($foreign_id, $remote_cpt) use ($relation, $backend) {
+            $endpoint = preg_replace('/\/$/', '', $relation->get_endpoint());
             $endpoint .= '/' . $foreign_id;
-            $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, $remote_cpt);
+            $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, $foreign_id, $remote_cpt);
 
             $url = $backend->get_endpoint_url($endpoint);
             $headers = $backend->get_headers();
@@ -158,7 +158,7 @@ class Posts_Synchronizer extends Singleton
             return false;
         }
 
-        return $this->sync_posts($relation->get_post_type(), $foreign_ids, function ($foreign_id, $remote_cpt) use ($relation) {
+        return $this->sync_posts($relation->get_post_type(), $foreign_ids, static function ($foreign_id, $remote_cpt) use ($relation) {
             $locale = apply_filters('wpct_i18n_current_language', null, 'locale');
             $data = HTTP_Client::read($relation->get_url(), $relation->get_model(), $foreign_id, $relation->get_headers());
             $data = $relation->map_remote_fields($data);
@@ -206,11 +206,12 @@ class Posts_Synchronizer extends Singleton
         wp_reset_postdata();
 
         foreach ($foreign_ids as $foreign_id => $post) {
+            // if is a new remote model, mock a post as its local counterpart
             if (!empty($post)) {
-                $post = (object) ['ID' => 0];
+                $post = new WP_Post((object) ['ID' => $post, 'post_type' => $post_type]);
             }
 
-            [$data, $custom_fields] = $fetch_data($foreign_id, new RemoteCPT($post);
+            [$data, $custom_fields] = $fetch_data($foreign_id, new Remote_CPT($post));
             if (is_wp_error($data)) {
                 return false;
             }
@@ -229,8 +230,11 @@ class Posts_Synchronizer extends Singleton
 
             if (isset($data['featured_media'])) {
                 $featured_media = Remote_Featured_Media::handle($data['featured_media']);
-                set_post_thumbnail($post_id, $featured_media);
+            } else {
+                $featured_media = Remote_Featured_Media::get_default_thumbnail_id();
             }
+
+            set_post_thumbnail($post_id, $featured_media);
 
             foreach ($custom_fields as $name) {
                 if (isset($data[$name])) {
