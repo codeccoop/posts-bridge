@@ -58,7 +58,7 @@ class Remote_Featured_Media
             return 'id';
         } elseif (filter_var($src, FILTER_VALIDATE_URL)) {
             return 'url';
-        } elseif (is_string($src) && base64_encode(base64_decode($src))) {
+        } elseif (is_string($src) && base64_encode(base64_decode($src)) === $src) {
             return 'base64';
         } else {
             return null;
