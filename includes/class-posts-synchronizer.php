@@ -232,7 +232,7 @@ class Posts_Synchronizer extends Singleton
      *
      * @param string $post_type Target post type collection.
      * @param array<integer> $foreign_ids Remote ids reference.
-     * @param function $fetch_data Method to fetch remote models data.
+     * @param Closure(int, object) $fetch_data Method to fetch remote models data.
      */
     private function sync_posts($post_type, $foreign_ids, $fetch_data)
     {
