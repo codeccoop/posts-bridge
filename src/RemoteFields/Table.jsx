@@ -39,15 +39,25 @@ export default function CustomFieldsTable({ fields, setFields, done }) {
   }, [fields]);
 
   const setField = (attr, index, value) => {
-    const newFields = fields.map((field, i) => {
-      if (index === i) {
-        field[attr] = value;
-        if (attr === "name" && field.foreign !== value) {
-          field.name = value;
+    let newFields;
+    if (index >= fields.length) {
+      newFields = fields.concat({
+        name: "",
+        foreign: "",
+        index,
+        [attr]: value,
+      });
+    } else {
+      newFields = fields.map((field, i) => {
+        if (index === i) {
+          field[attr] = value;
+          if (attr === "name" && field.foreign !== value) {
+            field.name = value;
+          }
         }
-      }
-      return { ...field };
-    });
+        return { ...field };
+      });
+    }
 
     setFields(newFields);
   };
