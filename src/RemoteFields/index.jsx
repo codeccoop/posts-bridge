@@ -9,6 +9,14 @@ import RemoteFieldsTable from "./Table";
 export default function RemoteFields({ fields, setFields }) {
   const __ = wp.i18n.__;
   const [open, setOpen] = useState(false);
+
+  const handleSetFields = (fields) => {
+    fields.forEach((field) => {
+      delete field.index;
+    });
+    setFields(fields);
+  };
+
   return (
     <>
       <Button
@@ -24,8 +32,8 @@ export default function RemoteFields({ fields, setFields }) {
           onRequestClose={() => setOpen(false)}
         >
           <RemoteFieldsTable
-            fields={fields}
-            setFields={setFields}
+            fields={fields.map((field, index) => ({ ...field, index }))}
+            setFields={handleSetFields}
             done={() => setOpen(false)}
           />
         </Modal>

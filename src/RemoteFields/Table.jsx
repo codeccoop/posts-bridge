@@ -21,10 +21,6 @@ const postModel = {
 export default function CustomFieldsTable({ fields, setFields, done }) {
   const __ = wp.i18n.__;
 
-  useEffect(() => {
-    fields.forEach((field, i) => (field.index = i));
-  }, [fields]);
-
   const postFields = useMemo(() => {
     return Object.keys(postModel).map((key) => {
       const field = fields.find(({ name }) => name === key);
@@ -32,11 +28,15 @@ export default function CustomFieldsTable({ fields, setFields, done }) {
     });
   }, [fields]);
 
-  const customFields = useMemo(
-    () =>
-      fields.filter(({ name }) => !Object.hasOwnProperty.call(postModel, name)),
-    [fields]
-  );
+  const customFields = useMemo(() => {
+    const customs = fields.filter(
+      ({ name }) => !Object.hasOwnProperty.call(postModel, name)
+    );
+    if (!customs.length) {
+      return [{ name: "", foreign: "", index: fields.length }];
+    }
+    return customs;
+  }, [fields]);
 
   const setField = (attr, index, value) => {
     const newFields = fields.map((field, i) => {
