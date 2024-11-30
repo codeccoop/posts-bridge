@@ -4,6 +4,7 @@ namespace POSTS_BRIDGE;
 
 use WPCT_ABSTRACT\Singleton;
 use WP_Query;
+use WP_Post;
 
 if (!defined('ABSPATH')) {
     exit();
@@ -27,11 +28,16 @@ class Posts_Synchronizer extends Singleton
      */
     public function __construct()
     {
-        add_action('update_option', function ($option) {
-            if ($option === 'posts-bridge_general') {
-                $this->schedule();
-            }
-        }, 90, 1);
+        add_action(
+            'update_option',
+            function ($option) {
+                if ($option === 'posts-bridge_general') {
+                    $this->schedule();
+                }
+            },
+            90,
+            1
+        );
 
         add_action('wp_ajax_posts_bridge_sync', function () {
             $this->sync_callback();
@@ -43,7 +49,10 @@ class Posts_Synchronizer extends Singleton
      */
     public function schedule()
     {
-        ['enabled' => $enabled, 'recurrence' => $recurrence] = Settings::get_setting('posts-bridge', 'general', 'synchronize');
+        [
+            'enabled' => $enabled,
+            'recurrence' => $recurrence,
+        ] = Settings::get_setting('posts-bridge', 'general', 'synchronize');
         if (empty($enabled) || empty($recurrence)) {
             Posts_Bridge::unschedule();
         } else {
@@ -100,7 +109,9 @@ class Posts_Synchronizer extends Singleton
             return;
         }
 
-        $this->sync_mode = isset($_POST['sync_mode']) ? $_POST['sync_mode'] : 'light';
+        $this->sync_mode = isset($_POST['sync_mode'])
+            ? $_POST['sync_mode']
+            : 'light';
         $this->sync();
 
         wp_send_json(['success' => true], 200);
@@ -126,20 +137,48 @@ class Posts_Synchronizer extends Singleton
             return $model[$relation->get_foreign_key()];
         }, $models);
 
-        return $this->sync_posts($relation->get_post_type(), $foreign_ids, static function ($foreign_id, $remote_cpt) use ($relation, $backend) {
-            $endpoint = preg_replace('/\/$/', '', $relation->get_endpoint());
-            $endpoint .= '/' . $foreign_id;
-            $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, $foreign_id, $remote_cpt);
+        return $this->sync_posts(
+            $relation->get_post_type(),
+            $foreign_ids,
+            static function ($foreign_id, $remote_cpt) use (
+                $relation,
+                $backend
+            ) {
+                $endpoint = preg_replace(
+                    '/\/$/',
+                    '',
+                    $relation->get_endpoint()
+                );
+                $endpoint .= '/' . $foreign_id;
+                $endpoint = apply_filters(
+                    'posts_bridge_endpoint',
+                    $endpoint,
+                    $foreign_id,
+                    $remote_cpt
+                );
 
-            $url = $backend->get_endpoint_url($endpoint);
-            $headers = $backend->get_headers();
+                $url = $backend->get_endpoint_url($endpoint);
+                $headers = $backend->get_headers();
 
-            $locale = apply_filters('wpct_i18n_current_language', null, 'locale');
-            $data = HTTP_Client::fetch($url, $headers);
-            $data = $relation->map_remote_fields($data);
-            $data = apply_filters('posts_bridge_fetch', $data, $remote_cpt, $locale);
-            return [$data, array_values($relation->get_remote_custom_fields())];
-        });
+                $locale = apply_filters(
+                    'wpct_i18n_current_language',
+                    null,
+                    'locale'
+                );
+                $data = HTTP_Client::fetch($url, $headers);
+                $data = $relation->map_remote_fields($data);
+                $data = apply_filters(
+                    'posts_bridge_fetch',
+                    $data,
+                    $remote_cpt,
+                    $locale
+                );
+                return [
+                    $data,
+                    array_values($relation->get_remote_custom_fields()),
+                ];
+            }
+        );
     }
 
     /**
@@ -158,13 +197,34 @@ class Posts_Synchronizer extends Singleton
             return false;
         }
 
-        return $this->sync_posts($relation->get_post_type(), $foreign_ids, static function ($foreign_id, $remote_cpt) use ($relation) {
-            $locale = apply_filters('wpct_i18n_current_language', null, 'locale');
-            $data = HTTP_Client::read($relation->get_url(), $relation->get_model(), $foreign_id, $relation->get_headers());
-            $data = $relation->map_remote_fields($data);
-            $data = apply_filters('posts_bridge_fetch', $data, $remote_cpt, $locale);
-            return [$data, array_values($relation->get_remote_custom_fields())];
-        });
+        return $this->sync_posts(
+            $relation->get_post_type(),
+            $foreign_ids,
+            static function ($foreign_id, $remote_cpt) use ($relation) {
+                $locale = apply_filters(
+                    'wpct_i18n_current_language',
+                    null,
+                    'locale'
+                );
+                $data = HTTP_Client::read(
+                    $relation->get_url(),
+                    $relation->get_model(),
+                    $foreign_id,
+                    $relation->get_headers()
+                );
+                $data = $relation->map_remote_fields($data);
+                $data = apply_filters(
+                    'posts_bridge_fetch',
+                    $data,
+                    $remote_cpt,
+                    $locale
+                );
+                return [
+                    $data,
+                    array_values($relation->get_remote_custom_fields()),
+                ];
+            }
+        );
     }
 
     /**
@@ -178,10 +238,14 @@ class Posts_Synchronizer extends Singleton
     {
         global $remote_cpt;
 
-        $foreign_ids = array_reduce($foreign_ids, function ($carry, $id) {
-            $carry[$id] = 0;
-            return $carry;
-        }, []);
+        $foreign_ids = array_reduce(
+            $foreign_ids,
+            function ($carry, $id) {
+                $carry[$id] = 0;
+                return $carry;
+            },
+            []
+        );
 
         $query = new WP_Query([
             'post_type' => $post_type,
@@ -207,11 +271,16 @@ class Posts_Synchronizer extends Singleton
 
         foreach ($foreign_ids as $foreign_id => $post) {
             // if is a new remote model, mock a post as its local counterpart
-            if (!empty($post)) {
-                $post = new WP_Post((object) ['ID' => $post, 'post_type' => $post_type]);
+            if (empty($post)) {
+                $post = new WP_Post(
+                    (object) ['ID' => $post, 'post_type' => $post_type]
+                );
             }
 
-            [$data, $custom_fields] = $fetch_data($foreign_id, new Remote_CPT($post));
+            [$data, $custom_fields] = $fetch_data(
+                $foreign_id,
+                new Remote_CPT($post)
+            );
             if (is_wp_error($data)) {
                 return false;
             }
@@ -226,10 +295,16 @@ class Posts_Synchronizer extends Singleton
                 return false;
             }
 
-            update_post_meta($post_id, Remote_CPT::_foreign_key_handle, $foreign_id);
+            update_post_meta(
+                $post_id,
+                Remote_CPT::_foreign_key_handle,
+                $foreign_id
+            );
 
             if (isset($data['featured_media'])) {
-                $featured_media = Remote_Featured_Media::handle($data['featured_media']);
+                $featured_media = Remote_Featured_Media::handle(
+                    $data['featured_media']
+                );
             } else {
                 $featured_media = Remote_Featured_Media::get_default_thumbnail_id();
             }
