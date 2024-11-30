@@ -89,6 +89,7 @@ class Settings extends BaseSettings
                     'type' => 'array',
                     'items' => [
                         'type' => 'object',
+                        'additionalProperties' => false,
                         'properties' => [
                             'name' => ['type' => 'string'],
                             'base_url' => ['type' => 'string'],
@@ -96,6 +97,7 @@ class Settings extends BaseSettings
                                 'type' => 'array',
                                 'items' => [
                                     'type' => 'object',
+                                    'additionalProperties' => false,
                                     'properties' => [
                                         'name' => ['type' => 'string'],
                                         'value' => ['type' => 'string'],
@@ -107,6 +109,7 @@ class Settings extends BaseSettings
                 ],
                 'synchronize' => [
                     'type' => 'object',
+                    'additionalProperties' => false,
                     'properties' => [
                         'enabled' => ['type' => 'boolean'],
                         'recurrence' => [
@@ -152,6 +155,7 @@ class Settings extends BaseSettings
                     'type' => 'array',
                     'items' => [
                         'type' => 'object',
+                        'additionalProperties' => false,
                         'properties' => [
                             'post_type' => ['type' => 'string'],
                             'endpoint' => ['type' => 'string'],
@@ -161,6 +165,7 @@ class Settings extends BaseSettings
                                 'type' => 'array',
                                 'items' => [
                                     'type' => 'object',
+                                    'additionalProperties' => false,
                                     'properties' => [
                                         'name' => ['type' => 'string'],
                                         'foreign' => ['type' => 'string'],
@@ -196,6 +201,7 @@ class Settings extends BaseSettings
                     'type' => 'array',
                     'items' => [
                         'type' => 'object',
+                        'additionalProperties' => false,
                         'properties' => [
                             'post_type' => ['type' => 'string'],
                             'model' => ['type' => 'string'],
@@ -204,6 +210,7 @@ class Settings extends BaseSettings
                                 'type' => 'array',
                                 'items' => [
                                     'type' => 'object',
+                                    'additionalProperties' => false,
                                     'properties' => [
                                         'name' => ['type' => 'string'],
                                         'foreign' => ['type' => 'string'],

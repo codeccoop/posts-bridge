@@ -85,9 +85,13 @@ class Remote_Relation
         $this->post_type = $data['post_type'];
         $this->backend = $data['backend'];
         $this->model = isset($data['model']) ? $data['model'] : null;
-        $this->endpoint = isset($data['endpoint']) ? $data['endpoint'] : Settings::get_setting('posts-bridge', 'rpc-api', 'endpoint');
-        $this->foreign_key = isset($data['foreign_key']) ? $data['foreign_key'] : 'id';
-        $this->fields = $data['fields'];
+        $this->endpoint = isset($data['endpoint'])
+            ? $data['endpoint']
+            : Settings::get_setting('posts-bridge', 'rpc-api', 'endpoint');
+        $this->foreign_key = isset($data['foreign_key'])
+            ? $data['foreign_key']
+            : 'id';
+        $this->fields = (array) $data['fields'];
     }
 
     /**
@@ -168,7 +172,7 @@ class Remote_Relation
      */
     public function get_headers()
     {
-        return ($this->get_backend())->get_headers();
+        return $this->get_backend()->get_headers();
     }
 
     /**
@@ -178,7 +182,10 @@ class Remote_Relation
      */
     public function get_remote_fields()
     {
-        return array_merge($this->get_remote_post_fields(), $this->get_remote_custom_fields());
+        return array_merge(
+            $this->get_remote_post_fields(),
+            $this->get_remote_custom_fields()
+        );
     }
 
     /**
@@ -265,16 +272,12 @@ class Remote_Relation
     {
         $fields = $this->get_remote_fields();
         foreach (array_keys($fields) as $foreign) {
-            register_post_meta(
-                $this->get_post_type(),
-                $foreign,
-                [
-                    'show_in_rest' => true,
-                    'single' => true,
-                    'type' => 'string',
-                    'sanitize_callback' => 'wp_kses_post',
-                ],
-            );
+            register_post_meta($this->get_post_type(), $foreign, [
+                'show_in_rest' => true,
+                'single' => true,
+                'type' => 'string',
+                'sanitize_callback' => 'wp_kses_post',
+            ]);
         }
     }
 }
