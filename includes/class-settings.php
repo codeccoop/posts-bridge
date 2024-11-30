@@ -32,9 +32,13 @@ class Settings extends BaseSettings
     public static function get_post_types($proto = null)
     {
         $relations = self::get_relations($proto);
-        return array_values(array_unique(array_map(function ($rel) {
-            return $rel->get_post_type();
-        }, $relations)));
+        return array_values(
+            array_unique(
+                array_map(function ($rel) {
+                    return $rel->get_post_type();
+                }, $relations)
+            )
+        );
     }
 
     /**
@@ -46,8 +50,16 @@ class Settings extends BaseSettings
      */
     public static function get_relations($proto = null)
     {
-        $rest_rels = Settings::get_setting('posts-bridge', 'rest-api', 'relations');
-        $rpc_rels = Settings::get_setting('posts-bridge', 'rpc-api', 'relations');
+        $rest_rels = Settings::get_setting(
+            'posts-bridge',
+            'rest-api',
+            'relations'
+        );
+        $rpc_rels = Settings::get_setting(
+            'posts-bridge',
+            'rpc-api',
+            'relations'
+        );
         $relations = array_map(function ($rel) {
             return new Remote_Relation($rel);
         }, array_merge($rest_rels, $rpc_rels));
@@ -120,8 +132,8 @@ class Settings extends BaseSettings
                         'headers' => [
                             [
                                 'name' => 'Authorization',
-                                'value' => 'Bearer <erp-api-token>'
-                            ]
+                                'value' => 'Bearer <erp-api-token>',
+                            ],
                         ],
                     ],
                 ],
@@ -129,7 +141,7 @@ class Settings extends BaseSettings
                     'enabled' => false,
                     'recurrence' => 'hourly',
                 ],
-            ],
+            ]
         );
 
         // Register REST API settings
@@ -150,7 +162,7 @@ class Settings extends BaseSettings
                                 'items' => [
                                     'type' => 'object',
                                     'properties' => [
-                                        'meta' => ['type' => 'string'],
+                                        'name' => ['type' => 'string'],
                                         'foreign' => ['type' => 'string'],
                                     ],
                                 ],
@@ -169,7 +181,7 @@ class Settings extends BaseSettings
                         'fields' => [],
                     ],
                 ],
-            ],
+            ]
         );
 
         // Register RPC API settings
@@ -193,7 +205,7 @@ class Settings extends BaseSettings
                                 'items' => [
                                     'type' => 'object',
                                     'properties' => [
-                                        'meta' => ['type' => 'string'],
+                                        'name' => ['type' => 'string'],
                                         'foreign' => ['type' => 'string'],
                                     ],
                                 ],
@@ -215,7 +227,7 @@ class Settings extends BaseSettings
                         'fields' => [],
                     ],
                 ],
-            ],
+            ]
         );
     }
 
@@ -255,13 +267,19 @@ class Settings extends BaseSettings
         $rest = self::get_setting($this->get_group_name(), 'rest-api');
         $rpc = self::get_setting($this->get_group_name(), 'rpc-api');
 
-        $relations = $this->validate_relations($rest['relations'], $setting['backends']);
+        $relations = $this->validate_relations(
+            $rest['relations'],
+            $setting['backends']
+        );
         if (count($relations) !== count($rest['relations'])) {
             $rest['relations'] = $relations;
             update_option($this->get_group_name() . '_' . 'rest-api', $rest);
         }
 
-        $relations = $this->validate_relations($rpc['relations'], $setting['backends']);
+        $relations = $this->validate_relations(
+            $rpc['relations'],
+            $setting['backends']
+        );
         if (count($relations) !== count($rpc['relations'])) {
             $rpc['relations'] = $relations;
             update_option($this->get_group_name() . '_' . 'rpc-api', $rpc);
@@ -279,8 +297,15 @@ class Settings extends BaseSettings
      */
     private function validate_api($setting)
     {
-        $backends = Settings::get_setting($this->get_group_name(), 'general', 'backends');
-        $setting['relations'] = $this->validate_relations($setting['relations'], $backends);
+        $backends = Settings::get_setting(
+            $this->get_group_name(),
+            'general',
+            'backends'
+        );
+        $setting['relations'] = $this->validate_relations(
+            $setting['relations'],
+            $backends
+        );
         return $setting;
     }
 
@@ -295,20 +320,32 @@ class Settings extends BaseSettings
     private function validate_relations($relations, $backends)
     {
         $post_types = get_post_types();
+
         $valid_relations = [];
         for ($i = 0; $i < count($relations); $i++) {
             $rel = $relations[$i];
 
             // Valid only if backend and post type exists
-            $is_valid = array_reduce($backends, function ($is_valid, $backend) use ($rel) {
-                return $rel['backend'] === $backend['name'] || $is_valid;
-            }, false) && in_array($rel['post_type'], $post_types);
+            $is_valid =
+                array_reduce(
+                    $backends,
+                    function ($is_valid, $backend) use ($rel) {
+                        return $rel['backend'] === $backend['name'] ||
+                            $is_valid;
+                    },
+                    false
+                ) && in_array($rel['post_type'], $post_types);
 
             if ($is_valid) {
                 // filter empty fields
-                $rel['fields'] = array_values(array_filter($rel['fields'], function ($field) {
-                    return boolval($field['foreign']);
-                }));
+                $ref['fields'] = isset($ref['fields'])
+                    ? (array) $ref['fields']
+                    : [];
+                $rel['fields'] = array_values(
+                    array_filter($rel['fields'], static function ($field) {
+                        return $field['foreign'] && $field['name'];
+                    })
+                );
 
                 $valid_relations[] = $rel;
             }
