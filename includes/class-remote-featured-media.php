@@ -113,7 +113,7 @@ class Remote_Featured_Media
             return self::get_default_thumbnail_id();
         }
 
-        update_post_meta($attachment_id, self::_memory_meta_key, $src);
+        self::memorize($attachment_id, $src);
         return $attachment_id;
     }
 
@@ -247,6 +247,18 @@ class Remote_Featured_Media
     }
 
     /**
+     * Store media source as attachment's post meta to recover in future handles.
+     *
+     * @param int $attachment_id ID of the attachment post type.
+     * @param string $src Featured media source. 
+     */
+    private static function memorize($attachment_id, $src)
+    {
+        $src = substr($src, 0, 1e4);
+        update_post_meta($attachment_id, self::_memory_meta_key, $src);
+    }
+
+    /**
      * Try to recover attachment id from posts meta.
      *
      * @param string $src Media source.
@@ -259,7 +271,7 @@ class Remote_Featured_Media
             'post_type' => 'attachment',
             'posts_per_page' => 1,
             'meta_key' => self::_memory_meta_key,
-            'meta_value' => $src,
+            'meta_value' => substr($src, 0, 1e4),
         ]);
 
         if (count($attachments)) {
