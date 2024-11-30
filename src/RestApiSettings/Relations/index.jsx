@@ -39,7 +39,7 @@ export default function Relations({ relations, setRelations }) {
     const index = relations.findIndex((r) => r.post_type === post_type);
     const newRelation = relations
       .slice(0, index)
-      .concat(relations.slice(index + 2));
+      .concat(relations.slice(index + 1));
     setRelations(newRelation);
   };
 
