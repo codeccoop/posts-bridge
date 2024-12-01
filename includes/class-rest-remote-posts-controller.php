@@ -7,6 +7,10 @@ use WP_Error;
 use WP_REST_Posts_Controller;
 use WP_REST_Post_Meta_Fields;
 
+if (!defined('ABSPATH')) {
+    exit();
+}
+
 /**
  * REST API Controller for remote posts.
  */
@@ -262,10 +266,15 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             null,
             $this->post_type
         );
+
+        // Use json fingers to get foreign key value from the request
         $foreign_key = $relation->get_foreign_key();
+        $foreign_id = (new JSON_Finger($request->get_params()))->get(
+            $foreign_key
+        );
 
         // Exits if no foreign key on the payload
-        if (!isset($request[$foreign_key])) {
+        if (empty($foreign_id)) {
             return new WP_Error(
                 'required_foreign_key',
                 __('Remote CPT foreign key is unkown', 'posts-bridge')
