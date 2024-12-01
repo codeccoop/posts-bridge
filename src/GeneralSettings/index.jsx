@@ -48,7 +48,7 @@ export default function GeneralSettings() {
               onChange={() => update({ whitelist: !whitelist })}
               __nextHasNoMarginBottom
               help={__(
-                "Should HTTP Bridge block requests from origins not listed as backends? If active, incomming connections should include HTTP Origin header",
+                "Should Posts Bridge block requests from origins not listed as backends? If active, incomming connections should include HTTP Origin header",
                 "posts-bridge"
               )}
             />

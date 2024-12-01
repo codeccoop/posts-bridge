@@ -1,109 +1,264 @@
 # Copyright (C) 2024 Còdec Cooperativa
-# This file is distributed under the same license as the Wpct Remote CPT plugin.
+# This file is distributed under the same license as the Posts Bridge plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: Wpct Remote CPT 0.0.1\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wpct-remote-cpt\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"Project-Id-Version: Posts Bridge 1.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/posts-bridge\n"
+"Last-Translator: Lucas García <lucas@codeccoop.org>\n"
+"Language-Team: Español\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-02-15T18:27:38+00:00\n"
+"POT-Creation-Date: 2024-12-01T14:54:24+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.10.0\n"
-"X-Domain: wpct-remote-cpt\n"
+"Language: es_ES\n"
+"X-Generator: WP-CLI 2.11.0\n"
+"X-Domain: posts-bridge\n"
 
 #. Plugin Name of the plugin
-#: wpct-remote-cpt.php
-msgid "Wpct Remote CPT"
-msgstr "Wpct Remote CPT"
+#: posts-bridge.php
+msgid "Posts Bridge"
+msgstr ""
 
 #. Plugin URI of the plugin
-#: wpct-remote-cpt.php
-msgid "https://git.coopdevs.org/codeccoop/wp/plugins/wpct-remote-cpt"
-msgstr "https://git.coopdevs.org/codeccoop/wp/plugins/wpct-remote-cpt"
+#: posts-bridge.php
+msgid "https://git.coopdevs.org/codeccoop/wp/plugins/bridges/posts-bridge"
+msgstr ""
 
-#: custom-blocks/remote-field/build/block.json:1
-#: custom-blocks/remote-field/src/block.json:1
-msgctxt "block description"
-msgid "Remote field custom block."
-msgstr "Bloque custom de campo remoto."
+#. Description of the plugin
+#: posts-bridge.php
+msgid "Bridge backend data to WP posts collections"
+msgstr "Conecta datos de backends a colecciones de posts de WP"
 
-#: custom-blocks/remote-field/build/block.json:1
-#: custom-blocks/remote-field/src/block.json:1
+#. Author of the plugin
+#: posts-bridge.php
+msgid "Còdec"
+msgstr ""
+
+#. Author URI of the plugin
+#: posts-bridge.php
+msgid "https://www.codeccoop.org"
+msgstr ""
+
+#: includes/class-menu.php:32
+msgid "Loading"
+msgstr "Cargando"
+
+#: includes/class-rest-remote-posts-controller.php:280
+msgid "Remote CPT foreign key is unkown"
+msgstr "La clave foránea del Remote CPT es desconocida"
+
+#: includes/trait-cron.php:162
+msgid "Minutly"
+msgstr "Minutalmente"
+
+#: includes/trait-cron.php:167
+msgid "Quarterly"
+msgstr "Quinceminutalmente"
+
+#: includes/trait-cron.php:172
+msgid "Twice Hourly"
+msgstr "Dos veces la hora"
+
+#: custom-blocks/remote-field/src/edit.js:63
+msgid "How does it works?"
+msgstr "Como funciona?"
+
+#: custom-blocks/remote-field/src/edit.js:65
+msgid "Use Gutenberg blocks to build the content of the block."
+msgstr "Usa los bloques de Gutenberg para construir el contenido del bloc."
+
+#: custom-blocks/remote-field/src/edit.js:71
+msgid "There where do you want to place some remote value, use the `{{fieldName}}` marks. It doesn't matter where do you place marks, inside a paragraph, or maybe in a link, feel free to play with it."
+msgstr "Allí donde quieras poner algun valor remoto, usa la marca `{{nombreDelCampo}}. No importa donde la pongas, dentro de un parágrafo, quizás en un enlace, sientete libre para jugar."
+
+#: custom-blocks/remote-field/src/edit.js:77
+msgid "Then, when the block is rendered, this marks will be replaced with its corresponding remote value."
+msgstr "Finalmente, cuando el bloque se renderice, estas marcas seran substituidas por sus respectivos valores remotos."
+
+#: custom-blocks/remote-field/src/edit.js:84
+msgid "Registered remote fields"
+msgstr "Campots remotos registrados"
+
+#: src/GeneralSettings/Backends/index.jsx:19
+msgid "Add Backend"
+msgstr "Añadir backend"
+
+#: src/GeneralSettings/Backends/index.jsx:52
+msgid "Backends"
+msgstr ""
+
+#: src/GeneralSettings/index.jsx:30
+msgid "General"
+msgstr ""
+
+#: src/GeneralSettings/index.jsx:33
+msgid "Syncrhonization"
+msgstr "Sincronización"
+
+#: src/GeneralSettings/index.jsx:39
+msgid "Remote"
+msgstr "Remoto"
+
+#: src/GeneralSettings/index.jsx:43
+msgid "Block connections from unkown origins"
+msgstr "Bloquear conexiones de origenes desconocidos"
+
+#: src/GeneralSettings/index.jsx:50
+msgid "Should Posts Bridge block requests from origins not listed as backends? If active, incomming connections should include HTTP Origin header"
+msgstr "Posts Bridge ha de bloquear peticiones de origenes no listados como backends? Si es así, las peticiones entrantes deberán incluir la cabecera HTTP Origin"
+
+#: src/GeneralSettings/Synchronize/index.jsx:81
+msgid "Synchronize"
+msgstr "Sincronizar"
+
+#: src/GeneralSettings/Synchronize/index.jsx:87
+msgid "Run a full synchronization"
+msgstr "Correr una sincronización completa"
+
+#: src/GeneralSettings/Synchronize/index.jsx:88
+msgid "Normal, or light, synchronizations only fetches new remote models data. If do you want to update all your content, you should trigger a full synchronization. This may take a while."
+msgstr "La sincronización ligera solo consulta los datos de los nuevos modelos del backend. Si quieres actualizar todo tu contenido, deberás disparar una sincronización completa. Esto puede llevar un tiempo"
+
+#: src/GeneralSettings/Synchronize/index.jsx:102
+msgid "Automatic syncrhonization"
+msgstr "Sincronización automática"
+
+#: src/GeneralSettings/Synchronize/index.jsx:103
+msgid "Allow scheduled pull strategy syncrhonization. WordPress will check the remote sources for updates and update its indices. This strategy can cause performance issues if you have large backend models collections"
+msgstr "Permite la estrategia de sincronización por consulta. WordPress comprobará las actualizaciones de contenido remote y actualizará sus índices. Esta estrategia puede probocar problemas de rendimiento si tus colecciones de datos del backend son muy grandes"
+
+#: src/GeneralSettings/Synchronize/index.jsx:115
+msgid "Recurrence"
+msgstr "Recurréncia"
+
+#: src/RemoteFields/index.jsx:27
+#: src/RemoteFields/index.jsx:31
+msgid "Remote fields"
+msgstr "Campos remotos"
+
+#: src/RemoteFields/Table.jsx:91
+msgid "Post fields"
+msgstr "Campos del post"
+
+#: src/RemoteFields/Table.jsx:102
+#: src/RemoteFields/Table.jsx:151
+msgid "Foreign field name"
+msgstr "Nombre de la clave foránea"
+
+#: src/RemoteFields/Table.jsx:123
+msgid "Custom fields"
+msgstr "Campos personalizados"
+
+#: src/RemoteFields/Table.jsx:134
+#: src/RestApiSettings/Relations/Relation.jsx:133
+#: src/RpcApiSettings/Relations/Relation.jsx:117
+msgid "Add"
+msgstr "Añadir"
+
+#: src/RemoteFields/Table.jsx:143
+msgid "Custom field name"
+msgstr "Nombre del campo personalizado"
+
+#: src/RemoteFields/Table.jsx:164
+msgid "Drop"
+msgstr "Descartar"
+
+#: src/RemoteFields/Table.jsx:177
+msgid "Done"
+msgstr "Hecho"
+
+#: src/RestApiSettings/index.jsx:22
+msgid "REST API"
+msgstr ""
+
+#: src/RestApiSettings/Relations/index.jsx:24
+#: src/RestApiSettings/Relations/Relation.jsx:125
+#: src/RpcApiSettings/Relations/index.jsx:22
+#: src/RpcApiSettings/Relations/Relation.jsx:109
+msgid "Add relation"
+msgstr "Añadir relación"
+
+#: src/RestApiSettings/Relations/index.jsx:57
+#: src/RpcApiSettings/Relations/index.jsx:55
+msgid "Posts remote relations"
+msgstr "Relaciones remotas del post"
+
+#: src/RestApiSettings/Relations/Relation.jsx:72
+#: src/RestApiSettings/Relations/Relation.jsx:181
+#: src/RpcApiSettings/Relations/Relation.jsx:64
+#: src/RpcApiSettings/Relations/Relation.jsx:165
+msgid "Post type"
+msgstr "Tipo de post"
+
+#: src/RestApiSettings/Relations/Relation.jsx:81
+#: src/RestApiSettings/Relations/Relation.jsx:190
+#: src/RpcApiSettings/Relations/Relation.jsx:73
+#: src/RpcApiSettings/Relations/Relation.jsx:174
+msgid "Backend"
+msgstr ""
+
+#: src/RestApiSettings/Relations/Relation.jsx:90
+#: src/RestApiSettings/Relations/Relation.jsx:199
+#: src/RpcApiSettings/index.jsx:32
+msgid "Endpoint"
+msgstr ""
+
+#: src/RestApiSettings/Relations/Relation.jsx:98
+#: src/RestApiSettings/Relations/Relation.jsx:207
+msgid "Foreign key"
+msgstr "Clave foránea"
+
+#: src/RestApiSettings/Relations/Relation.jsx:232
+#: src/RpcApiSettings/Relations/Relation.jsx:208
+msgid "Map fields"
+msgstr "Mapa de campos"
+
+#: src/RestApiSettings/Relations/Relation.jsx:251
+#: src/RpcApiSettings/Relations/Relation.jsx:227
+msgid "Remove relation"
+msgstr "Borrar relación"
+
+#: src/RestApiSettings/Relations/Relation.jsx:259
+#: src/RpcApiSettings/Relations/Relation.jsx:235
+msgid "Remove"
+msgstr "Borrar"
+
+#: src/RpcApiSettings/index.jsx:27
+msgid "Odoo JSON-RPC"
+msgstr ""
+
+#: src/RpcApiSettings/index.jsx:40
+msgid "Database"
+msgstr "Base de datos"
+
+#: src/RpcApiSettings/index.jsx:48
+msgid "User"
+msgstr "Usuario"
+
+#: src/RpcApiSettings/index.jsx:56
+msgid "Password"
+msgstr "Contraseña"
+
+#: src/RpcApiSettings/Relations/Relation.jsx:82
+#: src/RpcApiSettings/Relations/Relation.jsx:183
+msgid "Model"
+msgstr "Modelo"
+
+#: src/SettingsPage/index.jsx:69
+msgid "Error"
+msgstr ""
+
+#: src/SettingsPage/index.jsx:69
+msgid "Save"
+msgstr "Guardar"
+
+#: custom-blocks/remote-field/src/block.json
 msgctxt "block title"
 msgid "Remote Field"
 msgstr "Campo remoto"
 
-#. Description of the plugin
-#: wpct-remote-cpt.php
-msgid "Custom Post Type with remote sourcing"
-msgstr "Custom Post Type con origen remoto"
-
-#. Author of the plugin
-#: wpct-remote-cpt.php
-msgid "Còdec"
-msgstr "Còdec"
-
-#. Author URI of the plugin
-#: wpct-remote-cpt.php
-msgid "https://www.codeccoop.org"
-msgstr "https://www.codeccoop.org"
-
-#: includes/class-synchronizer:195
-msgid "Error on remote syncrhonization"
-msgstr "Error de sincronización"
-
-#: includes/class-synchronizer:198
-msgid "Successfully synchronized"
-msgstr "Sincronización satisfactoria"
-
-#: includes/class-synchronizer:149
-msgid "Synchronize"
-msgstr "Sincronizar"
-
-msgid "wpct-rcpt_general--title"
-msgstr "General"
-
-msgid "wpct-rcpt_general--description"
-msgstr "Configuración general del plugin Remote CPT"
-
-msgid "wpct-rcpt_general__base_url--label"
-msgstr "URL base del backend"
-
-msgid "wpct-rcpt_general__api_key--label"
-msgstr "Calve API del backend"
-
-msgid "wpct-rcpt_general__cron--label"
-msgstr "Sincronización calendarizada"
-
-msgid "wpct-rcpt_rest-api--title"
-msgstr "REST API"
-
-msgid "wpct-rcpt_rest-api--description"
-msgstr "Configuración de la sincronización via REST API con el backend"
-
-msgid "wpct-rcpt_rest-api__relations--label"
-msgstr "Listado de relaciones entre post types y endpoints"
-
-msgid "wpct-rcpt_rpc-api--title"
-msgstr "RPC API"
-
-msgid "wpct-rcpt_rpc-api--description"
-msgstr "Configuración de la sincronitzación via RPC API con el backend"
-
-msgid "wpct-rcpt_rpc-api__endpoint--label"
-msgstr "Endpoint de la API RPC"
-
-msgid "wpct-rcpt_rpc-api__user--label"
-msgstr "Login del usuario de la API"
-
-msgid "wpct-rcpt_rpc-api__password--label"
-msgstr "Contraseña del usuario"
-
-msgid "wpct-rcpt_rpc-api__database--label"
-msgstr "Nombre de la base de datos"
-
-msgid "wpct-rcpt_rpc-api__relations--label"
-msgstr "Listado de relaciones entre post types y modelos de la base de datos del backend"
+#: custom-blocks/remote-field/src/block.json
+msgctxt "block description"
+msgid "Remote field custom block that replace marks by its remote value on the render."
+msgstr "Bloque personalizado de campo remoto que reemplaza marcas por sus correspondientes valores remotos."
