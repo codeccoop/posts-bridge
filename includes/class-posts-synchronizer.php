@@ -147,12 +147,15 @@ class Posts_Synchronizer extends Singleton
                 $relation,
                 $backend
             ) {
-                $endpoint = preg_replace(
-                    '/\/$/',
-                    '',
-                    $relation->get_endpoint()
-                );
+                $endpoint = $relation->get_endpoint();
+                $url = parse_url($endpoint);
+                $endpoint = preg_replace('/\/$/', '', $url['path']);
                 $endpoint .= '/' . $foreign_id;
+
+                if (isset($url['query'])) {
+                    $endpoint .= '?' . $url['query'];
+                }
+
                 $endpoint = apply_filters(
                     'posts_bridge_endpoint',
                     $endpoint,

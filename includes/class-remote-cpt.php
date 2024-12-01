@@ -74,9 +74,19 @@ class Remote_CPT
             return $this->remote_data;
         }
 
-        $locale = apply_filters('wpct_i18n_post_language', null, $this->ID, 'locale');
+        $locale = apply_filters(
+            'wpct_i18n_post_language',
+            null,
+            $this->ID,
+            'locale'
+        );
 
-        $this->remote_data = apply_filters('posts_bridge_fetch', $this->http_client->get_data($locale), $this, $locale);
+        $this->remote_data = apply_filters(
+            'posts_bridge_fetch',
+            $this->http_client->get_data($locale),
+            $this,
+            $locale
+        );
         return $this->remote_data;
     }
 
@@ -129,14 +139,29 @@ class Remote_CPT
     {
         $rel = $this->get_relation();
         if ($rel->get_proto() === 'rest') {
-            $endpoint = preg_replace('/\/$/', '', $rel->get_endpoint());
-            $endpoint .= '/' . $this->foreign_id;
-            $endpoint = apply_filters('posts_bridge_endpoint', $endpoint, $this->foreign_id, $this);
+            $endpoint = $rel->get_endpoint();
         } else {
-            $endpoint = Settings::get_setting('posts-bridge', 'rpc-api', 'endpoint');
+            $endpoint = Settings::get_setting(
+                'posts-bridge',
+                'rpc-api',
+                'endpoint'
+            );
         }
 
-        return $endpoint;
+        $url = parse_url($endpoint);
+        $endpoint = preg_replace('/\/$/', '', $url['path']);
+        $endpoint .= '/' . $this->foreign_id;
+
+        if (isset($url['query'])) {
+            $endpoint .= '?' . $url['query'];
+        }
+
+        return apply_filters(
+            'posts_bridge_endpoint',
+            $endpoint,
+            $this->foreign_id,
+            $this
+        );
     }
 
     /**
@@ -162,7 +187,11 @@ class Remote_CPT
     public function get_foreign_id()
     {
         if (empty($this->foreign_id)) {
-            $this->foreign_id = get_post_meta($this->post->ID, self::_foreign_key_handle, true);
+            $this->foreign_id = get_post_meta(
+                $this->post->ID,
+                self::_foreign_key_handle,
+                true
+            );
         }
 
         return $this->foreign_id;

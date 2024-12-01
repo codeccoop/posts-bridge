@@ -85,13 +85,24 @@ class Remote_Relation
         $this->post_type = $data['post_type'];
         $this->backend = $data['backend'];
         $this->model = isset($data['model']) ? $data['model'] : null;
-        $this->endpoint = isset($data['endpoint'])
-            ? $data['endpoint']
-            : Settings::get_setting('posts-bridge', 'rpc-api', 'endpoint');
+        $this->fields = (array) $data['fields'];
         $this->foreign_key = isset($data['foreign_key'])
             ? $data['foreign_key']
             : 'id';
-        $this->fields = (array) $data['fields'];
+
+        $this->endpoint = (string) (isset($data['endpoint'])
+            ? $data['endpoint']
+            : Settings::get_setting('posts-bridge', 'rpc-api', 'endpoint'));
+
+        if (!empty($this->endpoint)) {
+            $url = parse_url($this->endpoint);
+            if (isset($url['path'])) {
+                $this->endpoint = $url['path'];
+                if (isset($url['query'])) {
+                    $this->endpoint .= '?' . $url['query'];
+                }
+            }
+        }
     }
 
     /**
