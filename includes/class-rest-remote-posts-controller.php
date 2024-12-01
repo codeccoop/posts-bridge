@@ -2,10 +2,10 @@
 
 namespace POSTS_BRIDGE;
 
+use Error;
 use WP_Error;
 use WP_REST_Posts_Controller;
 use WP_REST_Post_Meta_Fields;
-use Exception;
 
 /**
  * REST API Controller for remote posts.
@@ -60,17 +60,32 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         $this->meta = new WP_REST_Post_Meta_Fields($this->post_type);
         $this->register_routes();
 
-        add_filter("rest_pre_insert_{$post_type}", function ($prepared_post, $request) {
-            return $this->filter_prepared_post($prepared_post, $request);
-        }, 10, 2);
+        add_filter(
+            "rest_pre_insert_{$post_type}",
+            function ($prepared_post, $request) {
+                return $this->filter_prepared_post($prepared_post, $request);
+            },
+            10,
+            2
+        );
 
-        add_action("rest_insert_{$post_type}", function ($post, $request, $is_new) {
-            $this->on_rest_insert($post, $request, $is_new);
-        }, 10, 3);
+        add_action(
+            "rest_insert_{$post_type}",
+            function ($post, $request, $is_new) {
+                $this->on_rest_insert($post, $request, $is_new);
+            },
+            10,
+            3
+        );
 
-        add_filter('rest_pre_dispatch', function ($result, $server, $request) {
-            return $this->rest_pre_dispatch($result, $server, $request);
-        }, 10, 3);
+        add_filter(
+            'rest_pre_dispatch',
+            function ($result, $server, $request) {
+                return $this->rest_pre_dispatch($result, $server, $request);
+            },
+            10,
+            3
+        );
     }
 
     /**
@@ -83,7 +98,10 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
     private function is_own_route($request)
     {
         $own_routes = $this->namespace . '/' . $this->rest_base;
-        return preg_match('/' . preg_quote($own_routes, '/') . '/', $request->get_route());
+        return preg_match(
+            '/' . preg_quote($own_routes, '/') . '/',
+            $request->get_route()
+        );
     }
 
     /**
@@ -100,7 +118,11 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             return $prepared_post;
         }
 
-        $relation = apply_filters('posts_bridge_relation', null, $this->post_type);
+        $relation = apply_filters(
+            'posts_bridge_relation',
+            null,
+            $this->post_type
+        );
         $payload = $request->get_json_params();
         foreach ($payload as $field => $value) {
             if ($this->is_alias($field)) {
@@ -129,7 +151,11 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             return;
         }
 
-        $relation = apply_filters('posts_bridge_relation', null, $this->post_type);
+        $relation = apply_filters(
+            'posts_bridge_relation',
+            null,
+            $this->post_type
+        );
         foreach ($relation->get_remote_custom_fields() as $foreign => $name) {
             if (isset($request[$foreign])) {
                 update_post_meta($post->ID, $name, $request[$foreign]);
@@ -139,15 +165,43 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         // Map custom featured media to the request before media handler execution
         foreach ($relation->get_remote_post_fields() as $foreign => $name) {
             if ($name === 'featured_media') {
-                $request->set_param('featured_media', $request[$foreign]);
+                try {
+                    $keys = JSON_Finger::parse($foreign);
+                } catch (Error) {
+                    $keys = [];
+                }
+
+                // Checks if foreign is a json finger
+                if (count($keys) > 1) {
+                    $key = $keys[0];
+                    $alias = $this->alias($key);
+                    // Checks if foreing field is aliased
+                    if (isset($request[$alias])) {
+                        // fix foreign key
+                        $foreign = str_replace($key, $alias, $foreign);
+                    }
+                } else {
+                    // Checks if foreing field is aliased
+                    $alias = $this->alias($foreign);
+                    if (isset($request[$alias])) {
+                        // Overwrite foreig with alias
+                        $foreign = $alias;
+                    }
+                }
+
+                $value = (new JSON_Finger($request->get_params()))->get(
+                    $foreign
+                );
+                $request->set_param('featured_media', $value);
+                break;
             }
         }
 
-        // Unalias featured media if exists
-        $media_alias = $this->alias('featured_media');
-        if (isset($request[$media_alias])) {
-            $request->set_param('featured_media', $request[$media_alias]);
-            unset($request[$media_alias]);
+        // Set default featured if empty
+        if (empty($request['featured_media'])) {
+            $request[
+                'featured_media'
+            ] = Remote_Featured_Media::get_default_thumbnail_id();
         }
 
         $foreign_key = $relation->get_foreign_key();
@@ -158,7 +212,11 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             $foreign_key = $this->alias($foreign_key);
         }
 
-        update_post_meta($post->ID, Remote_CPT::_foreign_key_handle, $request[$foreign_key]);
+        update_post_meta(
+            $post->ID,
+            Remote_CPT::_foreign_key_handle,
+            $request[$foreign_key]
+        );
     }
 
     /**
@@ -185,21 +243,33 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
 
         // check schema conflict ressolutions
         $schema_properties = array_keys($this->get_item_schema()['properties']);
-        $is_processed = array_reduce($schema_properties, function ($is_processed, $property) use ($request) {
-            return $is_processed || !empty($request[$this->alias($property)]);
-        }, false);
+        $is_processed = array_reduce(
+            $schema_properties,
+            function ($is_processed, $property) use ($request) {
+                return $is_processed ||
+                    !empty($request[$this->alias($property)]);
+            },
+            false
+        );
 
         // Exits if request has been processed
         if ($is_processed) {
             return $result;
         }
 
-        $relation = apply_filters('posts_bridge_relation', null, $this->post_type);
+        $relation = apply_filters(
+            'posts_bridge_relation',
+            null,
+            $this->post_type
+        );
         $foreign_key = $relation->get_foreign_key();
 
         // Exits if no foreign key on the payload
         if (!isset($request[$foreign_key])) {
-            return new WP_Error('required_foreign_key', __('Remote CPT foreign key is unkown', 'posts-bridge'));
+            return new WP_Error(
+                'required_foreign_key',
+                __('Remote CPT foreign key is unkown', 'posts-bridge')
+            );
         }
 
         // Resolve schema conflicts
