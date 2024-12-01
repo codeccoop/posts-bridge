@@ -41,6 +41,7 @@ build:
   artifacts:
     paths:
       - assets
+      - custom-blocks
 
 package:
   image: javieraviles/zip:latest
