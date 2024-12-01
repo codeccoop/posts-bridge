@@ -1,0 +1,74 @@
+{
+  "translation-revision-date": "YEAR-MO-DA HO:MI+ZONE",
+  "generator": "WP-CLI/2.11.0",
+  "source": "assets/plugin.bundle.js",
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "lang": "es_ES",
+        "plural-forms": "nplurals=2; plural=(n != 1);"
+      },
+      "Remote fields": ["Campos remotos"],
+      "REST API": [""],
+      "Endpoint": [""],
+      "Odoo JSON-RPC": [""],
+      "Database": ["Base de datos"],
+      "User": ["Usuario"],
+      "Password": ["Contrase\u00f1a"],
+      "Add relation": ["A\u00f1adir relaci\u00f3n"],
+      "Posts remote relations": ["Relaciones remotas del post"],
+      "How does it works?": ["Como funciona?"],
+      "Use Gutenberg blocks to build the content of the block.": [
+        "Usa los bloques de Gutenberg para construir el contenido del bloc."
+      ],
+      "There where do you want to place some remote value, use the `{{fieldName}}` marks. It doesn't matter where do you place marks, inside a paragraph, or maybe in a link, feel free to play with it.": [
+        "All\u00ed donde quieras poner algun valor remoto, usa la marca `{{nombreDelCampo}}. No importa donde la pongas, dentro de un par\u00e1grafo, quiz\u00e1s en un enlace, sientete libre para jugar."
+      ],
+      "Then, when the block is rendered, this marks will be replaced with its corresponding remote value.": [
+        "Finalmente, cuando el bloque se renderice, estas marcas seran substituidas por sus respectivos valores remotos."
+      ],
+      "Registered remote fields": ["Campots remotos registrados"],
+      "Add": ["A\u00f1adir"],
+      "Post type": ["Tipo de post"],
+      "Backend": [""],
+      "Map fields": ["Mapa de campos"],
+      "Remove relation": ["Borrar relaci\u00f3n"],
+      "Remove": ["Borrar"],
+      "Model": ["Modelo"],
+      "Error": [""],
+      "Save": ["Guardar"],
+      "Post fields": ["Campos del post"],
+      "Foreign field name": ["Nombre de la clave for\u00e1nea"],
+      "Custom fields": ["Campos personalizados"],
+      "Custom field name": ["Nombre del campo personalizado"],
+      "Drop": ["Descartar"],
+      "Done": ["Hecho"],
+      "Synchronize": ["Sincronizar"],
+      "Run a full synchronization": ["Correr una sincronizaci\u00f3n completa"],
+      "Normal, or light, synchronizations only fetches new remote models data. If do you want to update all your content, you should trigger a full synchronization. This may take a while.": [
+        "La sincronizaci\u00f3n ligera solo consulta los datos de los nuevos modelos del backend. Si quieres actualizar todo tu contenido, deber\u00e1s disparar una sincronizaci\u00f3n completa. Esto puede llevar un tiempo"
+      ],
+      "Automatic syncrhonization": ["Sincronizaci\u00f3n autom\u00e1tica"],
+      "Allow scheduled pull strategy syncrhonization. WordPress will check the remote sources for updates and update its indices. This strategy can cause performance issues if you have large backend models collections": [
+        "Permite la estrategia de sincronizaci\u00f3n por consulta. WordPress comprobar\u00e1 las actualizaciones de contenido remote y actualizar\u00e1 sus \u00edndices. Esta estrategia puede probocar problemas de rendimiento si tus colecciones de datos del backend son muy grandes"
+      ],
+      "Recurrence": ["Recurr\u00e9ncia"],
+      "Posts remote relations": ["Relaciones remotas del post"],
+      "Add Backend": ["A\u00f1adir backend"],
+      "Backends": [""],
+      "Foreign key": ["Clave for\u00e1nea"],
+      "Map fields": ["Mapa de campos"],
+      "General": [""],
+      "Syncrhonization": ["Sincronizaci\u00f3n"],
+      "Remote": ["Remoto"],
+      "Block connections from unkown origins": [
+        "Bloquear conexiones de origenes desconocidos"
+      ],
+      "Should Posts Bridge block requests from origins not listed as backends? If active, incomming connections should include HTTP Origin header": [
+        "Posts Bridge ha de bloquear peticiones de origenes no listados como backends? Si es as\u00ed, las peticiones entrantes deber\u00e1n incluir la cabecera HTTP Origin"
+      ]
+    }
+  }
+}

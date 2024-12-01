@@ -1,0 +1,71 @@
+{
+  "translation-revision-date": "YEAR-MO-DA HO:MI+ZONE",
+  "generator": "WP-CLI/2.11.0",
+  "source": "assets/plugin.bundle.js",
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "lang": "en_US",
+        "plural-forms": "nplurals=2; plural=(n != 1);"
+      },
+      "Remote fields": [""],
+      "REST API": [""],
+      "Endpoint": [""],
+      "Odoo JSON-RPC": [""],
+      "Database": [""],
+      "User": [""],
+      "Password": [""],
+      "Add relation": [""],
+      "Posts remote relations": [""],
+      "How does it works?": [""],
+      "Use Gutenberg blocks to build the content of the block.": [""],
+      "There where do you want to place some remote value, use the `{{fieldName}}` marks. It doesn't matter where do you place marks, inside a paragraph, or maybe in a link, feel free to play with it.": [
+        ""
+      ],
+      "Then, when the block is rendered, this marks will be replaced with its corresponding remote value.": [
+        ""
+      ],
+      "Registered remote fields": [""],
+      "Add": [""],
+      "Add relation": [""],
+      "Post type": [""],
+      "Backend": [""],
+      "Map fields": [""],
+      "Remove relation": [""],
+      "Remove": [""],
+      "Model": [""],
+      "Error": [""],
+      "Save": [""],
+      "Post fields": [""],
+      "Foreign field name": [""],
+      "Custom fields": [""],
+      "Custom field name": [""],
+      "Drop": [""],
+      "Done": [""],
+      "Synchronize": [""],
+      "Run a full synchronization": [""],
+      "Normal, or light, synchronizations only fetches new remote models data. If do you want to update all your content, you should trigger a full synchronization. This may take a while.": [
+        ""
+      ],
+      "Automatic syncrhonization": [""],
+      "Allow scheduled pull strategy syncrhonization. WordPress will check the remote sources for updates and update its indices. This strategy can cause performance issues if you have large backend models collections": [
+        ""
+      ],
+      "Recurrence": [""],
+      "Posts remote relations": [""],
+      "Add Backend": [""],
+      "Backends": [""],
+      "Foreign key": [""],
+      "Map fields": [""],
+      "General": [""],
+      "Syncrhonization": [""],
+      "Remote": [""],
+      "Block connections from unkown origins": [""],
+      "Should HTTP Bridge block requests from origins not listed as backends? If active, incomming connections should include HTTP Origin header": [
+        ""
+      ]
+    }
+  }
+}

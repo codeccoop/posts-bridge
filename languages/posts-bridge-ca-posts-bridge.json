@@ -1,0 +1,74 @@
+{
+  "translation-revision-date": "YEAR-MO-DA HO:MI+ZONE",
+  "generator": "WP-CLI/2.11.0",
+  "source": "assets/plugin.bundle.js",
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "lang": "ca",
+        "plural-forms": "nplurals=2; plural=(n != 1);"
+      },
+      "Remote fields": ["Camps remots"],
+      "REST API": [""],
+      "Endpoint": [""],
+      "Odoo JSON-RPC": [""],
+      "Database": ["Base de dades"],
+      "User": ["Usuari"],
+      "Password": ["Contrasenya"],
+      "Add relation": ["Afegir relaci\u00f3"],
+      "Posts remote relations": ["Relacions remotes dels posts"],
+      "How does it works?": ["Com funciona?"],
+      "Use Gutenberg blocks to build the content of the block.": [
+        "Fes servir els blocs de Gutenberg per construir el contingut del bloc."
+      ],
+      "There where do you want to place some remote value, use the `{{fieldName}}` marks. It doesn't matter where do you place marks, inside a paragraph, or maybe in a link, feel free to play with it.": [
+        "All\u00e0 on vulguis posar algun valor remot, fes servir la marca `{{nomDelCamp}}. No importa on la posis, dins d'un par\u00e0graf, o potser en un enlla\u00e7, juga lliurement amb ella."
+      ],
+      "Then, when the block is rendered, this marks will be replaced with its corresponding remote value.": [
+        "Aleshores, quan el bloc es renderitzi, aquestes marquest seran substituides pels seus corresponents valors remots."
+      ],
+      "Registered remote fields": ["Camps remots registrats"],
+      "Add": ["Afegir"],
+      "Post type": ["Tipus de post"],
+      "Backend": [""],
+      "Map fields": ["Mapa de camps"],
+      "Remove relation": ["Esborrar relaci\u00f3"],
+      "Remove": ["Esborrar"],
+      "Model": [""],
+      "Error": [""],
+      "Save": ["Guardar"],
+      "Post fields": ["Camps del post"],
+      "Foreign field name": ["Nom del camp for\u00e0"],
+      "Custom fields": ["Camps personalitzats"],
+      "Custom field name": ["Nom del camp personalitzat"],
+      "Drop": ["Descartar"],
+      "Done": ["Fet"],
+      "Synchronize": ["Sincronitzar"],
+      "Run a full synchronization": ["Correr una sincronitzaci\u00f3 completa"],
+      "Normal, or light, synchronizations only fetches new remote models data. If do you want to update all your content, you should trigger a full synchronization. This may take a while.": [
+        "La sincronitzaci\u00f3 lleugera nom\u00e9s consulta les dades dels nous models del backend. Si vols actualitzar tot el teu contingut, haur\u00e0s de disparar una sincronitzaci\u00f3 completa. Aix\u00f2 pot trigar una estona"
+      ],
+      "Automatic syncrhonization": ["Sincronitzaci\u00f3 autom\u00e0tica"],
+      "Allow scheduled pull strategy syncrhonization. WordPress will check the remote sources for updates and update its indices. This strategy can cause performance issues if you have large backend models collections": [
+        "Permet la estrategia de sincronitzaci\u00f3 per consulta. WordPress comprobar\u00e0 les actualitzaciones de contingut remote i actualitzar\u00e0 els seus index. Aquesta estrat\u00e8gia pot provocar problemes de rendiment si les colleccions de dades del teu backend s\u00f3n molt grans"
+      ],
+      "Recurrence": ["Recurr\u00e8ncia"],
+      "Posts remote relations": ["Relacions remotes dels posts"],
+      "Add Backend": ["Afegir backend"],
+      "Backends": [""],
+      "Foreign key": ["Clau forana"],
+      "Map fields": ["Mapa de camps"],
+      "General": [""],
+      "Syncrhonization": ["Sincronitzaci\u00f3"],
+      "Remote": ["Remot"],
+      "Block connections from unkown origins": [
+        "Bloquejar connexions d'origens desconeguts"
+      ],
+      "Should Posts Bridge block requests from origins not listed as backends? If active, incomming connections should include HTTP Origin header": [
+        "Posts Bridge ha de bloquejar peticions d'origens no llistas com a backends? Si \u00e9s aix\u00ed, les peticions entrants hauran d'incloure la cap\u00e7alera HTTP Origin"
+      ]
+    }
+  }
+}
