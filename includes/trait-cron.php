@@ -108,19 +108,32 @@ trait Cron
 
         if ($next_schedule) {
             if ($next_schedule > $timestamp) {
-                wp_unschedule_event($next_schedule, self::$schedule_hook, $payload);
+                wp_unschedule_event(
+                    $next_schedule,
+                    self::$schedule_hook,
+                    $payload
+                );
                 $next_schedule = null;
             }
 
             $schedule = wp_get_schedule(self::$schedule_hook, $payload);
             if ($schedule !== $recurrence) {
-                wp_unschedule_event($next_schedule, self::$schedule_hook, $payload);
+                wp_unschedule_event(
+                    $next_schedule,
+                    self::$schedule_hook,
+                    $payload
+                );
                 $next_schedule = null;
             }
         }
 
         if (!$next_schedule) {
-            wp_schedule_event($timestamp, $recurrence, self::$schedule_hook, $payload);
+            wp_schedule_event(
+                $timestamp,
+                $recurrence,
+                self::$schedule_hook,
+                $payload
+            );
         }
     }
 
@@ -139,7 +152,7 @@ trait Cron
      * Registers custom wp schedules.
      *
      * @param array<string, array> $schedules New schedules to register.
-     * 
+     *
      * @return Array with custom schedules registerefs.
      */
     public static function register_custom_schedules($schedules)
@@ -147,6 +160,11 @@ trait Cron
         $schedules['minutly'] = [
             'interval' => 60,
             'display' => __('Minutly', 'posts-bridge'),
+        ];
+
+        $schedules['quarterly'] = [
+            'interval' => 60 * 15,
+            'display' => __('Quarterly', 'posts-bridge'),
         ];
 
         $schedules['twicehourly'] = [

@@ -40,6 +40,7 @@ require_once 'includes/class-posts-synchronizer.php';
 require_once 'includes/class-rest-remote-posts-controller.php';
 require_once 'includes/class-remote-relation.php';
 require_once 'includes/class-remote-featured-media.php';
+require_once 'includes/class-json-finger.php';
 
 require_once 'includes/trait-cron.php';
 require_once 'includes/trait-translations.php';
@@ -95,7 +96,7 @@ class Posts_Bridge extends BasePlugin
     public static function activate()
     {
         Posts_Bridge::setup_default_thumbnail();
-        (Posts_Synchronizer::get_instance())->schedule();
+        Posts_Synchronizer::get_instance()->schedule();
     }
 
     /**
@@ -128,7 +129,10 @@ class Posts_Bridge extends BasePlugin
             }
         }
 
-        $static_path = apply_filters('posts_bridge_default_thumbnail', plugin_dir_path(__FILE__) . 'assets/posts-bridge-thumbnail.webp');
+        $static_path = apply_filters(
+            'posts_bridge_default_thumbnail',
+            plugin_dir_path(__FILE__) . 'assets/posts-bridge-thumbnail.webp'
+        );
 
         $filename = basename($static_path);
 
@@ -151,18 +155,27 @@ class Posts_Bridge extends BasePlugin
             $filetype['type'] = mime_content_type($filepath);
         }
 
-        $attachment_id = wp_insert_attachment([
-            'post_mime_type' => $filetype['type'],
-            'post_title' => 'posts-bridge-thumbnail',
-            'post_content' => '',
-            'post_status' => 'inherit',
-        ], $filepath);
+        $attachment_id = wp_insert_attachment(
+            [
+                'post_mime_type' => $filetype['type'],
+                'post_title' => 'posts-bridge-thumbnail',
+                'post_content' => '',
+                'post_status' => 'inherit',
+            ],
+            $filepath
+        );
 
-        require_once(ABSPATH . 'wp-admin/includes/image.php');
-        $attach_data = wp_generate_attachment_metadata($attachment_id, $filepath);
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+        $attach_data = wp_generate_attachment_metadata(
+            $attachment_id,
+            $filepath
+        );
         wp_update_attachment_metadata($attachment_id, $attach_data);
 
-        add_option(Remote_Featured_Media::_default_thumbnail_handle, $attachment_id);
+        add_option(
+            Remote_Featured_Media::_default_thumbnail_handle,
+            $attachment_id
+        );
     }
 
     /**
@@ -203,16 +216,23 @@ class Posts_Bridge extends BasePlugin
         // Initalize REST controllers on API init
         add_action('rest_api_init', function () {
             foreach (Settings::get_post_types() as $post_type) {
-                $this->rest_controllers[$post_type] = new REST_Remote_Posts_Controller($post_type);
+                $this->rest_controllers[
+                    $post_type
+                ] = new REST_Remote_Posts_Controller($post_type);
             }
         });
 
         // Filter REST Requests before dispatch
-        add_filter('rest_pre_dispatch', function ($result, $server, $request) {
-            foreach (array_values($this->rest_controllers) as $controller) {
-                $controller->rest_pre_dispatch($result, $server, $request);
-            }
-        }, 10, 3);
+        add_filter(
+            'rest_pre_dispatch',
+            function ($result, $server, $request) {
+                foreach (array_values($this->rest_controllers) as $controller) {
+                    $controller->rest_pre_dispatch($result, $server, $request);
+                }
+            },
+            10,
+            3
+        );
 
         $this->synchronizer = Posts_Synchronizer::get_instance();
         $this->sync_http_settings();
@@ -236,18 +256,23 @@ class Posts_Bridge extends BasePlugin
         });
 
         // Syncronize plugin settings with http bridge settings
-        add_action('updated_option', function ($option, $from, $to) {
-            if ($option !== 'posts-bridge_general') {
-                return;
-            }
+        add_action(
+            'updated_option',
+            function ($option, $from, $to) {
+                if ($option !== 'posts-bridge_general') {
+                    return;
+                }
 
-            $http_setting = Settings::get_setting('http-bridge', 'general');
-            foreach (['backends', 'whitelist'] as $key) {
-                $http_setting[$key] = $to[$key];
-            }
+                $http_setting = Settings::get_setting('http-bridge', 'general');
+                foreach (['backends', 'whitelist'] as $key) {
+                    $http_setting[$key] = $to[$key];
+                }
 
-            update_option('http-bridge_general', $http_setting);
-        }, 10, 3);
+                update_option('http-bridge_general', $http_setting);
+            },
+            10,
+            3
+        );
     }
 
     /**
@@ -274,14 +299,24 @@ class Posts_Bridge extends BasePlugin
         );
 
         // Store global remote cpts
-        add_action('the_post', function ($post) {
-            $this->the_post($post);
-        }, 10, 2);
+        add_action(
+            'the_post',
+            function ($post) {
+                $this->the_post($post);
+            },
+            10,
+            2
+        );
 
         // Translate remote cpts on updates
-        add_action('wp_insert_post', function ($post_id, $post, $update) {
-            $this->translate_post($post_id, $post, $update);
-        }, 90, 3);
+        add_action(
+            'wp_insert_post',
+            function ($post_id, $post, $update) {
+                $this->translate_post($post_id, $post, $update);
+            },
+            90,
+            3
+        );
 
         // Hide remote cpts from admin menu
         // add_action('admin_menu', function () {
@@ -309,33 +344,53 @@ class Posts_Bridge extends BasePlugin
      */
     private function custom_hooks()
     {
-        add_filter('posts_bridge_remote_cpts', function ($default, $proto = null) {
-            return Settings::get_post_types($proto);
-        }, 10, 2);
+        add_filter(
+            'posts_bridge_remote_cpts',
+            function ($default, $proto = null) {
+                return Settings::get_post_types($proto);
+            },
+            10,
+            2
+        );
 
         add_filter('posts_bridge_is_remote', function () {
             global $remote_cpt;
             return !empty($remote_cpt);
         });
 
-        add_filter('posts_bridge_relation', function ($default, $post_type) {
-            $relations = Settings::get_relations();
-            foreach ($relations as $rel) {
-                if ($rel->get_post_type() === $post_type) {
-                    return $rel;
+        add_filter(
+            'posts_bridge_relation',
+            function ($default, $post_type) {
+                $relations = Settings::get_relations();
+                foreach ($relations as $rel) {
+                    if ($rel->get_post_type() === $post_type) {
+                        return $rel;
+                    }
                 }
-            }
 
-            return null;
-        }, 10, 2);
+                return null;
+            },
+            10,
+            2
+        );
 
-        add_filter('posts_bridge_relations', function ($default, $proto = null) {
-            return Settings::get_relations($proto);
-        }, 10, 2);
+        add_filter(
+            'posts_bridge_relations',
+            function ($default, $proto = null) {
+                return Settings::get_relations($proto);
+            },
+            10,
+            2
+        );
 
-        add_filter('posts_bridge_backend', function ($default, $name) {
-            return apply_filters('http_bridge_backend', $default, $name);
-        }, 10, 2);
+        add_filter(
+            'posts_bridge_backend',
+            function ($default, $name) {
+                return apply_filters('http_bridge_backend', $default, $name);
+            },
+            10,
+            2
+        );
 
         add_filter('posts_bridge_backends', function () {
             return apply_filters('http_bridge_backends');
@@ -376,15 +431,11 @@ class Posts_Bridge extends BasePlugin
             plugin_dir_path(__FILE__) . 'languages'
         );
 
-        wp_localize_script(
-            $this->get_textdomain(),
-            '_postsBridgeAjax',
-            [
-                'url' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('posts-bridge-ajax-sync'),
-                'action' => 'posts_bridge_sync',
-            ],
-        );
+        wp_localize_script($this->get_textdomain(), '_postsBridgeAjax', [
+            'url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('posts-bridge-ajax-sync'),
+            'action' => 'posts_bridge_sync',
+        ]);
 
         wp_enqueue_style('wp-components');
     }
@@ -457,16 +508,20 @@ class Posts_Bridge extends BasePlugin
 
         // Exit if no fields is defined
         if (empty($fields)) {
-            return  $content;
+            return $content;
         } else {
             $fields = array_map(function ($field) {
                 return trim($field);
             }, explode(',', $fields));
         }
 
-        $is_empty = array_reduce($fields, function ($handle, $field) use ($remote_cpt) {
-            return $handle || $remote_cpt->get($field) === null;
-        }, false);
+        $is_empty = array_reduce(
+            $fields,
+            function ($handle, $field) use ($remote_cpt) {
+                return $handle || $remote_cpt->get($field) === null;
+            },
+            false
+        );
 
         // Exit if no field values
         if ($is_empty) {
@@ -483,7 +538,11 @@ class Posts_Bridge extends BasePlugin
             for ($i = 0; $i < count($fields); $i++) {
                 $field = $fields[$i];
                 $value = $values[$i];
-                $content = preg_replace('/{{' . preg_quote($field, '/') . '}}/', $value, $content);
+                $content = preg_replace(
+                    '/{{' . preg_quote($field, '/') . '}}/',
+                    $value,
+                    $content
+                );
             }
 
             return $content;
@@ -509,7 +568,11 @@ class Posts_Bridge extends BasePlugin
     private function the_post($post)
     {
         global $remote_cpt;
-        if (empty($post) || !$post->ID || !in_array($post->post_type, Settings::get_post_types())) {
+        if (
+            empty($post) ||
+            !$post->ID ||
+            !in_array($post->post_type, Settings::get_post_types())
+        ) {
             $remote_cpt = null;
         } else {
             $remote_cpt = new Remote_CPT($post);
@@ -549,7 +612,10 @@ class Posts_Bridge extends BasePlugin
 
         // If post is published, then translate it
         if ($post->post_status === 'publish') {
-            self::detach('\POSTS_BRIDGE\_posts_bridge_do_translations', $post_id);
+            self::detach(
+                '\POSTS_BRIDGE\_posts_bridge_do_translations',
+                $post_id
+            );
         }
     }
 }
@@ -574,7 +640,6 @@ add_action('plugins_loaded', function () {
     Posts_Bridge::start();
 });
 
-
 // Bind detached hook to detached tasks
 add_action(Posts_Bridge::$detach_hook, function () {
     Posts_Bridge::do_detacheds();
@@ -587,7 +652,7 @@ add_action(Posts_Bridge::$schedule_hook, function () {
 });
 
 /**
-* Handle global Remote_CPT instances.
+ * Handle global Remote_CPT instances.
  *
  * @var Remote_CPT|null $remote_cpt Global Remote_CPT instance.
  */

@@ -61,6 +61,9 @@ class Posts_Synchronizer extends Singleton
                 case 'minutly':
                     $next_run += 60;
                     break;
+                case 'quarterly':
+                    $next_run += 60 * 15;
+                    break;
                 case 'twicehourly':
                     $next_run += 60 * 30;
                     break;
@@ -133,8 +136,8 @@ class Posts_Synchronizer extends Singleton
             return false;
         }
 
-        $foreign_ids = array_map(function ($model) use ($relation) {
-            return $model[$relation->get_foreign_key()];
+        $foreign_ids = array_map(static function ($model) use ($relation) {
+            return (new JSON_Finger($model))->get($relation->get_foreign_key());
         }, $models);
 
         return $this->sync_posts(

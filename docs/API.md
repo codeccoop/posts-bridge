@@ -1,5 +1,82 @@
 # API
 
+## Shortcodes
+
+### `posts_bridge_remote_field`
+
+Replace a post's remote field value inside the content string.
+
+#### Arguments
+
+1. `string $field`: Field name.
+2. `string $content`: Content with replace mark with your field name.
+
+#### Returns
+
+1. `string $content`: The content with marks replaced with the remote values.
+
+#### Example
+
+```php
+$field = 'price';
+$content = '<p><b>{{price}}</b></p>';
+do_shortcode("[remote_field field='<?= $field ?>']<?= $content ?>[remote_field]'");
+```
+
+### `posts_bridge_remote_fields`
+
+Replace many post's remote field values inside the content string.
+
+#### Arguments
+
+1. `string $fields`: Comma separated list of field names.
+2. `string $content`: Content with replace marks with your field names.
+
+#### Returns
+
+1. `string $content`: The content with marks replaced with the remote values.
+
+#### Example
+
+```php
+$fields = 'firstname,lastname';
+$content = '<p>{{lastname}}, {{firstname}}</p>';
+do_shortcode("[remote_fields fields='<?= $fields ?>']<?= $content ?>[remote_fields]'");
+```
+
+### `posts_bridge_remote_callback`
+
+Gets post's remote fields and pass its value as input parameters to the callback.
+Use it if do you want to render complex data values.
+
+#### Arguments
+
+1. `string $fn`: Name of a global available callback function. Callback will recive the
+parammeters: `Remote_CPT $rcpt` with the Remote CPT instance, `array $atts` with the
+shortcode attributes, and `string $content` with the shortcode content.
+2. `string $content`: Optional, content to be passed to the callback.
+
+#### Returns
+
+Returns the output of the callback function.
+
+#### Example
+
+```php
+$content = '<p>My Tags</p>';
+function remote_callback($rcpt, $atts, $content) {
+	$tags = $rcpt->get('tags');
+	$content .= '<ul>';
+	foreach ($tags as $tag) {
+		$content .= '<li>' . $tag . '</li>';
+	}
+	$content .= '</ul>';
+	return '<div class="tags">' . $content . '</div>';
+}
+
+do_shortcode("[remote_callback fn="remote_callback"]<?= $content ?>[remote_callback]");
+```
+
 ## Getters
 
 ### `posts_bridge_is_remote`
