@@ -19,7 +19,7 @@ class JSON_Finger
     private $data;
 
     /**
-     * Parse a finger selector and returns it as an array of keys.
+     * Parse a json finger and returns it as an array of keys.
      *
      * @param string $finger JSON finger.
      *
@@ -85,6 +85,11 @@ class JSON_Finger
         return $keys;
     }
 
+    /**
+     * Binds data to the handler instance.
+     *
+     * @param array $data Target data.
+     */
     public function __construct($data)
     {
         if (!is_array($data)) {
@@ -94,6 +99,13 @@ class JSON_Finger
         $this->data = $data;
     }
 
+    /**
+     * Proxy handler attributes to the data.
+     *
+     * @param string $name Attribute name.
+     *
+     * @return mixed Attribute value or null.
+     */
     public function __get($name)
     {
         if (isset($this->data[$name])) {
@@ -101,16 +113,34 @@ class JSON_Finger
         }
     }
 
+    /**
+     * Proxy handler attribute updates to the data.
+     *
+     * @param string $name Attribute name.
+     * @param mixed $value Attribute value.
+     */
     public function __set($name, $value)
     {
         $this->data[$name] = $value;
     }
 
+    /**
+     * Returns de current data.
+     *
+     * @return array Current data.
+     */
     public function data()
     {
         return $this->data;
     }
 
+    /**
+     * Gets the attribute from the data.
+     *
+     * @param string $finger JSON finger.
+     *
+     * @return mixed Attribute value.
+     */
     public function get($finger)
     {
         if ($this->$finger) {
@@ -137,6 +167,15 @@ class JSON_Finger
         return $value;
     }
 
+    /**
+     * Sets the attribute value on the data.
+     *
+     * @param string $finger JSON finger.
+     * @param mixed $value Attribute value.
+     * @param boolean $unset If true, unsets the attribute.
+     *
+     * @return array Data after the attribute update.
+     */
     public function set($finger, $value, $unset = false)
     {
         if ($this->$finger) {
@@ -181,13 +220,25 @@ class JSON_Finger
         return $data;
     }
 
+    /**
+     * Unsets the attribute from the data.
+     *
+     * @param string $finger JSON finger.
+     */
     public function unset($finger)
     {
         return $this->set($finger, null, true);
     }
 
-    public function isset($name)
+    /**
+     * Checks if the json finger is set on the data.
+     *
+     * @param string $finger JSON finger.
+     *
+     * @return boolean True if attribute is set.
+     */
+    public function isset($finger)
     {
-        return !empty($this->get($name));
+        return !empty($this->get($finger));
     }
 }
