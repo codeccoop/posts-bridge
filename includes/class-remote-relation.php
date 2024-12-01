@@ -233,6 +233,7 @@ class Remote_Relation
      */
     public function map_remote_fields($data)
     {
+        $finger = new JSON_Finger($data);
         $remote_fields = $this->get_remote_fields();
 
         foreach ($remote_fields as $foreign => $name) {
@@ -240,12 +241,14 @@ class Remote_Relation
                 continue;
             }
 
-            if (!empty($data[$foreign])) {
-                $data[$name] = $data[$foreign];
+            if ($value = $finger->get($foreign)) {
+                $finger->set($name, $value);
             }
 
-            unset($data[$foreign]);
+            $finger->unset($foreign);
         }
+
+        $data = $finger->data();
 
         // standarize ID field
         if (isset($data['post_ID'])) {
