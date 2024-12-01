@@ -61,6 +61,9 @@ class Posts_Synchronizer extends Singleton
                 case 'minutly':
                     $next_run += 60;
                     break;
+                case 'quarterly':
+                    $next_run += 60 * 15;
+                    break;
                 case 'twicehourly':
                     $next_run += 60 * 30;
                     break;
