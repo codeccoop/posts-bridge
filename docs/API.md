@@ -1,5 +1,12 @@
 # API
 
+## Table of Contents
+
+1. [Shortcodes](#shortcodes)
+2. [Getters](#getters)
+3. [Filters](#filters)
+4. [Actions](#actions)
+
 ## Shortcodes
 
 ### `posts_bridge_remote_field`
@@ -46,8 +53,7 @@ do_shortcode("[remote_fields fields='<?= $fields ?>']<?= $content ?>[remote_fiel
 
 ### `posts_bridge_remote_callback`
 
-Gets post's remote fields and pass its value as input parameters to the callback.
-Use it if do you want to render complex data values.
+Gets post's remote cpt instance and pass its as input to the callback. Use it if do you want to render complex data values.
 
 #### Arguments
 
@@ -74,7 +80,7 @@ function remote_callback($rcpt, $atts, $content) {
 	return '<div class="tags">' . $content . '</div>';
 }
 
-do_shortcode("[remote_callback fn="remote_callback"]<?= $content ?>[remote_callback]");
+do_shortcode('[remote_callback fn="remote_callback"]<?= $content ?>[remote_callback]');
 ```
 
 ## Getters
