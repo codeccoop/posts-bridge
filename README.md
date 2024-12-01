@@ -95,9 +95,24 @@ fits the post schema, or as custom fields.
 ### JSON Fingers
 
 The remote field's mappers supports JSON Fingers as foreign attribute names. A JSON Finger
-is a hierarchical selector of array attributes like `children[0].name.rendered`. The former
-will get the attribute `rendered` from the array `name` inside the first `child` in the
-array `children`. Use this fingers to get your attributes from your backend payloads.
+is a hierarchical pointer to array attributes like `children[0].name.rendered`. The former
+will point to the attribute `rendered` from the array `name` inside the first `child` in
+the array `children`. Use this fingers to get your attributes from your backend payloads.
+
+For example, if your backend send a payload like this:
+
+```
+[
+	'id' => 1,
+	'contact' => [
+		2,
+		'Bob',
+	],
+];
+```
+
+Then you can set your `contact_name` remote field's foreign key as `contact[1]` and the
+finger will set `Bob` as its value as the post custom field.
 
 ## Custom Blocks
 
