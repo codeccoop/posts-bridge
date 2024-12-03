@@ -32,6 +32,11 @@ export default function Relations({ relations, setRelations }) {
       .slice(0, index)
       .concat([data])
       .concat(relations.slice(index + 1, relations.length));
+
+    newRelations.forEach((rel) => {
+      delete rel.name;
+      delete rel.title;
+    });
     setRelations(newRelations);
   };
 
