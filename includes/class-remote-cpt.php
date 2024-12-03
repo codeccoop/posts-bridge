@@ -123,8 +123,9 @@ class Remote_CPT
             return $default;
         }
 
-        if (isset($data[$attr])) {
-            return $data[$attr];
+        $finger = new JSON_Finger($data);
+        if ($value = $finger->get($attr)) {
+            return $value;
         }
 
         return $default;
