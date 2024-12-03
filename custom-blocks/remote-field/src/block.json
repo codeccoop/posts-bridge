@@ -11,11 +11,6 @@
     "anchor": true,
     "html": false
   },
-  "attributes": {
-    "remotes": {
-      "type": "string"
-    }
-  },
   "usesContext": ["postId", "postType"],
   "textdomain": "posts-bridge",
   "editorScript": "file:./index.js",
