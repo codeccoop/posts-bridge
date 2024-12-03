@@ -246,7 +246,7 @@ class Posts_Bridge extends BasePlugin
     private function sync_http_settings()
     {
         // Patch http bridge settings to plugin settings
-        add_filter('option_posts-bridge_general', function ($value) {
+        add_filter('option_posts-bridge_general', static function ($value) {
             $http_setting = Settings::get_setting('http-bridge', 'general');
             foreach (['backends', 'whitelist'] as $key) {
                 $value[$key] = $http_setting[$key];
@@ -255,20 +255,34 @@ class Posts_Bridge extends BasePlugin
             return $value;
         });
 
-        // Syncronize plugin settings with http bridge settings
+        // Syncronize plugin settings with http bridge settings on option updates
+        function _posts_bridge_http_sync($option, $to)
+        {
+            if ($option !== 'posts-bridge_general') {
+                return;
+            }
+
+            $http_setting = Settings::get_setting('http-bridge', 'general');
+            foreach (['backends', 'whitelist'] as $key) {
+                $http_setting[$key] = $to[$key];
+            }
+
+            update_option('http-bridge_general', $http_setting);
+        }
+
+        add_action(
+            'add_option',
+            static function ($option, $to) {
+                _posts_bridge_http_sync($option, $to);
+            },
+            10,
+            2
+        );
+
         add_action(
             'updated_option',
-            function ($option, $from, $to) {
-                if ($option !== 'posts-bridge_general') {
-                    return;
-                }
-
-                $http_setting = Settings::get_setting('http-bridge', 'general');
-                foreach (['backends', 'whitelist'] as $key) {
-                    $http_setting[$key] = $to[$key];
-                }
-
-                update_option('http-bridge_general', $http_setting);
+            static function ($option, $from, $to) {
+                _posts_bridge_http_sync($option, $to);
             },
             10,
             3
@@ -449,19 +463,9 @@ class Posts_Bridge extends BasePlugin
             return;
         }
 
-        // Single field shortcode as proxy to the plural shortcode
-        add_shortcode('remote_field', function ($atts, $content = '') {
-            if (!isset($atts['field'])) {
-                return $content;
-            }
-            $atts['fields'] = $atts['field'];
-            unset($atts['field']);
-            return $this->do_shortcode($atts, $content);
-        });
-
         // Multi field shortcode
         add_shortcode('remote_fields', function ($atts, $content = '') {
-            return $this->do_shortcode($atts, $content);
+            return $this->do_shortcode($content);
         });
 
         // Callback shortcode, allow execution of arbitrary global functions
@@ -491,11 +495,10 @@ class Posts_Bridge extends BasePlugin
     /**
      * Do the `remote_field` shortcode fetching remote data of the current Remote CPT
      *
-     * @param array $atts Shortcode attributes.
      * @param string $content Shortcode content.
      * @return string $html Rendered output.
      */
-    private function do_shortcode($atts, $content)
+    private function do_shortcode($content)
     {
         global $remote_cpt;
 
@@ -504,21 +507,31 @@ class Posts_Bridge extends BasePlugin
             return $content;
         }
 
-        $fields = isset($atts['fields']) ? $atts['fields'] : null;
+        preg_match_all('/{{([^}]+)}}/', $content, $matches);
+        if (empty($matches)) {
+            return $content;
+        }
+
+        $fields = array_values(
+            array_filter(
+                array_map(static function ($match) {
+                    return trim($match);
+                }, $matches[1]),
+                static function ($field) {
+                    return $field;
+                }
+            )
+        );
 
         // Exit if no fields is defined
         if (empty($fields)) {
             return $content;
-        } else {
-            $fields = array_map(function ($field) {
-                return trim($field);
-            }, explode(',', $fields));
         }
 
         $is_empty = array_reduce(
             $fields,
             function ($handle, $field) use ($remote_cpt) {
-                return $handle || $remote_cpt->get($field) === null;
+                return $handle && $remote_cpt->get($field) === null;
             },
             false
         );
@@ -537,7 +550,7 @@ class Posts_Bridge extends BasePlugin
             // Replace anchors on the shortcode content with values
             for ($i = 0; $i < count($fields); $i++) {
                 $field = $fields[$i];
-                $value = $values[$i];
+                $value = (string) $values[$i];
                 $content = preg_replace(
                     '/{{' . preg_quote($field, '/') . '}}/',
                     $value,
