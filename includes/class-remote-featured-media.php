@@ -58,7 +58,10 @@ class Remote_Featured_Media
             return 'id';
         } elseif (filter_var($src, FILTER_VALIDATE_URL)) {
             return 'url';
-        } elseif (is_string($src) && base64_encode(base64_decode($src)) === $src) {
+        } elseif (
+            is_string($src) &&
+            base64_encode(base64_decode($src)) === $src
+        ) {
             return 'base64';
         } else {
             return null;
@@ -93,7 +96,7 @@ class Remote_Featured_Media
      *
      * @return int Generated attachment ID.
      */
-    public static function handle($src)
+    public static function handle($src, $filename = null)
     {
         if (!empty($src)) {
             $type = self::get_src_type($src);
@@ -102,7 +105,7 @@ class Remote_Featured_Media
                     $attachment_id = self::attach_url($src);
                     break;
                 case 'base64':
-                    $attachment_id =  self::attach_b64($src);
+                    $attachment_id = self::attach_b64($src, $filename);
                     break;
                 case 'id':
                     return (int) $src;
@@ -124,13 +127,9 @@ class Remote_Featured_Media
      * @param string $filename Op
      *
      * @return int|null ID of the created attachment.
-    */
-    public static function attach_b64($src, $filename = null)
+     */
+    private static function attach_b64($src, $filename)
     {
-        if (self::get_src_type($src) !== 'base64') {
-            return null;
-        }
-
         if ($attachment_id = self::memory($src)) {
             return $attachment_id;
         }
@@ -147,7 +146,7 @@ class Remote_Featured_Media
             $filename = 'img_' . time();
         }
 
-        $filepath = get_temp_dir() . '/' . time();
+        $filepath = get_temp_dir() . $filename;
         return self::attach($filepath, $content);
     }
 
@@ -157,13 +156,9 @@ class Remote_Featured_Media
      * @param string $src Image URL.
      *
      * @return int|null ID of the created attachment.
-    */
-    public static function attach_url($src)
+     */
+    private static function attach_url($src)
     {
-        if (self::get_src_type($src) !== 'url') {
-            return null;
-        }
-
         if ($attachment_id = self::memory($src)) {
             return $attachment_id;
         }
@@ -226,12 +221,15 @@ class Remote_Featured_Media
         }
 
         // Creates new attachment
-        $attachment_id = wp_insert_attachment([
-            'post_mime_type' => $filetype['type'],
-            'post_title' => sanitize_title($filename),
-            'post_content' => '',
-            'post_status' => 'inherit',
-        ], $filepath);
+        $attachment_id = wp_insert_attachment(
+            [
+                'post_mime_type' => $filetype['type'],
+                'post_title' => sanitize_title($filename),
+                'post_content' => '',
+                'post_status' => 'inherit',
+            ],
+            $filepath
+        );
 
         // exits if attach process error
         if (is_wp_error($attachment_id)) {
@@ -239,8 +237,11 @@ class Remote_Featured_Media
             return $attachment_id;
         }
 
-        require_once(ABSPATH . 'wp-admin/includes/image.php');
-        $attach_data = wp_generate_attachment_metadata($attachment_id, $filepath);
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+        $attach_data = wp_generate_attachment_metadata(
+            $attachment_id,
+            $filepath
+        );
         wp_update_attachment_metadata($attachment_id, $attach_data);
 
         return $attachment_id;
@@ -250,7 +251,7 @@ class Remote_Featured_Media
      * Store media source as attachment's post meta to recover in future handles.
      *
      * @param int $attachment_id ID of the attachment post type.
-     * @param string $src Featured media source. 
+     * @param string $src Featured media source.
      */
     private static function memorize($attachment_id, $src)
     {
