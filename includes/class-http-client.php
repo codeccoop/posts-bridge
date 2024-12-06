@@ -112,9 +112,9 @@ class HTTP_Client
             $rpc->password,
         ]);
 
-        do_action('posts_bridge_before_rpc_login', $url, $payload, $headers);
+        do_action('posts_bridge_before_rpc_login', $url, $payload);
         $res = http_bridge_post($url, $payload, $headers);
-        do_action('posts_bridge_after_rpc_login', $res);
+        do_action('posts_bridge_after_rpc_login', $res, $url, $payload);
 
         $result = static::rpc_response($res);
 
@@ -172,9 +172,9 @@ class HTTP_Client
         $backend = $this->rcpt->relation()->backend();
         $endpoint = $this->rcpt->endpoint();
 
-        do_action('posts_bridge_before_fetch', $this);
+        do_action('posts_bridge_before_fetch', $endpoint, $this->rcpt);
         $res = $backend->get($endpoint);
-        do_action('posts_bridge_after_fetch', $res, $this);
+        do_action('posts_bridge_after_fetch', $res, $endpoint, $this->rcpt);
 
         if (is_wp_error($res)) {
             return $res;
@@ -215,9 +215,9 @@ class HTTP_Client
             [(int) $this->rcpt->foreign_id()],
         ]);
 
-        do_action('posts_bridge_before_fetch', $this);
+        do_action('posts_bridge_before_fetch', $endpoint, $this->rcpt);
         $res = $backend->post($endpoint, $payload);
-        do_action('posts_bridge_after_fetch', $res, $this);
+        do_action('posts_bridge_after_fetch', $res, $endpoint, $this->rcpt);
 
         return static::rpc_response($res, true);
     }

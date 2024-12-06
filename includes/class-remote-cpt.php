@@ -214,7 +214,7 @@ class Remote_CPT
      *
      * @param string $tax Taxonomy name.
      *
-     * @return array<WP_Term>|WP_Error Terms of the taxonomy attacheds to the post.
+     * @return array|WP_Error Terms of the taxonomy attacheds to the post.
      */
     public function terms($tax)
     {

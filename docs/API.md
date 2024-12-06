@@ -9,46 +9,23 @@
 
 ## Shortcodes
 
-### `posts_bridge_remote_field`
-
-Replace a post's remote field value inside the content string.
-
-#### Arguments
-
-1. `string $field`: Field name.
-2. `string $content`: Content with replace mark with your field name.
-
-#### Returns
-
-1. `string $content`: The content with marks replaced with the remote values.
-
-#### Example
-
-```php
-$field = 'price';
-$content = '<p><b>{{price}}</b></p>';
-do_shortcode("[remote_field field='<?= $field ?>']<?= $content ?>[remote_field]'");
-```
-
 ### `posts_bridge_remote_fields`
 
 Replace many post's remote field values inside the content string.
 
 #### Arguments
 
-1. `string $fields`: Comma separated list of field names.
-2. `string $content`: Content with replace marks with your field names.
+1. `string $content`: Content with replace marks with your field names.
 
 #### Returns
 
-1. `string $content`: The content with marks replaced with the remote values.
+1. `string`: The content with marks replaced with the remote values.
 
 #### Example
 
 ```php
-$fields = 'firstname,lastname';
 $content = '<p>{{lastname}}, {{firstname}}</p>';
-do_shortcode("[remote_fields fields='<?= $fields ?>']<?= $content ?>[remote_fields]'");
+do_shortcode("[remote_fields]<?= $content ?>[remote_fields]'");
 ```
 
 ### `posts_bridge_remote_callback`
@@ -70,84 +47,22 @@ Returns the output of the callback function.
 
 ```php
 $content = '<p>My Tags</p>';
-function remote_callback($rcpt, $atts, $content) {
+function my_remote_callback($rcpt, $atts, $content = '') {
 	$tags = $rcpt->get('tags');
-	$content .= '<ul>';
+
+	$output .= '<ul>';
 	foreach ($tags as $tag) {
-		$content .= '<li>' . $tag . '</li>';
+		$output .= '<li>' . $tag . '</li>';
 	}
-	$content .= '</ul>';
-	return '<div class="tags">' . $content . '</div>';
+	$output .= '</ul>';
+
+	return $content . '<div class="tags">' . $output . '</div>';
 }
 
-do_shortcode('[remote_callback fn="remote_callback"]<?= $content ?>[remote_callback]');
+do_shortcode('[remote_callback fn="my_remote_callback"]');
 ```
 
 ## Getters
-
-### `posts_bridge_is_remote`
-
-Checks if the current global post is a Remote CPT handled by Posts Bridge.
-
-#### Arguments
-
-1. `boolean $default`: Default value.
-
-#### Returns
-
-1. `boolean $is_remote`: Boolean value.
-
-#### Example
-
-```php
-$is_remote = apply_filters('posts_bridge_is_remote', false);
-if ($is_remote) {
-	// do something
-}
-```
-
-### `posts_bridge_backend`
-
-Returns an instance of the Remote_Backend object by name.
-
-#### Arguments
-
-1. `mixed $default`: Default value.
-2. `string $backend_name`: Name of the backend.
-
-#### Returns
-
-1. `Remote_Backend|null $backend`: Instance of the backend.
-
-#### Example
-
-```php
-$backend = apply_filters('posts_bridge_backend', null, 'Odoo');
-if ($backend) {
-	// do something
-}
-```
-
-### `posts_bridge_backends`
-
-Returns the collection of configured backends as Remote_Backend instances.
-
-#### Arguments
-
-1. `array $default`: Default value.
-
-#### Returns
-
-1. `array $backends`: Array of Remote_Backend instances.
-
-#### Example
-
-```php
-$backends = apply_filters('posts_bridge_backends', []);
-foreach ($backends as $backend) {
-	// do something
-}
-```
 
 ### `posts_bridge_relation`
 
@@ -213,13 +128,33 @@ foreach ($remote_cpts as $remote_cpt) {
 }
 ```
 
+### `posts_bridge_is_remote`
+
+Checks if the current global post is a Remote CPT handled by Posts Bridge.
+
+#### Arguments
+
+1. `boolean $default`: Default value.
+
+#### Returns
+
+1. `boolean $is_remote`: Boolean value.
+
+#### Example
+
+```php
+$is_remote = apply_filters('posts_bridge_is_remote', false);
+if ($is_remote) {
+	// do something
+}
+```
+
 ## Filters
 
-### `posts_bridge_fetch`
+### `posts_bridge_remote_data`
 
-Fired each time WP fetches the remote data of your posts. To work properly,
-the Remote Field Custom Blocks needs a plain object of key values. If your backend
-response does not looks like this, preformat it on this filter.
+Filters the posts' remote data before render. With this filter you can
+format your data before it was stored on the Remote_CPT instance.
 
 #### Arguments
 
@@ -230,7 +165,7 @@ response does not looks like this, preformat it on this filter.
 #### Example
 
 ```php
-add_filter('posts_bridge_fetch', function ($data, $rcpt, $locale) {
+add_filter('posts_bridge_remote_data', function ($data, $rcpt, $locale) {
     return $data;
 }, 10, 3);
 ```
@@ -238,7 +173,7 @@ add_filter('posts_bridge_fetch', function ($data, $rcpt, $locale) {
 ### `posts_bridge_endpoint`
 
 When using the REST protocol to synchronization, use this hook to format endpoints
-if your API is not standard.
+if your API endpoints does not comply with the RESY standards.
 
 #### Arguments
 
@@ -254,7 +189,138 @@ add_filter('posts_bridge_endpoint', function ($endpoint, $foreign_id, $rcpt) {
 }, 10, 2);
 ```
 
+### `posts_bridge_default_thumbnail`
+
+Filter to change the path to the plugin's default thumbnail image.
+
+#### Arguments
+
+1. `string $filpath`: Path to the image file.
+
+#### Example
+
+```php
+add_filter('posts_bridge_default_thumbnail', function ($filepath) {
+	return $filepath;
+});
+```
+
 ## Actions
+
+### `posts_bridge_before_search`
+
+Fired before Posts Bridge ask a backend for its models' foreig keys.
+
+#### Arguments
+
+1. `Remote_Relation $relation`: Instance of the remote relation object.
+
+#### Example
+
+```php
+add_action('posts_bridge_before_search', function ($relation) {
+	if ($relation->endpoint() === '/products') {
+		// do something
+	}
+});
+```
+
+### `posts_after_after_search`
+
+Fired with the response to the Posts Bridge ask for foreig keys.
+
+#### Arguments
+
+1. `array $response`: HTTP request response data, or error.
+2. `Remote_Relation $relation`: Instance of the remote relation object.
+
+#### Example
+
+```php
+add_action('posts_bridge_after_search', function ($response, $relation) {
+	if ($response['response']['code'] === 200) {
+		// do something;
+	}
+}, 10, 2);
+```
+
+### `posts_bridge_before_fetch`
+
+Fired before Posts Bridge fetches data for a remote post.
+
+#### Arguments
+
+1. `string $endpoint`: Target endpoint of the request.
+2. `Remote_CPT $rcpt`: Instance of the Remote_CPT who is triggering the request.
+
+#### Example
+
+```php
+add_action('posts_bridge_before_fetch', function ($endpoint, $rcpt) {
+	if ($rcpt->post_type === 'post') {
+		// do something
+	}
+}, 10, 2);
+```
+
+### `posts_bridge_after_fetch`
+
+Fired with the response to the Posts Bridge remote data request.
+
+#### Arguments
+
+1. `array|WP_Error $response`: HTTP request response data, or error.
+2. `string $endpoint`: Source endpoint of the response.
+3. `Remote_CPT $rcpt`: Instance of the Remote_CPT who has requested remote data.
+
+#### Example
+
+```php
+add_action('posts_bridge_after_fetch', function ($response, $endpoint, $rcpt) {
+	if ($response['headers']['Content-Type'] !== 'application/json') {
+		// do something
+	}
+}, 10, 3);
+```
+
+### `posts_bridge_before_rpc_login`
+
+Fired before Posts Bridge stablishes a new RPC session.
+
+#### Arguments
+
+1. `string $url`: Destination URL.
+2. `array $payload`: JSON-RPC login payload.
+
+#### Example
+
+```php
+add_action('posts_bridge_before_rpc_login', function ($url, $payload) {
+	if ($payload['params']['args'][1] === 'ERP') {
+		// do something
+	}
+}, 10, 3);
+```
+
+### `posts_bridge_after_rpc_login`
+
+Fired with the response to the Posts Bridge login call.
+
+#### Arguments
+
+1. `array|WP_Error $response`: Result from the login request.
+2. `string $url`: Source URL of the result.
+3. `array $payload`: Submitted payload.
+
+#### Example
+
+```php
+add_action('posts_bridge_after_rpc_login', function ($response, $url, $payload) {
+	if (is_wp_error($response)) {
+		// do something
+	}
+}, 10, 3);
+```
 
 ### `posts_bridge_translation`
 
@@ -262,7 +328,8 @@ Fired each time a remote cpt translation hase been done.
 
 #### Arguments
 
-1. `array $translation`: Array with the translation data.
+1. `array $translation`: Array with the translation data. The array contains
+the new post ID, its language as slug, and its translation post ID.
 
 #### Example
 
