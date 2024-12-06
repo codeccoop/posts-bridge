@@ -48,6 +48,13 @@ require_once 'includes/trait-translations.php';
 require_once 'custom-blocks/remote-field/remote-field.php';
 
 /**
+ * Handle global Remote_CPT instances.
+ *
+ * @var Remote_CPT|null $remote_cpt Global Remote_CPT instance.
+ */
+$remote_cpt = null;
+
+/**
  * Posts Bridge plugin.
  */
 class Posts_Bridge extends BasePlugin
@@ -121,7 +128,7 @@ class Posts_Bridge extends BasePlugin
      */
     private static function setup_default_thumbnail()
     {
-        $attachment_id = Remote_Featured_Media::get_default_thumbnail_id();
+        $attachment_id = Remote_Featured_Media::default_thumbnail_id();
         if ($attachment_id) {
             $attachment = get_post($attachment_id);
             if ($attachment) {
@@ -183,7 +190,7 @@ class Posts_Bridge extends BasePlugin
      */
     private static function remove_default_thumbnail()
     {
-        $attachment_id = Remote_Featured_Media::get_default_thumbnail_id();
+        $attachment_id = Remote_Featured_Media::default_thumbnail_id();
         if ($attachment_id) {
             $query = new WP_Query([
                 'meta_key' => '_thumbnail_id',
@@ -209,13 +216,13 @@ class Posts_Bridge extends BasePlugin
      * Binds REST_Controllers to the rest_api_init hook, instantiate the Posts_Syncronizer
      * and binds plugin to wp hooks.
      */
-    public function __construct()
+    protected function construct(...$args)
     {
-        parent::__construct();
+        parent::construct(...$args);
 
         // Initalize REST controllers on API init
         add_action('rest_api_init', function () {
-            foreach (Settings::get_post_types() as $post_type) {
+            foreach (Settings::post_types() as $post_type) {
                 $this->rest_controllers[
                     $post_type
                 ] = new REST_Remote_Posts_Controller($post_type);
@@ -238,6 +245,17 @@ class Posts_Bridge extends BasePlugin
         $this->sync_http_settings();
         $this->wp_hooks();
         $this->custom_hooks();
+
+        // Bind detached hook to detached tasks
+        add_action(static::$detach_hook, function () {
+            Posts_Bridge::do_detacheds();
+        });
+
+        // Use schedule hook to trigger synchronizer subroutines
+        add_action(static::$schedule_hook, function () {
+            $synchronizer = Posts_Synchronizer::get_instance();
+            $synchronizer->sync();
+        });
     }
 
     /**
@@ -247,9 +265,9 @@ class Posts_Bridge extends BasePlugin
     {
         // Patch http bridge settings to plugin settings
         add_filter('option_posts-bridge_general', static function ($value) {
-            $http_setting = Settings::get_setting('http-bridge', 'general');
+            $http = Settings::get_setting('http-bridge', 'general');
             foreach (['backends', 'whitelist'] as $key) {
-                $value[$key] = $http_setting[$key];
+                $value[$key] = $http->data($key);
             }
 
             return $value;
@@ -262,12 +280,13 @@ class Posts_Bridge extends BasePlugin
                 return;
             }
 
-            $http_setting = Settings::get_setting('http-bridge', 'general');
+            $data = [];
             foreach (['backends', 'whitelist'] as $key) {
-                $http_setting[$key] = $to[$key];
+                $data[$key] = $to[$key];
             }
 
-            update_option('http-bridge_general', $http_setting);
+            $http = Settings::get_setting('http-bridge', 'general');
+            $http->update(array_merge($http->data(), $data));
         }
 
         add_action(
@@ -294,24 +313,6 @@ class Posts_Bridge extends BasePlugin
      */
     private function wp_hooks()
     {
-        // Add link to submenu page on plugins page
-        add_filter(
-            'plugin_action_links',
-            function ($links, $file) {
-                if ($file !== plugin_basename(__FILE__)) {
-                    return $links;
-                }
-
-                $url = admin_url('options-general.php?page=posts-bridge');
-                $label = __('Settings');
-                $link = "<a href='{$url}'>{$label}</a>";
-                array_unshift($links, $link);
-                return $links;
-            },
-            5,
-            2
-        );
-
         // Store global remote cpts
         add_action(
             'the_post',
@@ -332,16 +333,6 @@ class Posts_Bridge extends BasePlugin
             3
         );
 
-        // Hide remote cpts from admin menu
-        // add_action('admin_menu', function () {
-        //     foreach (Settings::get_post_types() as $post_type) {
-        //         $hide = apply_filters('posts_bridge_hide_menu', true, $post_type);
-        //         if ($hide) {
-        //             remove_menu_page('edit.php?post_type=' . $post_type);
-        //         }
-        //     }
-        // });
-
         // Enqueue plugin admin client scripts
         add_action('admin_enqueue_scripts', function ($admin_page) {
             $this->admin_enqueue_scripts($admin_page);
@@ -360,8 +351,8 @@ class Posts_Bridge extends BasePlugin
     {
         add_filter(
             'posts_bridge_remote_cpts',
-            function ($default, $proto = null) {
-                return Settings::get_post_types($proto);
+            static function ($default, $proto = null) {
+                return Settings::post_types($proto);
             },
             10,
             2
@@ -374,10 +365,10 @@ class Posts_Bridge extends BasePlugin
 
         add_filter(
             'posts_bridge_relation',
-            function ($default, $post_type) {
-                $relations = Settings::get_relations();
+            static function ($default, $post_type) {
+                $relations = Settings::relations();
                 foreach ($relations as $rel) {
-                    if ($rel->get_post_type() === $post_type) {
+                    if ($rel->post_type() === $post_type) {
                         return $rel;
                     }
                 }
@@ -390,25 +381,12 @@ class Posts_Bridge extends BasePlugin
 
         add_filter(
             'posts_bridge_relations',
-            function ($default, $proto = null) {
-                return Settings::get_relations($proto);
+            static function ($default, $proto = null) {
+                return Settings::relations($proto);
             },
             10,
             2
         );
-
-        add_filter(
-            'posts_bridge_backend',
-            function ($default, $name) {
-                return apply_filters('http_bridge_backend', $default, $name);
-            },
-            10,
-            2
-        );
-
-        add_filter('posts_bridge_backends', function () {
-            return apply_filters('http_bridge_backends');
-        });
     }
 
     /**
@@ -423,7 +401,7 @@ class Posts_Bridge extends BasePlugin
         }
 
         wp_enqueue_script(
-            $this->get_textdomain(),
+            $this->textdomain(),
             plugins_url('assets/plugin.bundle.js', __FILE__),
             [
                 'react',
@@ -440,12 +418,12 @@ class Posts_Bridge extends BasePlugin
         );
 
         wp_set_script_translations(
-            $this->get_textdomain(),
-            $this->get_textdomain(),
+            $this->textdomain(),
+            $this->textdomain(),
             plugin_dir_path(__FILE__) . 'languages'
         );
 
-        wp_localize_script($this->get_textdomain(), '_postsBridgeAjax', [
+        wp_localize_script($this->textdomain(), '_postsBridgeAjax', [
             'url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('posts-bridge-ajax-sync'),
             'action' => 'posts_bridge_sync',
@@ -566,7 +544,7 @@ class Posts_Bridge extends BasePlugin
 
     private function register_meta()
     {
-        $relations = Settings::get_relations();
+        $relations = Settings::relations();
         foreach ($relations as $rel) {
             $rel->register_meta();
         }
@@ -584,7 +562,7 @@ class Posts_Bridge extends BasePlugin
         if (
             empty($post) ||
             !$post->ID ||
-            !in_array($post->post_type, Settings::get_post_types())
+            !in_array($post->post_type, Settings::post_types())
         ) {
             $remote_cpt = null;
         } else {
@@ -602,7 +580,7 @@ class Posts_Bridge extends BasePlugin
     private function translate_post($post_id, $post, $update)
     {
         // Exit if is not a remote cpt
-        if (!in_array($post->post_type, Settings::get_post_types())) {
+        if (!in_array($post->post_type, Settings::post_types())) {
             return;
         }
 
@@ -625,48 +603,15 @@ class Posts_Bridge extends BasePlugin
 
         // If post is published, then translate it
         if ($post->post_status === 'publish') {
-            self::detach(
-                '\POSTS_BRIDGE\_posts_bridge_do_translations',
-                $post_id
-            );
+            self::detach('\POSTS_BRIDGE\_do_translations', $post_id);
         }
     }
 }
 
 // Public proxy to private Posts_Bridge::do_translation to allow hooks
-function _posts_bridge_do_translations($post_id)
+function _do_translations($post_id)
 {
     Posts_Bridge::do_translations($post_id);
 }
 
-register_activation_hook(__FILE__, function () {
-    Posts_Bridge::activate();
-});
-
-//
-register_deactivation_hook(__FILE__, function () {
-    Posts_Bridge::deactivate();
-});
-
-// Start the plugin on plugins loaded event
-add_action('plugins_loaded', function () {
-    Posts_Bridge::start();
-});
-
-// Bind detached hook to detached tasks
-add_action(Posts_Bridge::$detach_hook, function () {
-    Posts_Bridge::do_detacheds();
-});
-
-// Use schedule hook to trigger synchronizer subroutines
-add_action(Posts_Bridge::$schedule_hook, function () {
-    $synchronizer = Posts_Synchronizer::get_instance();
-    $synchronizer->sync();
-});
-
-/**
- * Handle global Remote_CPT instances.
- *
- * @var Remote_CPT|null $remote_cpt Global Remote_CPT instance.
- */
-$remote_cpt = null;
+Posts_Bridge::setup();

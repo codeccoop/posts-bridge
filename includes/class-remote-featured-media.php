@@ -30,7 +30,7 @@ class Remote_Featured_Media
      *
      * @return int Thumbnail attachment ID.
      */
-    public static function get_default_thumbnail_id()
+    public static function default_thumbnail_id()
     {
         return (int) get_option(static::_default_thumbnail_handle);
     }
@@ -40,9 +40,9 @@ class Remote_Featured_Media
      *
      * @return WP_Post|null Thumbnail attachment.
      */
-    public static function get_default_thumbnail()
+    public static function default_thumbnail()
     {
-        return get_post($this->get_default_thumbnail_id());
+        return get_post($this->default_thumbnail_id());
     }
 
     /**
@@ -52,7 +52,7 @@ class Remote_Featured_Media
      *
      * @return string Source type.
      */
-    public static function get_src_type($src)
+    public static function src_type($src)
     {
         if (is_int($src)) {
             return 'id';
@@ -75,7 +75,7 @@ class Remote_Featured_Media
      *
      * @return array|null File type data.
      */
-    public static function get_file_type($filepath)
+    public static function file_type($filepath)
     {
         if (empty($filepath) || !is_string($filepath)) {
             return null;
@@ -99,7 +99,7 @@ class Remote_Featured_Media
     public static function handle($src, $filename = null)
     {
         if (!empty($src)) {
-            $type = self::get_src_type($src);
+            $type = self::src_type($src);
             switch ($type) {
                 case 'url':
                     $attachment_id = self::attach_url($src);
@@ -110,10 +110,10 @@ class Remote_Featured_Media
                 case 'id':
                     return (int) $src;
                 default:
-                    return self::get_default_thumbnail_id();
+                    return self::default_thumbnail_id();
             }
         } else {
-            return self::get_default_thumbnail_id();
+            return self::default_thumbnail_id();
         }
 
         self::memorize($attachment_id, $src);
@@ -182,6 +182,11 @@ class Remote_Featured_Media
     {
         $filename = basename($src);
 
+        // unlink temp files
+        if (is_file($src)) {
+            unlink($src);
+        }
+
         // get wp current upload dir
         $upload_dir = wp_upload_dir();
         if (wp_mkdir_p($upload_dir['path'])) {
@@ -199,14 +204,12 @@ class Remote_Featured_Media
             }
         }
 
-        file_put_contents($filepath, $content);
-
-        // unlink temp files
-        if (is_file($src)) {
-            unlink($src);
+        $success = file_put_contents($filepath, $content);
+        if (!$success) {
+            return null;
         }
 
-        $filetype = self::get_file_type($filepath);
+        $filetype = self::file_type($filepath);
 
         // exits if unkown file type
         if (!$filetype['type']) {

@@ -70,6 +70,10 @@ class Remote_CPT
      */
     public function fetch()
     {
+        if (is_wp_error($this->remote_data)) {
+            return [];
+        }
+
         if ($this->remote_data) {
             return $this->remote_data;
         }
@@ -81,12 +85,19 @@ class Remote_CPT
             'locale'
         );
 
+        $data = $this->http_client->fetch($locale);
+        if (is_wp_error($data)) {
+            $this->remote_data = $data;
+            return [];
+        }
+
         $this->remote_data = apply_filters(
-            'posts_bridge_fetch',
-            $this->http_client->get_data($locale),
+            'posts_bridge_remote_data',
+            $data,
             $this,
             $locale
         );
+
         return $this->remote_data;
     }
 
@@ -120,7 +131,7 @@ class Remote_CPT
         $data = $this->fetch();
 
         if (is_wp_error($data)) {
-            return $default;
+            return null;
         }
 
         $finger = new JSON_Finger($data);
@@ -136,22 +147,22 @@ class Remote_CPT
      *
      * @return string Post's relation endpoint.
      */
-    public function get_endpoint()
+    public function endpoint()
     {
-        $rel = $this->get_relation();
-        if ($rel->get_proto() === 'rest') {
-            $endpoint = $rel->get_endpoint();
+        $rel = $this->relation();
+        if ($rel->proto() === 'rest') {
+            $endpoint = $rel->endpoint();
         } else {
-            $endpoint = Settings::get_setting(
-                'posts-bridge',
-                'rpc-api',
-                'endpoint'
-            );
+            $endpoint = Settings::get_setting('posts-bridge', 'rpc-api')
+                ->endpoint;
         }
 
         $url = parse_url($endpoint);
         $endpoint = preg_replace('/\/$/', '', $url['path']);
-        $endpoint .= '/' . $this->foreign_id;
+
+        if ($rel->proto() === 'rest') {
+            $endpoint .= '/' . $this->foreign_id();
+        }
 
         if (isset($url['query'])) {
             $endpoint .= '?' . $url['query'];
@@ -160,7 +171,7 @@ class Remote_CPT
         return apply_filters(
             'posts_bridge_endpoint',
             $endpoint,
-            $this->foreign_id,
+            $this->foreign_id(),
             $this
         );
     }
@@ -170,11 +181,11 @@ class Remote_CPT
      *
      * @return Remote_Relation Remote relation data.
      */
-    public function get_relation()
+    public function relation()
     {
-        $relations = Settings::get_relations();
+        $relations = Settings::relations();
         foreach ($relations as $rel) {
-            if ($rel->get_post_type() === $this->post_type) {
+            if ($rel->post_type() === $this->post_type) {
                 return $rel;
             }
         }
@@ -185,7 +196,7 @@ class Remote_CPT
      *
      * @return string|int Remote relation foreign key value.
      */
-    public function get_foreign_id()
+    public function foreign_id()
     {
         if (empty($this->foreign_id)) {
             $this->foreign_id = get_post_meta(
@@ -205,7 +216,7 @@ class Remote_CPT
      *
      * @return array<WP_Term>|WP_Error Terms of the taxonomy attacheds to the post.
      */
-    public function get_terms($tax)
+    public function terms($tax)
     {
         return get_the_terms($this->ID, $tax);
     }
@@ -218,7 +229,7 @@ class Remote_CPT
      *
      * @return mixed Custom field value or false.
      */
-    public function get_meta($field, $single = true)
+    public function meta($field, $single = true)
     {
         return get_post_meta($this->ID, $field, $single);
     }

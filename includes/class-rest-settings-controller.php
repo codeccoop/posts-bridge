@@ -54,17 +54,18 @@ class REST_Settings_Controller extends Base_REST_Settings_Controller
         'wp_global_styles',
         'wp_navigation',
         'wp_font_family',
-        'wp_font_face'
+        'wp_font_face',
     ];
 
     /**
      * Overwrite of the parent constructor to register the post types route
      *
-     * @param string $group_name Plugin settings group name.
+     * @param string $group Plugin settings group name.
      */
-    public function __construct($group_name)
+    public function construct(...$args)
     {
-        parent::__construct($group_name);
+        [$group] = $args;
+        parent::construct($group);
 
         add_action('rest_api_init', function () {
             $this->register_post_types_route();
@@ -89,7 +90,7 @@ class REST_Settings_Controller extends Base_REST_Settings_Controller
                 'permission_callback' => function () {
                     return $this->permission_callback();
                 },
-            ],
+            ]
         );
     }
 
@@ -100,8 +101,10 @@ class REST_Settings_Controller extends Base_REST_Settings_Controller
      */
     private function get_post_types()
     {
-        return array_values(array_filter(array_values(get_post_types()), function ($post_type) {
-            return !in_array($post_type, self::$_excluded_post_types);
-        }));
+        return array_values(
+            array_filter(array_values(get_post_types()), function ($post_type) {
+                return !in_array($post_type, self::$_excluded_post_types);
+            })
+        );
     }
 }

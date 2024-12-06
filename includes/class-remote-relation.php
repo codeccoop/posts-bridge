@@ -92,7 +92,7 @@ class Remote_Relation
 
         $this->endpoint = (string) (isset($data['endpoint'])
             ? $data['endpoint']
-            : Settings::get_setting('posts-bridge', 'rpc-api', 'endpoint'));
+            : Settings::get_setting('posts-bridge', 'rpc-api')->endpoint);
 
         if (!empty($this->endpoint)) {
             $url = parse_url($this->endpoint);
@@ -110,7 +110,7 @@ class Remote_Relation
      *
      * @return string API protocol.
      */
-    public function get_proto()
+    public function proto()
     {
         return empty($this->model) ? 'rest' : 'rpc';
     }
@@ -120,7 +120,7 @@ class Remote_Relation
      *
      * @return string Post type slug.
      */
-    public function get_post_type()
+    public function post_type()
     {
         return $this->post_type;
     }
@@ -130,9 +130,9 @@ class Remote_Relation
      *
      * @return Http_Backend Http_Backend instance.
      */
-    public function get_backend()
+    public function backend()
     {
-        return apply_filters('posts_bridge_backend', null, $this->backend);
+        return apply_filters('http_bridge_backend', null, $this->backend);
     }
 
     /**
@@ -140,7 +140,7 @@ class Remote_Relation
      *
      * @return string Model name.
      */
-    public function get_model()
+    public function model()
     {
         return $this->model;
     }
@@ -150,7 +150,7 @@ class Remote_Relation
      *
      * @return string Foreign key.
      */
-    public function get_foreign_key()
+    public function foreign_key()
     {
         return $this->foreign_key;
     }
@@ -160,7 +160,7 @@ class Remote_Relation
      *
      * @return string Endpoint path.
      */
-    public function get_endpoint()
+    public function endpoint()
     {
         return $this->endpoint;
     }
@@ -170,10 +170,10 @@ class Remote_Relation
      *
      * @return string Endpoint full URL.
      */
-    public function get_url()
+    public function url()
     {
-        $backend = $this->get_backend();
-        return $backend->get_endpoint_url($this->endpoint);
+        $backend = $this->backend();
+        return $backend->url($this->endpoint);
     }
 
     /**
@@ -181,9 +181,9 @@ class Remote_Relation
      *
      * @return array Backend HTTP headers.
      */
-    public function get_headers()
+    public function headers()
     {
-        return $this->get_backend()->get_headers();
+        return $this->backend()->headers();
     }
 
     /**
@@ -191,11 +191,11 @@ class Remote_Relation
      *
      * @return array<string, string> Map of remote fields with foreign as keys and names as values.
      */
-    public function get_remote_fields()
+    public function remote_fields()
     {
         return array_merge(
-            $this->get_remote_post_fields(),
-            $this->get_remote_custom_fields()
+            $this->remote_post_fields(),
+            $this->remote_custom_fields()
         );
     }
 
@@ -204,7 +204,7 @@ class Remote_Relation
      *
      * @return array<string, string> Map of remote fields with foreign as keys and names as values.
      */
-    public function get_remote_post_fields()
+    public function remote_post_fields()
     {
         $fields = [];
         foreach ($this->fields as $field) {
@@ -222,7 +222,7 @@ class Remote_Relation
      *
      * @return array<string, string> Map of remote fields with foreign as keys and names as values.
      */
-    public function get_remote_custom_fields()
+    public function remote_custom_fields()
     {
         $fields = [];
         foreach ($this->fields as $field) {
@@ -245,7 +245,7 @@ class Remote_Relation
     public function map_remote_fields($data)
     {
         $finger = new JSON_Finger($data);
-        $remote_fields = $this->get_remote_fields();
+        $remote_fields = $this->remote_fields();
 
         foreach ($remote_fields as $foreign => $name) {
             if ($foreign === $name) {
@@ -284,9 +284,9 @@ class Remote_Relation
      */
     public function register_meta()
     {
-        $fields = $this->get_remote_fields();
+        $fields = $this->remote_fields();
         foreach (array_keys($fields) as $foreign) {
-            register_post_meta($this->get_post_type(), $foreign, [
+            register_post_meta($this->post_type(), $foreign, [
                 'show_in_rest' => true,
                 'single' => true,
                 'type' => 'string',

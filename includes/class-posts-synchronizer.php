@@ -26,7 +26,7 @@ class Posts_Synchronizer extends Singleton
     /*
      * Binds schedules to general settings updates.
      */
-    public function __construct()
+    public function construct(...$args)
     {
         add_action(
             'update_option',
@@ -52,7 +52,7 @@ class Posts_Synchronizer extends Singleton
         [
             'enabled' => $enabled,
             'recurrence' => $recurrence,
-        ] = Settings::get_setting('posts-bridge', 'general', 'synchronize');
+        ] = Settings::get_setting('posts-bridge', 'general')->syncronize;
         if (empty($enabled) || empty($recurrence)) {
             Posts_Bridge::unschedule();
         } else {
@@ -115,134 +115,94 @@ class Posts_Synchronizer extends Singleton
         $this->sync_mode = isset($_POST['sync_mode'])
             ? $_POST['sync_mode']
             : 'light';
-        $this->sync();
 
-        wp_send_json(['success' => true], 200);
+        $success = $this->sync();
+
+        wp_send_json(['success' => $success], 200);
     }
 
     /**
      * Synchronize REST API remote relation posts.
      *
      * @param Remote_Relation $relation REST remote relation.
+     *
+     * @return boolean True if success, false otherwise.
      */
     private function rest_sync($relation)
     {
-        $url = $relation->get_url();
-        $headers = $relation->get_headers();
-        $backend = $relation->get_backend();
+        $endpoint = $relation->endpoint();
+        $backend = $relation->backend();
 
-        $models = HTTP_Client::fetch($url, $headers);
-        if (is_wp_error($models)) {
+        do_action('posts_bridge_before_search', $relation);
+        $res = $backend->get($endpoint);
+        do_action('posts_bridge_after_search', $res, $relation);
+
+        if (is_wp_error($res)) {
             return false;
         }
 
         $foreign_ids = array_map(static function ($model) use ($relation) {
-            return (new JSON_Finger($model))->get($relation->get_foreign_key());
-        }, $models);
+            return (new JSON_Finger($model))->get($relation->foreign_key());
+        }, (array) $res['data']);
 
-        return $this->sync_posts(
-            $relation->get_post_type(),
-            $foreign_ids,
-            static function ($foreign_id, $remote_cpt) use (
-                $relation,
-                $backend
-            ) {
-                $endpoint = $relation->get_endpoint();
-                $url = parse_url($endpoint);
-                $endpoint = preg_replace('/\/$/', '', $url['path']);
-                $endpoint .= '/' . $foreign_id;
-
-                if (isset($url['query'])) {
-                    $endpoint .= '?' . $url['query'];
-                }
-
-                $endpoint = apply_filters(
-                    'posts_bridge_endpoint',
-                    $endpoint,
-                    $foreign_id,
-                    $remote_cpt
-                );
-
-                $url = $backend->get_endpoint_url($endpoint);
-                $headers = $backend->get_headers();
-
-                $locale = apply_filters(
-                    'wpct_i18n_current_language',
-                    null,
-                    'locale'
-                );
-                $data = HTTP_Client::fetch($url, $headers);
-                $data = $relation->map_remote_fields($data);
-                $data = apply_filters(
-                    'posts_bridge_fetch',
-                    $data,
-                    $remote_cpt,
-                    $locale
-                );
-                return [
-                    $data,
-                    array_values($relation->get_remote_custom_fields()),
-                ];
-            }
-        );
+        return $this->sync_posts($foreign_ids, $relation);
     }
 
     /**
      * Synchronize RPC API remote relation posts.
      *
      * @param Remote_Relation $relation RPC remote relation.
+     *
+     * @return boolean True if success, false otherwise.
      */
     private function rpc_sync($relation)
     {
-        $model = $relation->get_model();
-        $url = $relation->get_url();
-        $headers = $relation->get_headers();
+        $rpc = Settings::get_setting('posts-bridge', 'rpc-api');
+        $url = $relation->url();
+        $headers = $relation->headers();
 
-        $foreign_ids = HTTP_Client::search($url, $model, $headers);
+        $result = HTTP_Client::rpc_login($url, $headers);
+
+        if (is_wp_error($result)) {
+            return false;
+        }
+
+        [$sid, $uid] = $result;
+
+        $payload = HTTP_Client::rpc_payload($sid, 'object', 'execute', [
+            $rpc->database,
+            $uid,
+            $rpc->password,
+            $relation->model(),
+            'search',
+            [],
+        ]);
+
+        do_action('posts_bridge_before_search', $relation);
+        $res = http_bridge_post($url, $payload, $headers);
+        do_action('posts_bridge_before_search', $res, $relation);
+
+        $foreign_ids = HTTP_Client::rpc_response($res);
         if (is_wp_error($foreign_ids)) {
             return false;
         }
 
-        return $this->sync_posts(
-            $relation->get_post_type(),
-            $foreign_ids,
-            static function ($foreign_id, $remote_cpt) use ($relation) {
-                $locale = apply_filters(
-                    'wpct_i18n_current_language',
-                    null,
-                    'locale'
-                );
-                $data = HTTP_Client::read(
-                    $relation->get_url(),
-                    $relation->get_model(),
-                    $foreign_id,
-                    $relation->get_headers()
-                );
-                $data = $relation->map_remote_fields($data);
-                $data = apply_filters(
-                    'posts_bridge_fetch',
-                    $data,
-                    $remote_cpt,
-                    $locale
-                );
-                return [
-                    $data,
-                    array_values($relation->get_remote_custom_fields()),
-                ];
-            }
-        );
+        return $this->sync_posts($foreign_ids, $relation);
     }
 
     /**
      * Synchronize post types collections.
      *
-     * @param string $post_type Target post type collection.
      * @param array<integer> $foreign_ids Remote ids reference.
-     * @param Closure(int, object) $fetch_data Method to fetch remote models data.
+     * @param Remote_Relation $relation Remote relation instance.
+     *
+     * @return boolean True if success, false otherwise.
      */
-    private function sync_posts($post_type, $foreign_ids, $fetch_data)
+    private function sync_posts($foreign_ids, $relation)
     {
         global $remote_cpt;
+
+        $post_type = $relation->post_type();
 
         $foreign_ids = array_reduce(
             $foreign_ids,
@@ -261,7 +221,7 @@ class Posts_Synchronizer extends Singleton
 
         while ($query->have_posts()) {
             $query->the_post();
-            $foreign_id = $remote_cpt->get_foreign_id();
+            $foreign_id = $remote_cpt->foreign_id();
             if (!isset($foreign_ids[$foreign_id])) {
                 wp_delete_post(get_the_ID());
             } else {
@@ -275,6 +235,7 @@ class Posts_Synchronizer extends Singleton
 
         wp_reset_postdata();
 
+        $sync = [];
         foreach ($foreign_ids as $foreign_id => $post) {
             // if is a new remote model, mock a post as its local counterpart
             if (empty($post)) {
@@ -283,13 +244,48 @@ class Posts_Synchronizer extends Singleton
                 );
             }
 
-            [$data, $custom_fields] = $fetch_data(
-                $foreign_id,
-                new Remote_CPT($post)
+            $rcpt = new Remote_CPT($post);
+            add_filter(
+                'posts_bridge_endpoint',
+                function ($endpoint, $fid, $rcpt) use (
+                    $relation,
+                    $foreign_id,
+                    $post,
+                    &$sync
+                ) {
+                    if (
+                        $fid ||
+                        isset($sync[$foreign_id]) ||
+                        $rcpt->ID !== $post->ID ||
+                        $relation->proto() === 'rpc'
+                    ) {
+                        return $endpoint;
+                    }
+
+                    $parsed = parse_url($endpoint);
+                    $endpoint =
+                        preg_replace('/\/+$/', '', $parsed['path']) .
+                        '/' .
+                        $foreign_id;
+                    if (isset($parsed['query'])) {
+                        $endpoint .= '/?' . $parsed['query'];
+                    }
+
+                    $sync[$foreign_id] = true;
+                    return $endpoint;
+                },
+                5,
+                3
             );
+
+            $data = $rcpt->fetch();
+            $data = $relation->map_remote_fields($data);
+
             if (is_wp_error($data)) {
                 return false;
             }
+
+            $custom_fields = $relation->remote_custom_fields();
 
             $data['post_type'] = $post_type;
             if ($post->ID !== 0) {
@@ -312,7 +308,7 @@ class Posts_Synchronizer extends Singleton
                     $data['featured_media']
                 );
             } else {
-                $featured_media = Remote_Featured_Media::get_default_thumbnail_id();
+                $featured_media = Remote_Featured_Media::default_thumbnail_id();
             }
 
             set_post_thumbnail($post_id, $featured_media);
@@ -337,5 +333,7 @@ class Posts_Synchronizer extends Singleton
                 }
             }
         }
+
+        return true;
     }
 }

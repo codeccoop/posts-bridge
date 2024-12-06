@@ -160,14 +160,14 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             null,
             $this->post_type
         );
-        foreach ($relation->get_remote_custom_fields() as $foreign => $name) {
+        foreach ($relation->remote_custom_fields() as $foreign => $name) {
             if (isset($request[$foreign])) {
                 update_post_meta($post->ID, $name, $request[$foreign]);
             }
         }
 
         // Map custom featured media to the request before media handler execution
-        foreach ($relation->get_remote_post_fields() as $foreign => $name) {
+        foreach ($relation->remote_post_fields() as $foreign => $name) {
             if ($name === 'featured_media') {
                 try {
                     $keys = JSON_Finger::parse($foreign);
@@ -205,10 +205,10 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         if (empty($request['featured_media'])) {
             $request[
                 'featured_media'
-            ] = Remote_Featured_Media::get_default_thumbnail_id();
+            ] = Remote_Featured_Media::default_thumbnail_id();
         }
 
-        $foreign_key = $relation->get_foreign_key();
+        $foreign_key = $relation->foreign_key();
 
         // Unalias foreign key on the request
         $schema_properties = $this->get_item_schema()['properties'];
@@ -268,7 +268,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         );
 
         // Use json fingers to get foreign key value from the request
-        $foreign_key = $relation->get_foreign_key();
+        $foreign_key = $relation->foreign_key();
         $foreign_id = (new JSON_Finger($request->get_params()))->get(
             $foreign_key
         );
