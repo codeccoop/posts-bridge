@@ -177,9 +177,9 @@ class Remote_CPT
     }
 
     /**
-     * Gets remote relation data.
+     * Gets remote relation instance.
      *
-     * @return Remote_Relation Remote relation data.
+     * @return Remote_Relation Remote relation instance.
      */
     public function relation()
     {

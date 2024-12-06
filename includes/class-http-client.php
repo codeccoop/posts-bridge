@@ -13,6 +13,11 @@ if (!defined('ABSPATH')) {
  */
 class HTTP_Client
 {
+    /**
+     * Handle RPC session data.
+     * 
+     * @var array Tuple with session and user ids.
+     */
     private static $rpc_session = null;
 
     /**
@@ -22,6 +27,14 @@ class HTTP_Client
      */
     private $rcpt;
 
+    /**
+     * Check for response result on the RPC body and returns the data.
+     * 
+     * @param array $response HTTP response data.
+     * @param boolean $single Indicates if the response should return a single entity.
+     * 
+     * @return array|WP_Error Response result or error.
+     */
     public static function rpc_response($response, $single = false)
     {
         if (is_wp_error($response)) {
@@ -53,6 +66,16 @@ class HTTP_Client
         return $data['result'];
     }
 
+    /**
+     * Build a Odoo JSON-RPC conformant payload.
+     * 
+     * @param string|int $session_id Active RPC sessión id.
+     * @param string $service Target service.
+     * @param string $service Call method.
+     * @param array $args Arguments to pass on the call.
+     * 
+     * @return array Odoo JSON-RPC conformant payload.
+     */
     public static function rpc_payload($session_id, $service, $method, $args)
     {
         return [
@@ -67,6 +90,14 @@ class HTTP_Client
         ];
     }
 
+    /**
+     * Performs a login call to a JSON-RPC API.
+     * 
+     * @param string $url Target URL.
+     * @param array $headers HTTP headers.
+     * 
+     * @return array|WP_Error Session data or error.
+     */
     public static function rpc_login($url, $headers = [])
     {
         $session_id = 'posts-bridge-' . time();
@@ -131,6 +162,11 @@ class HTTP_Client
         }
     }
 
+    /**
+     * Fetches remote data over the REST protocol.
+     * 
+     * @return array|WP_Error Response data or error.
+     */
     private function rest_fetch()
     {
         $backend = $this->rcpt->relation()->backend();
@@ -147,6 +183,11 @@ class HTTP_Client
         return $res['data'];
     }
 
+    /**
+     * Fetches remote data over the JSON-RPC protocol.
+     * 
+     * @return array|WP_Error Response data or error.
+     */
     private function rpc_fetch()
     {
         $rpc = Settings::get_setting('posts-bridge', 'rpc-api');

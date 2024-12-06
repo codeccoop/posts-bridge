@@ -189,7 +189,7 @@ class Remote_Relation
     /**
      * Relation's remote fields getter.
      *
-     * @return array<string, string> Map of remote fields with foreign as keys and names as values.
+     * @return array Map of remote fields with foreign as keys and names as values.
      */
     public function remote_fields()
     {
@@ -202,7 +202,7 @@ class Remote_Relation
     /**
      * Relation's remote post fields getter.
      *
-     * @return array<string, string> Map of remote fields with foreign as keys and names as values.
+     * @return array Map of remote fields with foreign as keys and names as values.
      */
     public function remote_post_fields()
     {
@@ -220,7 +220,7 @@ class Remote_Relation
     /**
      * Relation's remote custom fields getter.
      *
-     * @return array<string, string> Map of remote fields with foreign as keys and names as values.
+     * @return array Map of remote fields with foreign as keys and names as values.
      */
     public function remote_custom_fields()
     {

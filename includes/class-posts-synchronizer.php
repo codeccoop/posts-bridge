@@ -193,7 +193,7 @@ class Posts_Synchronizer extends Singleton
     /**
      * Synchronize post types collections.
      *
-     * @param array<integer> $foreign_ids Remote ids reference.
+     * @param array $foreign_ids Remote ids reference.
      * @param Remote_Relation $relation Remote relation instance.
      *
      * @return boolean True if success, false otherwise.

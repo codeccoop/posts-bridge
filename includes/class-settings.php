@@ -247,8 +247,8 @@ class Settings extends BaseSettings
     /**
      * Sanitize setting data before database inserts.
      *
-     * @param string $option Setting name.
      * @param array $value Setting data.
+     * @param Setting $setting Setting instance.
      *
      * @return array $value Sanitized setting data.
      */
@@ -346,8 +346,8 @@ class Settings extends BaseSettings
     /**
      * Validate API setting remote relations.
      *
-     * @param array $relations List of API remote relations.
-     * @param array $backends List of available backends.
+     * @param array $relations List of API remote relations data.
+     * @param array $backends List of available backends data.
      *
      * @return array List of valid API remote relations.
      */
