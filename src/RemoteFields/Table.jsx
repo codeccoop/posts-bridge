@@ -73,7 +73,7 @@ export default function CustomFieldsTable({ fields, setFields, done }) {
   };
 
   const dropField = (index) => {
-    const newFields = fields.slice(0, index).concat(fields.slice(index + 2));
+    const newFields = fields.slice(0, index).concat(fields.slice(index + 1));
     setFields(newFields);
   };
 
