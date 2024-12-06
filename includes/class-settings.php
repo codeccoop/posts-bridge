@@ -298,6 +298,9 @@ class Settings extends BaseSettings
         )
             ? $value['synchronize']['recurrence']
             : 'hourly';
+        $value['backends'] = \HTTP_BRIDGE\Settings::validate_backends(
+            $value['backends']
+        );
 
         $rest = self::get_setting($this->group(), 'rest-api');
         $rpc = self::get_setting($this->group(), 'rpc-api');
