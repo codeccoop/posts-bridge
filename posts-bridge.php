@@ -8,7 +8,7 @@
  * Author URI:      https://www.codeccoop.org
  * Text Domain:     posts-bridge
  * Domain Path:     /languages
- * Version:         1.1.2
+ * Version:         1.2.0
  */
 
 namespace POSTS_BRIDGE;
@@ -26,7 +26,7 @@ if (!defined('ABSPATH')) {
  *
  * @var string POSTS_BRIDGE_VERSION Current plugin version.
  */
-define('POSTS_BRIDGE_VERSION', '1.1.2');
+define('POSTS_BRIDGE_VERSION', '1.2.0');
 
 require_once 'abstracts/class-plugin.php';
 
