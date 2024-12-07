@@ -33,9 +33,10 @@ settings. The page has three main sections:
    - **Synchronization**: Trigger manual content synchronizations.
    - **Schedule**: Configuration for automatic content synchronization.
    - **Whitelist backends**: Controls if Posts Bridge should block incomming connections
-     from other sources than the listed on de _backends_ setting.
+     to the `wp-bridges` REST API namespace from other sources than the listed on de
+     _backends_ setting.
    - **Backends**: List of configured backend connections. Each backend needs a unique
-	name, a base URL, and, optional, a map of HTTP headers.
+     name, a base URL, and, optional, a map of HTTP headers.
 2. REST API
    - **Relations**: A list of handled post types and it's relation with your backend
      endpoints. Each realtion needs a post type, a backend, an endpoint and the remote
@@ -68,29 +69,37 @@ backends:
   from the plugins settings page, or automatically, scheduling recurrent synchronizations.
 - **Push**: Posts Bridge opens new endpoints on the WP REAST API and allow remote sources
   to perform CRUD operations against its database. This way, is the backend who is
-  responsible to inform WordPress each time an update ocurs on its database.
+  responsible to inform WordPress each time an update occurs on its database.
 
 ## Remote Fields
 
-Remote data will be fetched on render time each time WordPress is rendering a Remote CPT.
-Posts on the WordPress instance works only as an index with the ability to crawl remote
-data when required. The source of truth its your backend database, and Posts Bridge
-ask it for information. Indeed, to create posts, WordPress needs some required fields.
-**To allow WordPress to maintain a post collection as your backend models index, at least,
-you have to map one of your backend models fields to the `post_title` field**, in addition
-to the foreign key value. Each Posts Bridge relations can be configured with remote field
-mappers. If your backend payloads does not fit the [WordPress REST API Post schema](https://developer.wordpress.org/rest-api/reference/posts/#schema),
-you can use mappers to transform your backend payloads into the WordPress schemas.
-With mappers, you save yourself from having to transform your backend API to fit the
-WP REST API schemas.
+On synchronization time, Posts Bridge will fetch the remote data of your remote cpts. If
+your backend payload fits the [WordPress REST API schema](https://developer.wordpress.org/rest-api/reference/posts/#schema)
+the post's attributes will be filled with it automatically.
 
-Each remote field configured on the relation will be stored as a post attribute, if
-fits the post schema, or as custom fields.
+To handle not standard remote data you can follow two approches:
 
-> If you store your backend data as post's attributes / custom fields, you can render
-> them as usual in WP without the need of HTTP requests to your backend and improve
-> performance. The drawback of this approach is that your posts data is not live any more,
-> and you will need to run _full synchronizations_ to get your backend database changes.
+- **Live**: Remote data will be fetched on demand each time WordPress is rendering a Remote
+  CPT. Posts on the WordPress instance works only as an index with the ability to crawl
+  remote data when required. The source of truth is your backend database, and Posts Bridge
+  ask it for information. **Use `Remote Field` custom block or `remote_fields` shortcode to
+  fetch the remote data on render time**.
+- **Ahead of time**: On synchronizations, Posts Bridge map custom remote fields to post's
+  fields. Posts on the WordPress instance works as a copy of your backend models and your
+  backend data is fetched once, on the synchronization. **Use remote relation's field mappers
+  to map your remote fields to the post schema**.
+
+> You can mix both approches, and store some remote fields as post attributes, like the title,
+> the excerpt, and the featured media, and load other fields on render time. In this way, WP
+> can render archives of your remote cpts without the need for recursive loads from the
+> backend, and fetch remote data only on single templates.
+
+### Field mappers
+
+Each remote relation can be configured with field mappers to map your backend endpoint payload
+schema to the post schema. Mappers can map your remote fields to post standard attributes or
+to post's custom fields. On synchronization time, Posts Bridge will use this mappers to 
+prepare the database inserts. **You can use JSON Fingers to traverse your backend payloads**
 
 ### JSON Fingers
 
@@ -111,12 +120,12 @@ For example, if your backend send a payload like this:
 ];
 ```
 
-Then you can set your `contact_name` remote field's foreign key as `contact[1]` and the
-finger will set `Bob` as its value as the post custom field.
+Then you can set your `contact_name` custom field's foreign key as `contact[1]` and the
+finger will set `Bob` as its value.
 
 ## Custom Blocks
 
-Posts Bridge comes packed with a **Remote Field** custom block. This custom block enables
+Posts Bridge comes packed with a **Remote Fields** custom block. This custom block enables
 Gutenberg editor to render remote data fields. The block, once inserted into the post
 template, enables the editor to freely build its contents. There where you want to render
 your remote data you have to use the `{{fieldName}}` mark as a replacement mark. If you
@@ -164,7 +173,7 @@ production builts.
 
 ## Dependencies
 
-This plugin relays on [HTTP Bridge](https://git.coopdevs.org/codeccoop/wp/plugins/bridges/http-bridge/)
+This plugin relays on [Http Bridge](https://git.coopdevs.org/codeccoop/wp/plugins/bridges/http-bridge/)
 and [Wpct i18n](https://git.coopdevs.org/codeccoop/wp/plugins/wpct/i18n/) as depenendencies,
 as well as the [Wpct Plugin Abstracts](https://git.coopdevs.org/codeccoop/wp/plugins/wpct/plugin-abstracts)
 snippets. The plugin comes with its dependencies bundled in its releases, so you should

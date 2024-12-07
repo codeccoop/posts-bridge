@@ -11,8 +11,8 @@
 
 ### `posts_bridge_remote_fields`
 
-Replace post's remote fields values inside the content string. A replace mark is the field name
-surrounded by double brackets.
+Replace post's remote fields values inside the content string. Use replace mark to get your remote
+fields values. A replace mark is the field name surrounded by double brackets.
 
 #### Arguments
 
