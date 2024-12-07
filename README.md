@@ -169,7 +169,7 @@ with some variations:
    custom fields based on the relation's field mappers configuration.
 
 Write operations are protected with authentication. To authenticate
-againts the API use the [Http Bridge](https://git.cooopdevs.org/codeccoop/wp/plugins/bridges/http-brdige/)
+againts the API use the [Http Bridge](https://git.coopdevs.org/codeccoop/wp/plugins/bridges/http-bridge/)
 custom endpoints to gain access over JWT authorization.
 
 ## Developers
