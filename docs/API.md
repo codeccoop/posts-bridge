@@ -11,11 +11,12 @@
 
 ### `posts_bridge_remote_fields`
 
-Replace many post's remote field values inside the content string.
+Replace post's remote fields values inside the content string. A replace mark is the field name
+surrounded by double brackets.
 
 #### Arguments
 
-1. `string $content`: Content with replace marks with your field names.
+1. `string $content`: HTML string with replace marks with your field names.
 
 #### Returns
 
@@ -30,14 +31,15 @@ do_shortcode("[remote_fields]<?= $content ?>[remote_fields]'");
 
 ### `posts_bridge_remote_callback`
 
-Gets post's remote cpt instance and pass its as input to the callback. Use it if do you want to render complex data values.
+Gets post's remote cpt instance and pass it as the first input to the callback. In addition,
+callback gets the shortcode attributes and content as its second and third argument. Use it if
+do you want to render complex data values.
 
 #### Arguments
 
-1. `string $fn`: Name of a global available callback function. Callback will recive the
-parammeters: `Remote_CPT $rcpt` with the Remote CPT instance, `array $atts` with the
-shortcode attributes, and `string $content` with the shortcode content.
-2. `string $content`: Optional, content to be passed to the callback.
+1. `string $fn`: Name of a global available callback function.
+2. `array $atts`: Array with shortcode attributes.
+2. `string $content`: String with the shortcode content.
 
 #### Returns
 
@@ -46,7 +48,6 @@ Returns the output of the callback function.
 #### Example
 
 ```php
-$content = '<p>My Tags</p>';
 function my_remote_callback($rcpt, $atts, $content = '') {
 	$tags = $rcpt->get('tags');
 
@@ -66,11 +67,11 @@ do_shortcode('[remote_callback fn="my_remote_callback"]');
 
 ### `posts_bridge_relation`
 
-Returns an instance of the Remote_Relation object by post type.
+Returns an instance of the remote relation object by post type.
 
 #### Arguments
 
-1. `mixed $default`: Default value.
+1. `mixed $default`: Fallback value.
 2. `string $post_type`: Post type slug.
 
 #### Returns
@@ -92,7 +93,7 @@ Returns the collection of configured remote relations as Remote_Relation instanc
 
 #### Arguments
 
-1. `array $default`: Default value.
+1. `array $default`: Fallback value.
 
 #### Returns
 
@@ -113,32 +114,32 @@ Returns the list of post type linked to remote backends.
 
 #### Arguments
 
-1. `array $default`: Default value.
+1. `array $default`: Fallback value.
 
 #### Returns
 
-1. `array $post_types`: Array of post type slugs.
+1. `array $post_types`: Array of post type slug strings.
 
 #### Example
 
 ```php
-$remote_cpts = apply_filters('posts_bridge_remote_cpts', []);
-foreach ($remote_cpts as $remote_cpt) {
+$rcpts = apply_filters('posts_bridge_remote_cpts', []);
+foreach ($rcpts as $rcpt) {
 	// do something
 }
 ```
 
 ### `posts_bridge_is_remote`
 
-Checks if the current global post is a Remote CPT handled by Posts Bridge.
+Checks if the current global post is a remote cpt handled by Posts Bridge.
 
 #### Arguments
 
-1. `boolean $default`: Default value.
+1. `boolean $default`: Fallback value.
 
 #### Returns
 
-1. `boolean $is_remote`: Boolean value.
+1. `boolean $is_remote`: True if the global post is a remote cpt.
 
 #### Example
 
@@ -153,13 +154,13 @@ if ($is_remote) {
 
 ### `posts_bridge_remote_data`
 
-Filters the posts' remote data before render. With this filter you can
-format your data before it was stored on the Remote_CPT instance.
+Filters the post's remote data before render. With this filter you can format your data
+before it was stored on the Remote_CPT instance.
 
 #### Arguments
 
-1. `array $data`: Array containing the backend response JSON data.
-2. `object $remote_cpt`: Instance of the current Remote CPT.
+1. `array $data`: Array containing the backend response data.
+2. `object $remote_cpt`: Instance of the current Remote_CPT.
 3. `string $locale`: Language code of the current post.
 
 #### Example
@@ -173,13 +174,13 @@ add_filter('posts_bridge_remote_data', function ($data, $rcpt, $locale) {
 ### `posts_bridge_endpoint`
 
 When using the REST protocol to synchronization, use this hook to format endpoints
-if your API endpoints does not comply with the RESY standards.
+if your API endpoints are not REST-compliant.
 
 #### Arguments
 
 1. `string $endpoint`: Default endpoint to send GET requests to crawl post's remote data.
 2. `string $foreign_id`: Remote CPT foreig key value.
-3. `object $remote_cpt`: Instance of the current Remote_CPT.
+3. `object $rcpt`: Instance of the current Remote_CPT.
 
 #### Example
 
@@ -191,7 +192,9 @@ add_filter('posts_bridge_endpoint', function ($endpoint, $foreign_id, $rcpt) {
 
 ### `posts_bridge_default_thumbnail`
 
-Filter to change the path to the plugin's default thumbnail image.
+Posts Bridge sets use a placeholder image as the default remote cpts thumbnail. Use this filter to change the path
+to the plugin's default thumbnail image. Use it to define a custom fallback thumbnail. This filter is
+triggered on plugin's activation and deactivation time.
 
 #### Arguments
 
@@ -209,7 +212,7 @@ add_filter('posts_bridge_default_thumbnail', function ($filepath) {
 
 ### `posts_bridge_before_search`
 
-Fired before Posts Bridge ask a backend for its models' foreig keys.
+Fired before Posts Bridge ask a backend for its models' foreig keys index.
 
 #### Arguments
 
@@ -246,7 +249,7 @@ add_action('posts_bridge_after_search', function ($response, $relation) {
 
 ### `posts_bridge_before_fetch`
 
-Fired before Posts Bridge fetches data for a remote post.
+Fired before Posts Bridge fetches data for a remote cpt.
 
 #### Arguments
 
@@ -334,9 +337,11 @@ the new post ID, its language as slug, and its translation post ID.
 #### Example
 
 ```php
-add_action('posts_bridge_translation', function () {
-    // do something
-}, 10);
+add_action('posts_bridge_translation', function ($trans) {
+	if ($trans['lang'] === 'ca') {
+		// do something
+	}
+});
 ```
 
 # Some other usful WP standard hooks
@@ -349,14 +354,14 @@ hooks you, as a develper, may want to use to control the lifecycle of your remot
 ### `rest_pre_insert_{$post_type}`
 
 Use this native WP hook to filter your backend payload on write operations against
-the WP REST API. Your payload has to be conformant to the WP API. If it isn't, use
-this hook to preformat your backend payloads.
+the WP REST API. Your payload has to be conformant to the WP API. If it isn't, and
+JSON Fingers are not enough, use this hook to preformat your backend payloads.
 
 #### Arguments
 
 1. `object $prepared_post`: An object representing a single post prepared for inserting
    or updating the database. Modify it with your request object.
-2. `WP_REST_Request $request`: Current request instance.
+2. `WP_REST_Request $request`: Current REST request instance.
 
 #### Example
 
