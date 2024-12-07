@@ -1,7 +1,7 @@
 {
-  "name": "posts-bridge-remote-field",
-  "version": "1.0.0",
-  "description": "Remote field custom block.",
+  "name": "posts-bridge-remote-fields",
+  "version": "1.2.0",
+  "description": "Remote fields custom block.",
   "author": "Còdec",
   "license": "GPL-2.0-or-later",
   "main": "build/index.js",

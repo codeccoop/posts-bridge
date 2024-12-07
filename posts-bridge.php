@@ -45,7 +45,7 @@ require_once 'includes/class-json-finger.php';
 require_once 'includes/trait-cron.php';
 require_once 'includes/trait-translations.php';
 
-require_once 'custom-blocks/remote-field/remote-field.php';
+require_once 'custom-blocks/remote-fields/remote-fields.php';
 
 /**
  * Handle global Remote_CPT instances.

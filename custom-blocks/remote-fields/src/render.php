@@ -6,7 +6,7 @@
  * @param   string $content - The block inner HTML (usually empty unless using inner blocks).
  */
 
-$is_remote_frontend = shortcode_exists('remote_field');
+$is_remote_frontend = shortcode_exists('remote_fields');
 if ($is_remote_frontend) {
     echo do_shortcode("[remote_fields]{$content}[/remote_fields]");
 } else {

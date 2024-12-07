@@ -1,11 +1,11 @@
 {
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
-  "name": "posts-bridge/remote-field",
-  "version": "1.0.0",
-  "title": "Remote Field",
+  "name": "posts-bridge/remote-fields",
+  "version": "1.2.0",
+  "title": "Remote Fields",
   "category": "widgets",
-  "description": "Remote field custom block that replace marks by its remote value on the render.",
+  "description": "Remote fields custom block that replace marks by its remote value on the render.",
   "icon": "airplane",
   "supports": {
     "anchor": true,
