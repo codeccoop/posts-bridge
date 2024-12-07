@@ -80,7 +80,7 @@ with many backend connexions configured to establish HTTP requests against.
 Each backend needs a unique name that identifies it and a base URL. The base URL will be
 prepended to your relation's endpoints to build the URLs from the backend HTTP API.
 
-To each backend you can set a collection of HTTP headers be sent on each request. In addition,
+To each backend you can set a collection of HTTP headers to be sent on each request. In addition,
 Http Bridge will add some default headers to the request.
 
 ## Remote Fields
@@ -133,7 +133,7 @@ For example, if your backend send a payload like this:
 ```
 
 Then you can set your `contact_name` custom field's foreign key as `contact[1]` and the
-finger will set `Bob` as its value.
+mapper will set `Bob` as its value.
 
 ## Custom Blocks
 
@@ -148,13 +148,25 @@ payload fetched from the backend.
 If do you prefer, you can use Posts Bridge shortcodes directly. They are described on
 the [documentation](./docs/API.md#shortcodes).
 
-## REST API Authentication
+## REST API
+
 
 The plugin opens endpoints on the WP REST API to allow CRUD operations against
-your **Remote Posts**. Write operations are protected with authentication. To authenticate
-againts the API you can use [native wp methods](https://developer.wordpress.org/rest-api/using-the-rest-api/authentication/)
-or use the [Http Bridge](https://git.cooopdevs.org/codeccoop/wp/plugins/bridges/http-brdige/)
-custom endpoints to gain access over JWT.
+your **Remote Posts**. This endpoints follow the schema are exposed under the
+namespace `wp-bridges/v1/posts-bridge` followed by the `post_type` slug of
+the remote cpt. This endpoints works like the [Post REST endpoint](https://developer.wordpress.org/rest-api/reference/posts/)
+with some variations:
+
+1. Remote featured media: Posts Bridge can handle URL sources for your remote
+   cpts featured media. It supports base64 images too.
+2. Foreign key: The requests are discarded if the relation's foreig key is not
+   present on the payload.
+3. Field mappers: Fields on your payload will be mapped to post's attributes /
+   custom fields based on the relation's field mappers configuration.
+
+Write operations are protected with authentication. To authenticate
+againts the API use the [Http Bridge](https://git.cooopdevs.org/codeccoop/wp/plugins/bridges/http-brdige/)
+custom endpoints to gain access over JWT authorization.
 
 ## Developers
 
