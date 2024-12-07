@@ -26,8 +26,9 @@ wp plugin install https://git.coopdevs.org/codeccoop/wp/plugins/bridges/posts-br
 
 ## Getting started
 
-Once installed and activated, go to `Settings > Posts Bridge` to manage plugin
-settings. The page has three main sections:
+See [install](#install) section to learn how to install the plugin. Once installed
+and activated, go to `Settings > Posts Bridge` to manage plugin settings. The page
+has three main sections:
 
 1. General
    - **Synchronization**: Trigger manual content synchronizations.
@@ -58,6 +59,9 @@ from the general settings page. You can perform this synchronization in two mode
   remote models without corresponding pairs on the WP posts table. The rest will be skipped.
 - **Full**: Like a light synchronization, but Posts Bridge will fetch data for every post
   on the local database and updates its remote data.
+
+If all goes well, you will find your wp admin post's pages filled with brand new
+content 🎉.
 
 ## Synchronization
 
