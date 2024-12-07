@@ -160,11 +160,6 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             null,
             $this->post_type
         );
-        foreach ($relation->remote_custom_fields() as $foreign => $name) {
-            if (isset($request[$foreign])) {
-                update_post_meta($post->ID, $name, $request[$foreign]);
-            }
-        }
 
         // Map custom featured media to the request before media handler execution
         foreach ($relation->remote_post_fields() as $foreign => $name) {

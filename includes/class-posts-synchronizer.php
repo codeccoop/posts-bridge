@@ -279,13 +279,12 @@ class Posts_Synchronizer extends Singleton
             );
 
             $data = $rcpt->fetch();
-            $data = $relation->map_remote_fields($data);
 
             if (is_wp_error($data)) {
                 return false;
             }
 
-            $custom_fields = $relation->remote_custom_fields();
+            $data = $relation->map_remote_fields($data);
 
             $data['post_type'] = $post_type;
             if ($post->ID !== 0) {
@@ -312,26 +311,6 @@ class Posts_Synchronizer extends Singleton
             }
 
             set_post_thumbnail($post_id, $featured_media);
-
-            if (!empty($data['categories'])) {
-                if (!is_array($data['categories'])) {
-                    $data['categories'] = (string) $data['categories'];
-                }
-                wp_set_post_terms($post_id, $data['categories'], 'category');
-            }
-
-            if (!empty($data['tags'])) {
-                if (!is_array($data['tags'])) {
-                    $data['tags'] = (string) $data['tags'];
-                }
-                wp_set_post_terms($post_id, $data['tags'], 'post_tag');
-            }
-
-            foreach ($custom_fields as $name) {
-                if (isset($data[$name])) {
-                    update_post_meta($post_id, $name, $data[$name]);
-                }
-            }
         }
 
         return true;

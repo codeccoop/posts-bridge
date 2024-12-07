@@ -8,7 +8,7 @@ import {
 import { useMemo } from "@wordpress/element";
 
 const postModel = {
-  post_ID: "ID",
+  ID: "ID",
   post_title: "Title",
   post_name: "Slug",
   post_excerpt: "Excerpt",
@@ -16,6 +16,8 @@ const postModel = {
   post_status: "Status",
   featured_media: "Featured media",
   post_date: "Date",
+  post_category: "Categories",
+  tags_input: "Tags",
 };
 
 export default function CustomFieldsTable({ fields, setFields, done }) {

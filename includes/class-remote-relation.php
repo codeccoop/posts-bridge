@@ -4,6 +4,8 @@ namespace POSTS_BRIDGE;
 
 use HTTP_BRIDGE\Http_Backend;
 
+use function WPCT_ABSTRACT\is_list;
+
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -19,7 +21,7 @@ class Remote_Relation
      * @var array<string> WP_Post model fields.
      */
     public const post_model = [
-        'post_ID',
+        'ID',
         'post_title',
         'post_name',
         'post_excerpt',
@@ -32,6 +34,21 @@ class Remote_Relation
         'post_modified',
         'post_modified_gmt',
         'post_parent',
+        'post_password',
+        'post_parent',
+        'comment_status',
+        'post_author',
+        'pinged',
+        'menu_order',
+        'post_mime_type',
+        'guid',
+        'import_id',
+        'post_category',
+        'tags_input',
+        'tax_input',
+        'meta_input',
+        'page_template',
+        # custom
         'featured_media',
     ];
 
@@ -94,6 +111,7 @@ class Remote_Relation
             ? $data['endpoint']
             : Settings::get_setting('posts-bridge', 'rpc-api')->endpoint);
 
+        // remove host data from the endpoint
         if (!empty($this->endpoint)) {
             $url = parse_url($this->endpoint);
             if (isset($url['path'])) {
@@ -245,9 +263,10 @@ class Remote_Relation
     public function map_remote_fields($data)
     {
         $finger = new JSON_Finger($data);
-        $remote_fields = $this->remote_fields();
+        $post_fields = $this->remote_post_fields();
+        $custom_fields = $this->remote_custom_fields();
 
-        foreach ($remote_fields as $foreign => $name) {
+        foreach ($post_fields as $foreign => $name) {
             if ($foreign === $name) {
                 continue;
             }
@@ -259,12 +278,35 @@ class Remote_Relation
             $finger->unset($foreign);
         }
 
+        foreach ($custom_fields as $foreign => $name) {
+            if ($value = $finger->get($foreign)) {
+                // wordpress can't serialize list arrays...
+                if (is_list($value)) {
+                    $serializable = [];
+                    for ($i = 0; $i < count($value); $i++) {
+                        $serializable[(string) $i] = $value[$i];
+                    }
+                    $value = $serializable;
+                }
+
+                $finger->set('meta_input.' . $name, $value);
+            }
+
+            $finger->unset($foreign);
+        }
+
         $data = $finger->data();
 
-        // standarize ID field
-        if (isset($data['post_ID'])) {
-            $data['ID'] = $data['post_ID'];
-            unset($data['post_ID']);
+        // Prepare tags value for post insert
+        if (isset($data['tags_input'])) {
+            $data['tags_input'] = $this->get_post_tags($data['tags_input']);
+        }
+
+        // Prepare categories value for post insert
+        if (isset($data['post_category'])) {
+            $data['post_category'] = $this->get_post_categories(
+                $data['post_category']
+            );
         }
 
         // post type should not be user declarable
@@ -276,6 +318,70 @@ class Remote_Relation
         }
 
         return $data;
+    }
+
+    /**
+     * On inserts, WordPress wants categories as an array of existing terms' ids.
+     * Loop over the categories, create them if they doesn't exists, an return
+     * its ids.
+     *
+     * @param array|string $categories Array with category names.
+     *
+     * @return array Array with valid categories ids.
+     */
+    private function get_post_categories($categories)
+    {
+        if (!is_array($categories)) {
+            $categories = $this->get_post_tags($categories);
+        }
+
+        $terms = get_terms(['taxonomy' => 'category', 'hide_empty' => false]);
+        $term_names = [];
+        foreach ($terms as $term) {
+            $term_names[$term->name] = $term->term_id;
+        }
+
+        $ids = [];
+        foreach ($categories as $cat) {
+            if (is_int($cat)) {
+                $ids[] = (int) $cat;
+            } elseif (is_string($cat)) {
+                if (isset($term_names[$cat])) {
+                    $ids[] = $term_names[$cat];
+                } else {
+                    $term = wp_insert_term($cat, 'category');
+                    if (!is_wp_error($term)) {
+                        $ids[] = $term['term_id'];
+                    }
+                }
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * On inserts, WordPress wants tags as an array of strings with tag names.
+     *
+     * @param array|string $tags Array with post tags, or string with comma separated values.
+     *
+     * @return array Tag names as array.
+     */
+    private function get_post_tags($tags)
+    {
+        if (!is_array($tags)) {
+            if (!is_string($tags)) {
+                return [];
+            }
+
+            $tags = explode(',', $tags);
+        }
+
+        return array_filter(
+            array_map(function ($tag) {
+                return trim($tag);
+            }, $tags)
+        );
     }
 
     /**
