@@ -71,6 +71,18 @@ backends:
   to perform CRUD operations against its database. This way, is the backend who is
   responsible to inform WordPress each time an update occurs on its database.
 
+## Backends
+
+Posts Bridge use [Http Bridge](https://git.coopdevs.org/codeccoop/wp/plugins/bridges/http-bridge/)
+backends as a foundational part of its system. With this feature, Posts Bridge can be configured
+with many backend connexions configured to establish HTTP requests against.
+
+Each backend needs a unique name that identifies it and a base URL. The base URL will be
+prepended to your relation's endpoints to build the URLs from the backend HTTP API.
+
+To each backend you can set a collection of HTTP headers be sent on each request. In addition,
+Http Bridge will add some default headers to the request.
+
 ## Remote Fields
 
 On synchronization time, Posts Bridge will fetch the remote data of your remote cpts. If
