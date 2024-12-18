@@ -1,7 +1,5 @@
 // vendor
 import React from "react";
-import { __ } from "@wordpress/i18n";
-import apiFetch from "@wordpress/api-fetch";
 import {
   createContext,
   useContext,
@@ -14,19 +12,11 @@ import useRelationPostTypes from "../hooks/useRelationPostTypes";
 
 const PostTypesContext = createContext([]);
 
-export default function PostTypesProvider({ setLoading, children }) {
+export default function PostTypesProvider({ children }) {
   const [postTypes, setPostTypes] = useState([]);
 
   useEffect(() => {
-    setLoading(true);
-    apiFetch({
-      path: `${window.wpApiSettings.root}wp-bridges/v1/posts-bridge/types`,
-      headers: {
-        "X-WP-Nonce": wpApiSettings.nonce,
-      },
-    })
-      .then((postTypes) => setPostTypes(postTypes))
-      .finally(() => setLoading(false));
+    wppb.on("postTypes", setPostTypes);
   }, []);
 
   return (
@@ -38,6 +28,7 @@ export default function PostTypesProvider({ setLoading, children }) {
 
 export function usePostTypes({ filter } = { filter: false }) {
   const postTypes = useContext(PostTypesContext);
+
   if (filter) {
     const relationPostTypes = useRelationPostTypes();
     return postTypes.filter((pt) => !relationPostTypes.has(pt));

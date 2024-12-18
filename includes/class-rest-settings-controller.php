@@ -5,6 +5,8 @@ namespace POSTS_BRIDGE;
 use WP_REST_Server;
 use WPCT_ABSTRACT\REST_Settings_Controller as Base_REST_Settings_Controller;
 
+use function WPCT_ABSTRACT\is_list;
+
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -27,13 +29,6 @@ class REST_Settings_Controller extends Base_REST_Settings_Controller
      * @var int $version REST API namespace version.
      */
     protected static $version = 1;
-
-    /**
-     * Handle plugin settings names.
-     *
-     * @var array<string> $settings Plugin settings names list.
-     */
-    protected static $settings = ['general', 'rest-api', 'rpc-api'];
 
     /**
      * Handle internat WP post types excluded from relations.
@@ -64,12 +59,28 @@ class REST_Settings_Controller extends Base_REST_Settings_Controller
      */
     public function construct(...$args)
     {
-        [$group] = $args;
-        parent::construct($group);
+        parent::construct(...$args);
 
         add_action('rest_api_init', function () {
             $this->register_post_types_route();
         });
+
+        add_filter(
+            'wpct_rest_settings',
+            function ($settings, $group) {
+                if ($group !== $this->group) {
+                    return $settings;
+                }
+
+                if (!is_list($settings)) {
+                    $settings = [];
+                }
+
+                return array_merge($settings, ['rest-api']);
+            },
+            10,
+            2
+        );
     }
 
     /**

@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 class Remote_Relation
 {
     /**
-     * Handle WP_Post model fields.
+     * Handles WP_Post model fields.
      *
      * @var array<string> WP_Post model fields.
      */
@@ -53,124 +53,75 @@ class Remote_Relation
     ];
 
     /**
-     * Handle relation's post type slug.
+     * Handles relation data.
      *
-     * @var string $post_type Post type slug.
+     * @var array $data Settings data of the relation.
      */
-    private $post_type;
+    protected $data;
+
+    /** Handles relation api slug.
+     *
+     * @var string $api Api slug.
+     */
+    protected $api;
 
     /**
-     * Handle relation's backend name.
+     * Public remote relations getter.
      *
-     * @var string $backend Backend name.
+     * @return array Remote relation instances.
      */
-    private $backend;
+    public static function relations()
+    {
+        $relations = apply_filters('posts_bridge_setting', null, 'rest-api')
+            ->relations;
+        return array_map(function ($rel) {
+            return new Remote_Relation($rel);
+        }, $relations);
+    }
 
     /**
-     * Handle relation's model name.
-     *
-     * @var string $model Model name.
-     */
-    private $model;
-
-    /**
-     * Handle relation's API endpoint path.
-     *
-     * @var string $endpoint Endpoint path.
-     */
-    private $endpoint;
-
-    /**
-     * Handle relation's foreign key.
-     *
-     * @var string $foreing_key Relation foreign key.
-     */
-    private $foreign_key;
-
-    /**
-     * Handle relation's remote fields maps.
-     *
-     * @var array $fields Remote fields list.
-     */
-    private $fields = [];
-
-    /**
-     * Binds the relation data to the instance.
+     * Binds the relation data to the instance and sets its api slug.
      */
     public function __construct($data)
     {
-        $this->post_type = $data['post_type'];
-        $this->backend = $data['backend'];
-        $this->model = isset($data['model']) ? $data['model'] : null;
-        $this->fields = (array) $data['fields'];
-        $this->foreign_key = isset($data['foreign_key'])
-            ? $data['foreign_key']
-            : 'id';
+        $this->data = $data;
+        $this->api = 'rest';
+    }
 
-        $this->endpoint = (string) (isset($data['endpoint'])
-            ? $data['endpoint']
-            : Settings::get_setting('posts-bridge', 'rpc-api')->endpoint);
-
-        // remove host data from the endpoint
-        if (!empty($this->endpoint)) {
-            $url = parse_url($this->endpoint);
-            if (isset($url['path'])) {
-                $this->endpoint = $url['path'];
-                if (isset($url['query'])) {
-                    $this->endpoint .= '?' . $url['query'];
-                }
-            }
+    /**
+     * Proxies relation private getters to public attributes.
+     *
+     * @param string $name Attribute name.
+     *
+     * @return mixed Instance attribute value.
+     */
+    public function __get($name)
+    {
+        switch ($name) {
+            case 'api':
+                $value = $this->api;
+                break;
+            case 'backend':
+                $value = $this->backend();
+                break;
+            case 'endpoint':
+                $value = $this->endpoint();
+                break;
+            default:
+                $value = isset($this->data[$name]) ? $this->data[$name] : null;
         }
-    }
 
-    /**
-     * Realtion's API protocol getter.
-     *
-     * @return string API protocol.
-     */
-    public function proto()
-    {
-        return empty($this->model) ? 'rest' : 'rpc';
-    }
-
-    /**
-     * Relation's post type getter.
-     *
-     * @return string Post type slug.
-     */
-    public function post_type()
-    {
-        return $this->post_type;
+        return apply_filters("posts_bridge_relation_{$name}", $value, $this);
     }
 
     /**
      * Relation's backend getter.
      *
-     * @return Http_Backend Http_Backend instance.
+     * @return Http_Backend Backend instance.
      */
-    public function backend()
+    private function backend()
     {
         return apply_filters('http_bridge_backend', null, $this->backend);
-    }
-
-    /**
-     * Relation's model getter.
-     *
-     * @return string Model name.
-     */
-    public function model()
-    {
-        return $this->model;
-    }
-
-    /**
-     * Relation's foreign key getter.
-     *
-     * @return string Foreign key.
-     */
-    public function foreign_key()
-    {
-        return $this->foreign_key;
     }
 
     /**
@@ -178,30 +129,48 @@ class Remote_Relation
      *
      * @return string Endpoint path.
      */
-    public function endpoint()
+    private function endpoint()
     {
-        return $this->endpoint;
+        $endpoint = $this->endpoint;
+        if (!empty($endpoint)) {
+            $url = parse_url($endpoint);
+            if (isset($url['path'])) {
+                $endpoint = $url['path'];
+                if (isset($url['query'])) {
+                    $endpoint .= '?' . $url['query'];
+                }
+            } else {
+                $endpoint = '';
+            }
+        }
+
+        return $endpoint;
+    }
+
+    public function fetch($rcpt)
+    {
+        return $this->backend()->get($this->endpoint());
     }
 
     /**
-     * Relation's endpoint URL getter.
+     * Searches for relation's foreign key values.
      *
-     * @return string Endpoint full URL.
+     * @return array List of foreign ids.
      */
-    public function url()
+    public function search()
     {
+        $endpoint = $this->endpoint();
         $backend = $this->backend();
-        return $backend->url($this->endpoint);
-    }
 
-    /**
-     * Proxy HTTP_Backend headers getter.
-     *
-     * @return array Backend HTTP headers.
-     */
-    public function headers()
-    {
-        return $this->backend()->headers();
+        $res = $backend->get($endpoint);
+
+        if (is_wp_error($res) || empty($res['data'])) {
+            return [];
+        }
+
+        return array_map(function ($model) {
+            return (new JSON_Finger($model))->get($this->foreign_id);
+        }, (array) $res['data']);
     }
 
     /**
@@ -331,7 +300,7 @@ class Remote_Relation
      */
     private function get_post_categories($categories)
     {
-        if (!is_array($categories)) {
+        if (!is_list($categories)) {
             $categories = $this->get_post_tags($categories);
         }
 
@@ -392,7 +361,7 @@ class Remote_Relation
     {
         $fields = $this->remote_fields();
         foreach (array_keys($fields) as $foreign) {
-            register_post_meta($this->post_type(), $foreign, [
+            register_post_meta($this->post_type, $foreign, [
                 'show_in_rest' => true,
                 'single' => true,
                 'type' => 'string',

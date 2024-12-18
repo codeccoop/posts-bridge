@@ -37,55 +37,10 @@ class Settings extends BaseSettings
     }
 
     /**
-     * Plugin handled post types getter.
-     *
-     * @param string|null $proto Filter post types by API protocol.
-     *
-     * @return array<string> Handled post type slugs.
-     */
-    public static function post_types($proto = null)
-    {
-        $relations = self::relations($proto);
-        return array_values(
-            array_unique(
-                array_map(function ($rel) {
-                    return $rel->post_type();
-                }, $relations)
-            )
-        );
-    }
-
-    /**
-     * Plugin's remote relations getter.
-     *
-     * @param string|null $proto Filter post types by API protocol.
-     *
-     * @return array<Remote_Relation> Remote relations.
-     */
-    public static function relations($proto = null)
-    {
-        $rest_rels = self::get_setting('posts-bridge', 'rest-api')->relations;
-        $rpc_rels = self::get_setting('posts-bridge', 'rpc-api')->relations;
-        $relations = array_map(function ($rel) {
-            return new Remote_Relation($rel);
-        }, array_merge($rest_rels, $rpc_rels));
-
-        if ($proto) {
-            $relations = array_filter($relations, function ($rel) use ($proto) {
-                return $rel->proto() === $proto;
-            });
-        }
-
-        return $relations;
-    }
-
-    /**
      * Register plugin settings.
      */
     public function register()
     {
-        $host = parse_url(get_bloginfo('url'))['host'];
-
         // Register general settings
         $this->register_setting(
             'general',
@@ -134,18 +89,7 @@ class Settings extends BaseSettings
             ],
             [
                 'whitelist' => false,
-                'backends' => [
-                    [
-                        'name' => 'ERP',
-                        'base_url' => 'https://erp.' . $host,
-                        'headers' => [
-                            [
-                                'name' => 'Authorization',
-                                'value' => 'Bearer <erp-api-token>',
-                            ],
-                        ],
-                    ],
-                ],
+                'backends' => [],
                 'synchronize' => [
                     'enabled' => false,
                     'recurrence' => 'hourly',
@@ -183,63 +127,7 @@ class Settings extends BaseSettings
                 ],
             ],
             [
-                'relations' => [
-                    [
-                        'post_type' => 'post',
-                        'endpoint' => '/api/posts',
-                        'foreign_key' => 'id',
-                        'backend' => 'ERP',
-                        'fields' => [],
-                    ],
-                ],
-            ]
-        );
-
-        // Register RPC API settings
-        $this->register_setting(
-            'rpc-api',
-            [
-                'endpoint' => ['type' => 'string'],
-                'user' => ['type' => 'string'],
-                'password' => ['type' => 'string'],
-                'database' => ['type' => 'string'],
-                'relations' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'additionalProperties' => false,
-                        'properties' => [
-                            'post_type' => ['type' => 'string'],
-                            'model' => ['type' => 'string'],
-                            'backend' => ['type' => 'string'],
-                            'fields' => [
-                                'type' => 'array',
-                                'items' => [
-                                    'type' => 'object',
-                                    'additionalProperties' => false,
-                                    'properties' => [
-                                        'name' => ['type' => 'string'],
-                                        'foreign' => ['type' => 'string'],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-            [
-                'endpoint' => '/jsonrpc',
-                'user' => 'admin',
-                'password' => 'admin',
-                'database' => 'erp',
-                'relations' => [
-                    [
-                        'post_type' => 'post',
-                        'model' => 'blog.post',
-                        'backend' => 'ERP',
-                        'fields' => [],
-                    ],
-                ],
+                'relations' => [],
             ]
         );
     }
@@ -262,9 +150,9 @@ class Settings extends BaseSettings
         switch ($name) {
             case 'general':
                 $value = $this->validate_general($value);
+                $this->update_addons($value);
                 break;
             case 'rest-api':
-            case 'rpc-api':
                 $value = $this->validate_api($value);
                 break;
         }
@@ -282,9 +170,15 @@ class Settings extends BaseSettings
     private function validate_general($value)
     {
         $value['whitelist'] = (bool) $value['whitelist'];
-        $value['synchronize'] = (array) $value['synchronize'];
+
+        $value['synchronize'] = array_merge((array) $value['synchronize'], [
+            'enabled' => false,
+            'recurrence' => 'hourly',
+        ]);
+
         $value['synchronize']['enabled'] =
             (bool) $value['synchronize']['enabled'];
+
         $value['synchronize']['recurrence'] = in_array(
             $value['synchronize']['recurrence'],
             [
@@ -298,28 +192,10 @@ class Settings extends BaseSettings
         )
             ? $value['synchronize']['recurrence']
             : 'hourly';
+
         $value['backends'] = \HTTP_BRIDGE\Settings::validate_backends(
             $value['backends']
         );
-
-        $rest = self::get_setting($this->group(), 'rest-api');
-        $rpc = self::get_setting($this->group(), 'rpc-api');
-
-        $relations = $this->validate_relations(
-            $rest->relations,
-            $value['backends']
-        );
-        if (count($relations) !== count($rest->relations)) {
-            $rest->relations = $relations;
-        }
-
-        $relations = $this->validate_relations(
-            $rpc->relations,
-            $value['backends']
-        );
-        if (count($relations) !== count($rpc->relations)) {
-            $rpc->relations = $relations;
-        }
 
         return $value;
     }
@@ -351,7 +227,7 @@ class Settings extends BaseSettings
      *
      * @return array List of valid API remote relations.
      */
-    private function validate_relations($relations, $backends)
+    protected function validate_relations($relations, $backends)
     {
         $post_types = get_post_types();
 
@@ -404,5 +280,22 @@ class Settings extends BaseSettings
         }
 
         return $valid_relations;
+    }
+
+    private function update_addons($value)
+    {
+        $addons = isset($value['addons']) ? $value['addons'] : [];
+        $addons_dir = dirname(__FILE__, 2) . '/addons';
+        $enableds = "{$addons_dir}/enabled";
+
+        foreach ($addons as $addon => $enabled) {
+            $index = "{$enableds}/{$addon}";
+            if ($enabled && !is_file($index)) {
+                $fp = fopen($index, 'w');
+                fclose($fp);
+            } elseif (!$enabled && is_file($index)) {
+                unlink($index);
+            }
+        }
     }
 }

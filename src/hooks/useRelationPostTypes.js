@@ -2,13 +2,12 @@
 import { useMemo } from "@wordpress/element";
 
 // source
-import { useRestApi, useRpcApi } from "../providers/Settings";
+import { useRelations } from "../providers/Settings";
 
 export default function useRelationPostTypes() {
-  const [{ relations: rest }] = useRestApi();
-  const [{ relations: rpc }] = useRpcApi();
+  const relations = useRelations();
 
   return useMemo(() => {
-    return new Set(rest.concat(rpc).map(({ post_type }) => post_type));
-  }, [rest, rpc]);
+    return new Set(relations.map(({ post_type }) => post_type));
+  }, [relations]);
 }

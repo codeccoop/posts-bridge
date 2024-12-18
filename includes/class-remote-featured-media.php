@@ -2,6 +2,8 @@
 
 namespace POSTS_BRIDGE;
 
+use WP_Query;
+
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -280,6 +282,52 @@ class Remote_Featured_Media
 
         if (count($attachments)) {
             return $attachments[0]->ID;
+        }
+    }
+
+    /**
+     * Register the plugin default thumbnail as a WP_Attachment on plugin activations.
+     */
+    public static function setup_default_thumbnail()
+    {
+        $attachment_id = self::default_thumbnail_id();
+        if ($attachment_id) {
+            $attachment = get_post($attachment_id);
+            if ($attachment) {
+                return;
+            }
+        }
+
+        $static_path = apply_filters(
+            'posts_bridge_default_thumbnail',
+            plugin_dir_path(__FILE__) . 'assets/posts-bridge-thumbnail.webp'
+        );
+
+        $attachment_id = self::attach(
+            $static_path,
+            file_get_contents($static_path)
+        );
+        add_option(
+            Remote_Featured_Media::_default_thumbnail_handle,
+            $attachment_id
+        );
+    }
+
+    /**
+     * Removes the default thumbnail attchment on plugin deactivations.
+     */
+    public static function remove_default_thumbnail()
+    {
+        $attachment_id = self::default_thumbnail_id();
+        if ($attachment_id) {
+            $query = new WP_Query([
+                'meta_key' => '_thumbnail_id',
+                'meta_value' => $attachment_id,
+            ]);
+            if (!$query->found_posts) {
+                wp_delete_attachment($attachment_id, true);
+                delete_option(self::_default_thumbnail_handle);
+            }
         }
     }
 }
