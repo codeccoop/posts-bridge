@@ -17,4 +17,11 @@ node_modules/
 
 # build
 plugin.bundle.*
-build
+addon.bundle.*
+
+# composer
+vendor
+
+# addons
+addons/enabled/*
+.store
