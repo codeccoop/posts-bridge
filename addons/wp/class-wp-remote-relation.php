@@ -66,7 +66,17 @@ class WP_Remote_Relation extends Remote_Relation
     public function fetch($foreign_id)
     {
         $endpoint = $this->endpoint($foreign_id);
-        $res = $this->backend->get($endpoint);
+        $res = $this->backend->get(
+            $endpoint,
+            [
+                'context' => 'edit',
+            ],
+            [
+                'Authorization' => $this->authorization(),
+                'Accept' => 'application/json',
+            ]
+        );
+
         if (is_wp_error($res)) {
             return $res;
         }
@@ -76,25 +86,29 @@ class WP_Remote_Relation extends Remote_Relation
 
     public function foreign_ids()
     {
-        return $this->get_pages();
+        return $this->get_paged();
     }
 
-    private function get_pages($page = 1)
+    private function get_paged($page = 1)
     {
         $pages = 1e10;
         $endpoint = $this->endpoint();
         $backend = $this->backend;
 
-        // $endpoint .= '?context=embed&_fields=id&per_page=100&page=' . $page;
-
         $posts = [];
         while ($page <= $pages) {
-            $res = $backend->get($endpoint, [
-                'context' => 'embed',
-                '_fields' => 'id',
-                'per_page' => '100',
-                'page' => $page,
-            ]);
+            $res = $backend->get(
+                $endpoint,
+                [
+                    'context' => 'embed',
+                    '_fields' => 'id',
+                    'per_page' => '100',
+                    'page' => $page,
+                ],
+                [
+                    'Accept' => 'application/json',
+                ]
+            );
 
             if (is_wp_error($res) || empty($res['data'])) {
                 break;
@@ -114,14 +128,17 @@ class WP_Remote_Relation extends Remote_Relation
     {
         unset($data['id']);
         unset($data['guid']);
+        unset($data['author']);
 
-        $data['content'] = $data['content']['rendered'];
-        $data['excerpt'] = $data['excerpt']['rendered'];
-        $data['title'] = $data['title']['rendered'];
+        $aliases = ['date_gmt', 'modified', 'modified_gmt', 'password'];
+        foreach ($aliases as $alias) {
+            $data['post_' . $alias] = $data[$alias];
+            unset($data[$alias]);
+        }
 
         foreach ($data['_links']['wp:attachments'] as $attachment) {
             $res = http_bridge_get($attachment['href']);
-            $attachments = json_decode($res['body'], true);
+            $attachments = $res['data'];
 
             foreach ($attachments as $attachment) {
                 $attachment_id = Remote_Featured_Media::handle(
@@ -136,13 +153,21 @@ class WP_Remote_Relation extends Remote_Relation
             }
         }
 
-        $res = http_bridge_get($data['_links']['wp:featuredmedia'][0]['href']);
-        if (!is_wp_error($res)) {
-            $attachment = json_decode($res['body'], true);
-            $data['featured_media'] = $attachment['source_url'];
+        if (isset($data['_links']['wp:featuredmedia'][0]['href'])) {
+            $res = http_bridge_get(
+                $data['_links']['wp:featuredmedia'][0]['href']
+            );
+            if (!is_wp_error($res)) {
+                $attachment = $res['data'];
+                $data['featured_media'] = $attachment['source_url'];
+            }
         }
 
         foreach ($data['_links']['wp:term'] as $tax) {
+            if (!in_array($tax['taxonomy'], ['category', 'post_tag'])) {
+                continue;
+            }
+
             if ($tax['taxonomy'] === 'category' && empty($data['categories'])) {
                 continue;
             }
@@ -151,6 +176,9 @@ class WP_Remote_Relation extends Remote_Relation
                 continue;
             }
 
+            $field = $tax['taxonomy'] === 'post_tag' ? 'tags' : 'categories';
+            $pk = $tax['taxonomy'] === 'post_tag' ? 'name' : 'term_id';
+
             $res = http_bridge_get($tax['href']);
             if (is_wp_error($res)) {
                 continue;
@@ -158,72 +186,49 @@ class WP_Remote_Relation extends Remote_Relation
 
             $terms = $res['data'];
             foreach ($terms as $term) {
-                if ($tax['taxonomy'] === 'category') {
-                    $ids = [];
-                    foreach ($data['categories'] as $cat_id) {
-                        if ($cat_id === $term['id']) {
-                            $terms = get_terms([
-                                'taxonomy' => 'category',
-                                'hide_empty' => false,
-                            ]);
-                            $exists = false;
-                            foreach ($terms as $wp_term) {
-                                if ($wp_term->name === $term['name']) {
-                                    $exists = true;
-                                    break;
-                                }
-                            }
-
-                            if (!$exists) {
-                                $term = wp_insert_term(
-                                    $term['name'],
-                                    'category'
-                                );
-                                if (!is_wp_error($term)) {
-                                    $ids[] = $term['term_id'];
-                                }
-                            } else {
-                                $ids[] = $wp_term->term_id;
+                $ids = [];
+                foreach ($data[$field] as $term_id) {
+                    if ((int) $term_id === (int) $term['id']) {
+                        $wp_terms = get_terms([
+                            'taxonomy' => $tax['taxonomy'],
+                            'hide_empty' => false,
+                        ]);
+                        $exists = false;
+                        foreach ($wp_terms as $wp_term) {
+                            if ($wp_term->name === $term['name']) {
+                                $exists = true;
+                                break;
                             }
                         }
-                    }
 
-                    $data['categories'] = $ids;
-                } elseif ($tax['taxonomy'] === 'post_tag') {
-                    $ids = [];
-                    foreach ($data['tags'] as $tag_id) {
-                        if ($tag_id === $term['id']) {
-                            $terms = get_terms([
-                                'taxonomy' => 'post_tag',
-                                'hide_empty' => false,
-                            ]);
-                            $exists = false;
-                            foreach ($terms as $wp_term) {
-                                if ($wp_term->name === $term['name']) {
-                                    $exists = true;
-                                    break;
-                                }
+                        if (!$exists) {
+                            $term = wp_insert_term(
+                                $term['name'],
+                                $tax['taxonomy']
+                            );
+                            if (!is_wp_error($term)) {
+                                $ids[] = $term[$pk];
                             }
-
-                            if (!$exists) {
-                                $term = wp_insert_term(
-                                    $term['name'],
-                                    'post_tag'
-                                );
-                                if (!is_wp_error($term)) {
-                                    $ids[] = $term['term_id'];
-                                }
-                            } else {
-                                $ids[] = $wp_term->term_id;
-                            }
+                        } else {
+                            $ids[] = $wp_term->$pk;
                         }
                     }
-
-                    $data['tags'] = $ids;
                 }
+
+                $data[$field] = $ids;
             }
         }
 
         return $data;
+    }
+
+    private function authorization()
+    {
+        $credentials = apply_filters('posts_bridge_setting', null, 'wp-api')
+            ->credentials;
+        return 'Basic ' .
+            base64_encode(
+                "{$credentials['username']}:{$credentials['password']}"
+            );
     }
 }

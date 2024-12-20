@@ -2,8 +2,6 @@
 
 namespace POSTS_BRIDGE;
 
-use Exception;
-
 use function WPCT_ABSTRACT\is_list;
 
 if (!defined('ABSPATH')) {
@@ -91,9 +89,17 @@ class WP_Addon extends Addon
                         ],
                     ],
                 ],
+                'credentials' => [
+                    'username' => ['type' => 'string'],
+                    'password' => ['type' => 'string'],
+                ],
             ],
             [
                 'relations' => [],
+                'credentials' => [
+                    'username' => '',
+                    'password' => '',
+                ],
             ]
         );
     }

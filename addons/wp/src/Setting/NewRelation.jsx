@@ -5,18 +5,17 @@ import { TextControl } from "@wordpress/components";
 // source
 import NewRelation from "../../../../src/components/Relations/NewRelation";
 
-const DEFAULT_MAPPERS = [
-  "ID",
-  "post_title",
-  "post_name",
-  "post_excerpt",
-  "post_content",
-  "post_status",
-  "featured_media",
-  "post_date",
-  "post_category",
-  "tags_input",
-].map((field) => ({ name: field, foreign: field }));
+const DEFAULT_MAPPERS = Object.entries({
+  post_title: "title.raw",
+  post_name: "slug",
+  post_excerpt: "excerpt.raw",
+  post_content: "content.raw",
+  post_status: "status",
+  featured_media: "featured_media",
+  post_date: "date",
+  post_category: "categories",
+  tags_input: "tags",
+}).map(([name, foreign]) => ({ name, foreign }));
 
 function RemotePostTypeField({ data, update }) {
   const __ = wp.i18n.__;

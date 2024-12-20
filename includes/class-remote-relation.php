@@ -292,6 +292,7 @@ class Remote_Relation
         }
 
         $data = $finger->data();
+        unset($data['ID']);
 
         // Prepare tags value for post insert
         if (isset($data['tags_input'])) {
@@ -375,7 +376,7 @@ class Remote_Relation
 
         return array_filter(
             array_map(function ($tag) {
-                return trim($tag);
+                return trim((string) $tag);
             }, $tags)
         );
     }

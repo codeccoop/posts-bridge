@@ -8,7 +8,6 @@ import {
 import { useMemo } from "@wordpress/element";
 
 const postModel = {
-  ID: "ID",
   post_title: "Title",
   post_name: "Slug",
   post_excerpt: "Excerpt",
