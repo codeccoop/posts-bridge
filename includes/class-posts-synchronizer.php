@@ -2,6 +2,7 @@
 
 namespace POSTS_BRIDGE;
 
+use Exception;
 use WPCT_ABSTRACT\Singleton;
 use WP_Query;
 use WP_Post;
@@ -16,6 +17,27 @@ if (!defined('ABSPATH')) {
 class Posts_Synchronizer extends Singleton
 {
     /**
+     * Handle syncrhonization ajax nonce name.
+     *
+     * @var string ajax_none
+     */
+    private const ajax_nonce = 'posts-bridge-ajax-sync';
+
+    /**
+     * Handle syncrhonization ajax action name.
+     *
+     * @var string ajax_action
+     */
+    private const ajax_action = 'posts_bridge_sync';
+
+    /**
+     * Handles synchronization schedule hook name.
+     *
+     * @var string Synchronization schedule hook name.
+     */
+    private const schedule_hook = '_posts_bridge_sync_schedule';
+
+    /**
      * Handle full synchronization mode. Full synchronization will fetch remote data of all remote models.
      * Light mode does only fetch differences between the posts collection and the foreign ids.
      *
@@ -23,38 +45,111 @@ class Posts_Synchronizer extends Singleton
      */
     private $sync_mode = 'light';
 
-    /*
-     * Binds schedules to general settings updates.
+    /**
+     * Public class initializer.
+     *
+     * @return Posts_Synchronizer Singleton instance.
      */
-    public function construct(...$args)
+    public static function setup()
     {
-        add_action(
-            'update_option',
-            function ($option) {
-                if ($option === 'posts-bridge_general') {
-                    $this->schedule();
-                }
-            },
-            90,
-            1
-        );
+        return self::get_instance();
+    }
 
-        add_action('wp_ajax_posts_bridge_sync', function () {
-            $this->sync_callback();
-        });
+    /**
+     * Registers custom wp schedules.
+     *
+     * @param array<string, array> $schedules New schedules to register.
+     *
+     * @return Array with custom schedules registerefs.
+     */
+    private static function register_custom_schedules($schedules)
+    {
+        $schedules['minutly'] = [
+            'interval' => 60,
+            'display' => __('Minutly', Posts_Bridge::textdomain()),
+        ];
+
+        $schedules['quarterly'] = [
+            'interval' => 60 * 15,
+            'display' => __('Quarterly', Posts_Bridge::textdomain()),
+        ];
+
+        $schedules['twicehourly'] = [
+            'interval' => 60 * 30,
+            'display' => __('Twice Hourly', Posts_Bridge::textdomain()),
+        ];
+
+        return $schedules;
+    }
+
+    /**
+     * Activates schedule hook events with a given recurrence.
+     *
+     * @param integer $timestamp UNIX timestamp for the first run.
+     * @param string $recurrence How often the event should be subsequently recur.
+     * @param array $payload Arguments to be passed to the hook's callback function.
+     */
+    private static function add_schedule($timestamp, $recurrence, $payload = [])
+    {
+        $next_schedule = wp_next_scheduled(self::schedule_hook, $payload);
+
+        if ($next_schedule) {
+            // if new timestamp is nearer than the existing one, replace it
+            if ($next_schedule > $timestamp) {
+                wp_unschedule_event(
+                    $next_schedule,
+                    self::schedule_hook,
+                    $payload
+                );
+                $next_schedule = null;
+            } else {
+                // if recurrence from the existing schedule is different from the new one, replace it
+                $schedule = wp_get_schedule(self::schedule_hook, $payload);
+                if ($schedule !== $recurrence) {
+                    wp_unschedule_event(
+                        $next_schedule,
+                        self::schedule_hook,
+                        $payload
+                    );
+                    $next_schedule = null;
+                }
+            }
+        }
+
+        // creates a new schedule if it doesn't exists
+        if (!$next_schedule) {
+            wp_schedule_event(
+                $timestamp,
+                $recurrence,
+                self::schedule_hook,
+                $payload
+            );
+        }
+    }
+
+    /**
+     * Unschedule the scheduled plugin's hook.
+     */
+    public static function unschedule()
+    {
+        $timestamp = wp_next_scheduled(self::schedule_hook, []);
+        if ($timestamp !== false) {
+            wp_unschedule_event($timestamp, self::schedule_hook);
+        }
     }
 
     /**
      * Gets syncronize general setting field and toggles schedule state.
      */
-    public function schedule()
+    public static function schedule()
     {
         [
             'enabled' => $enabled,
             'recurrence' => $recurrence,
-        ] = Settings::get_setting('posts-bridge', 'general')->syncronize;
+        ] = apply_filters('posts_bridge_setting', null, 'general')->synchronize;
+
         if (empty($enabled) || empty($recurrence)) {
-            Posts_Bridge::unschedule();
+            self::unschedule();
         } else {
             $next_run = time();
             switch ($recurrence) {
@@ -81,130 +176,132 @@ class Posts_Synchronizer extends Singleton
                     break;
             }
 
-            Posts_Bridge::schedule($next_run, $recurrence, []);
+            self::add_schedule($next_run, $recurrence, []);
         }
     }
 
-    /**
-     * Synchronize posts with remote sources.
-     */
-    public function sync()
+    private static function ajax_localization()
     {
-        $relations = apply_filters('posts_bridge_relations', [], 'rest');
+        wp_localize_script(
+            Posts_Bridge::textdomain() . '-admin',
+            'postsBridgeAjaxSync',
+            [
+                'url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce(self::ajax_nonce),
+                'action' => self::ajax_action,
+            ]
+        );
+    }
 
-        foreach ($relations as $rel) {
-            $this->rest_sync($rel);
-        }
+    /*
+     * Binds schedules to general settings updates.
+     */
+    protected function construct(...$args)
+    {
+        add_action(
+            'updated_option',
+            static function ($option) {
+                if ($option === Posts_Bridge::textdomain() . '_general') {
+                    self::schedule();
+                }
+            },
+            90,
+            1
+        );
 
-        $relations = apply_filters('posts_bridge_relations', [], 'rpc');
-        foreach ($relations as $rel) {
-            $this->rpc_sync($rel);
-        }
+        add_action(
+            'admin_enqueue_scripts',
+            static function ($admin_page) {
+                if (
+                    'settings_page_' . Posts_Bridge::textdomain() !==
+                    $admin_page
+                ) {
+                    return;
+                }
+
+                self::ajax_localization();
+            },
+            11
+        );
+
+        add_action('wp_ajax_' . self::ajax_action, function () {
+            $this->ajax_callback();
+        });
+
+        add_filter('cron_schedules', static function ($schedules) {
+            return self::register_custom_schedules($schedules);
+        });
+
+        add_action(self::schedule_hook, function () {
+            $relations = apply_filters('posts_bridge_relations', []);
+            foreach ($relations as $relation) {
+                $this->sync($relation);
+            }
+        });
     }
 
     /**
      * Ajax synchronization callback.
      */
-    private function sync_callback()
+    private function ajax_callback()
     {
-        check_ajax_referer('posts-bridge-ajax-sync');
+        check_ajax_referer(self::ajax_nonce);
         if (!current_user_can('manage_options')) {
             return;
         }
 
-        $this->sync_mode = isset($_POST['sync_mode'])
-            ? $_POST['sync_mode']
-            : 'light';
+        [
+            'mode' => $mode,
+            'post_type' => $post_type,
+        ] = array_merge(
+            [
+                'mode' => 'light',
+                'post_type' => null,
+            ],
+            $_POST
+        );
 
-        $success = $this->sync();
+        $this->sync_mode = $mode;
+        if ($post_type) {
+            $relations = array_filter([
+                apply_filters('posts_bridge_relation', null, $post_type),
+            ]);
+        } else {
+            $relations = apply_filters('posts_bridge_relation', []);
+        }
+
+        try {
+            $success = true;
+            foreach ($relations as $relation) {
+                $success &= $this->sync($relation);
+            }
+        } catch (Exception) {
+            $success = false;
+        } finally {
+            $this->sync_mode = 'light';
+        }
 
         wp_send_json(['success' => $success], 200);
     }
 
     /**
-     * Synchronize REST API remote relation posts.
-     *
-     * @param Remote_Relation $relation REST remote relation.
-     *
-     * @return boolean True if success, false otherwise.
-     */
-    private function rest_sync($relation)
-    {
-        $endpoint = $relation->endpoint();
-        $backend = $relation->backend();
-
-        do_action('posts_bridge_before_search', $relation);
-        $res = $backend->get($endpoint);
-        do_action('posts_bridge_after_search', $res, $relation);
-
-        if (is_wp_error($res)) {
-            return false;
-        }
-
-        $foreign_ids = array_map(static function ($model) use ($relation) {
-            return (new JSON_Finger($model))->get($relation->foreign_key());
-        }, (array) $res['data']);
-
-        return $this->sync_posts($foreign_ids, $relation);
-    }
-
-    /**
-     * Synchronize RPC API remote relation posts.
-     *
-     * @param Remote_Relation $relation RPC remote relation.
-     *
-     * @return boolean True if success, false otherwise.
-     */
-    private function rpc_sync($relation)
-    {
-        $rpc = Settings::get_setting('posts-bridge', 'rpc-api');
-        $url = $relation->url();
-        $headers = $relation->headers();
-
-        $result = HTTP_Client::rpc_login($url, $headers);
-
-        if (is_wp_error($result)) {
-            return false;
-        }
-
-        [$sid, $uid] = $result;
-
-        $payload = HTTP_Client::rpc_payload($sid, 'object', 'execute', [
-            $rpc->database,
-            $uid,
-            $rpc->password,
-            $relation->model(),
-            'search',
-            [],
-        ]);
-
-        do_action('posts_bridge_before_search', $relation);
-        $res = http_bridge_post($url, $payload, $headers);
-        do_action('posts_bridge_before_search', $res, $relation);
-
-        $foreign_ids = HTTP_Client::rpc_response($res);
-        if (is_wp_error($foreign_ids)) {
-            return false;
-        }
-
-        return $this->sync_posts($foreign_ids, $relation);
-    }
-
-    /**
      * Synchronize post types collections.
      *
-     * @param array $foreign_ids Remote ids reference.
      * @param Remote_Relation $relation Remote relation instance.
      *
      * @return boolean True if success, false otherwise.
      */
-    private function sync_posts($foreign_ids, $relation)
+    private function sync($relation)
     {
         global $remote_cpt;
 
-        $post_type = $relation->post_type();
+        $foreign_ids = apply_filters(
+            'posts_bridge_foreign_ids',
+            $relation->foreign_ids(),
+            $relation
+        );
 
-        $foreign_ids = array_reduce(
+        $remote_pairs = array_reduce(
             $foreign_ids,
             function ($carry, $id) {
                 $carry[$id] = 0;
@@ -214,79 +311,49 @@ class Posts_Synchronizer extends Singleton
         );
 
         $query = new WP_Query([
-            'post_type' => $post_type,
+            'post_type' => $relation->post_type,
             'posts_per_page' => -1,
             'post_status' => 'any',
         ]);
 
         while ($query->have_posts()) {
             $query->the_post();
-            $foreign_id = $remote_cpt->foreign_id();
-            if (!isset($foreign_ids[$foreign_id])) {
+            $foreign_id = $remote_cpt->foreign_id;
+            if (!isset($remote_pairs[$foreign_id])) {
+                // if post does not exists on the remote backend, then remove it.
                 wp_delete_post(get_the_ID());
             } else {
                 if ($this->sync_mode === 'light') {
-                    unset($foreign_ids[$foreign_id]);
+                    // if light mode, skip syncrhonization for existing ones
+                    unset($remote_pairs[$foreign_id]);
                 } else {
-                    $foreign_ids[$foreign_id] = get_post();
+                    $remote_pairs[$foreign_id] = get_post();
                 }
             }
         }
 
         wp_reset_postdata();
 
-        $sync = [];
-        foreach ($foreign_ids as $foreign_id => $post) {
+        foreach ($remote_pairs as $foreign_id => $post) {
             // if is a new remote model, mock a post as its local counterpart
             if (empty($post)) {
                 $post = new WP_Post(
-                    (object) ['ID' => $post, 'post_type' => $post_type]
+                    (object) [
+                        'ID' => $post,
+                        'post_type' => $relation->post_type,
+                    ]
                 );
             }
 
-            $rcpt = new Remote_CPT($post);
-            add_filter(
-                'posts_bridge_endpoint',
-                function ($endpoint, $fid, $rcpt) use (
-                    $relation,
-                    $foreign_id,
-                    $post,
-                    &$sync
-                ) {
-                    if (
-                        $fid ||
-                        isset($sync[$foreign_id]) ||
-                        $rcpt->ID !== $post->ID ||
-                        $relation->proto() === 'rpc'
-                    ) {
-                        return $endpoint;
-                    }
+            $data = $relation->fetch($foreign_id);
 
-                    $parsed = parse_url($endpoint);
-                    $endpoint =
-                        preg_replace('/\/+$/', '', $parsed['path']) .
-                        '/' .
-                        $foreign_id;
-                    if (isset($parsed['query'])) {
-                        $endpoint .= '/?' . $parsed['query'];
-                    }
-
-                    $sync[$foreign_id] = true;
-                    return $endpoint;
-                },
-                5,
-                3
-            );
-
-            $data = $rcpt->fetch();
-
-            if (is_wp_error($data)) {
+            if (empty($data)) {
                 return false;
             }
 
             $data = $relation->map_remote_fields($data);
 
-            $data['post_type'] = $post_type;
+            $data['post_type'] = $relation->post_type;
             if ($post->ID !== 0) {
                 $data['ID'] = $post->ID;
             }
@@ -316,3 +383,5 @@ class Posts_Synchronizer extends Singleton
         return true;
     }
 }
+
+Posts_Synchronizer::setup();

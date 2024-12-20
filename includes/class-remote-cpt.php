@@ -2,6 +2,7 @@
 
 namespace POSTS_BRIDGE;
 
+use ValueError;
 use WP_Post;
 
 if (!defined('ABSPATH')) {
@@ -21,11 +22,11 @@ class Remote_CPT
     public const _foreign_key_handle = '_posts_bridge_foreign_key';
 
     /**
-     * Handle instance of the HTTP_Client.
+     * Handles remote cpt locale.
      *
-     * @var HTTP_Client $http_client Own instance of the HTTP_Client;
+     * @var string $locale
      */
-    private $http_client;
+    private $locale;
 
     /**
      * Handle value of the remote model foreign key.
@@ -49,18 +50,149 @@ class Remote_CPT
     private $post;
 
     /**
-     * Wraps the post and gets its own HTTP_Client instance.
+     * Plugin handled post types getter.
+     *
+     * @param string|null $api Filter post types by API slug.
+     *
+     * @return array<string> Handled post type slugs.
+     */
+    public static function post_types($api = null)
+    {
+        $relations = apply_filters('posts_bridge_relations', [], $api);
+        return array_values(
+            array_unique(
+                array_map(function ($rel) {
+                    return $rel->post_type;
+                }, $relations)
+            )
+        );
+    }
+
+    /**
+     * Do the `remote_field` shortcode fetching remote data of the current Remote CPT
+     *
+     * @param string $content Shortcode content.
+     *
+     * @return string $html Rendered output.
+     */
+    public static function do_shortcode($content)
+    {
+        global $remote_cpt;
+
+        // Exit if global post is not Remote CPT
+        if (empty($remote_cpt)) {
+            return $content;
+        }
+
+        // Gets replacement marks and exit if not found
+        preg_match_all('/{{([^}]+)}}/', $content, $matches);
+        if (empty($matches)) {
+            return $content;
+        }
+
+        // Filters empty replace marks and trim its content
+        $fields = array_values(
+            array_filter(
+                array_map(static function ($match) {
+                    return trim($match);
+                }, $matches[1]),
+                static function ($field) {
+                    return $field;
+                }
+            )
+        );
+
+        // Exit if no fields is defined
+        if (empty($fields)) {
+            return $content;
+        }
+
+        // Checks if there are values for the fields and exits if it isn't
+        $is_empty = array_reduce(
+            $fields,
+            function ($handle, $field) use ($remote_cpt) {
+                return $handle && $remote_cpt->get($field) === null;
+            },
+            false
+        );
+        if ($is_empty) {
+            return $content;
+        }
+
+        // Get remote field values
+        $values = array_map(function ($field) use ($remote_cpt) {
+            return $remote_cpt->get($field, '');
+        }, $fields);
+
+        try {
+            // Replace anchors on the shortcode content with values
+            for ($i = 0; $i < count($fields); $i++) {
+                $field = $fields[$i];
+                $value = (string) $values[$i];
+                $content = preg_replace(
+                    '/{{' . preg_quote($field, '/') . '}}/',
+                    $value,
+                    $content
+                );
+            }
+
+            return $content;
+        } catch (ValueError $e) {
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * Do the `remote_callback` shortcode ussing the current remote cpt as the first param.
+     * This shortcode pass control of the fetch process to the user's function.
+     *
+     * @param array $atts Shortcode's attributes.
+     * @param string $content Shortcode's content.
+     *
+     * @return string $html Rendered output.
+     */
+    public static function do_remote_callback($atts, $content)
+    {
+        global $remote_cpt;
+        if (empty($remote_cpt)) {
+            return $content;
+        }
+
+        $callback = isset($atts['fn']) ? $atts['fn'] : null;
+
+        if (empty($callback)) {
+            return $content;
+        } else {
+            unset($atts['fn']);
+        }
+
+        if (!function_exists($callback)) {
+            return $content;
+        }
+
+        return $callback($remote_cpt, $atts, $content);
+    }
+
+    /**
+     * Bounds the post and returns the instance.
      *
      * @param WP_Post|int $post Instance of the post.
      */
-    public function __construct($post)
+    public function __construct($post, $foreign_id = null)
     {
         if (is_int($post)) {
             $post = get_post($post);
         }
 
         $this->post = $post;
-        $this->http_client = new HTTP_Client($this);
+        $this->foreign_id = $foreign_id;
+
+        $this->locale = apply_filters(
+            'wpct_i18n_post_language',
+            null,
+            $this->ID,
+            'locale'
+        );
     }
 
     /**
@@ -72,50 +204,55 @@ class Remote_CPT
     {
         if (is_wp_error($this->remote_data)) {
             return [];
-        }
-
-        if ($this->remote_data) {
+        } elseif ($this->remote_data) {
             return $this->remote_data;
         }
 
-        $locale = apply_filters(
-            'wpct_i18n_post_language',
-            null,
-            $this->ID,
-            'locale'
+        add_filter(
+            'wpct_i18n_current_language',
+            [$this, 'language_interceptor'],
+            99
         );
 
-        $data = $this->http_client->fetch($locale);
+        do_action('posts_bridge_before_fetch', $this->rcpt);
+        $data = $this->relation()->fetch($this->foreign_id());
+        do_action('posts_bridge_after_fetch', $data, $this->rcpt);
+
         if (is_wp_error($data)) {
             $this->remote_data = $data;
             return [];
         }
 
-        $this->remote_data = apply_filters(
+        $this->remote_data = (array) apply_filters(
             'posts_bridge_remote_data',
             $data,
             $this,
-            $locale
+            $this->locale
         );
 
         return $this->remote_data;
     }
 
     /**
-     * Proxy of the wrapped posts attributes.
+     * Proxy of the private getters and wrapped posts attributes.
      *
-     * @param string $attr Attribute name.
+     * @param string $name Attribute name.
      *
      * @return mixed Attribute value or null if attribute does not exists.
      */
-    public function __get($attr)
+    public function __get($name)
     {
-        $post_data = wp_slash((array) $this->post);
-        if (isset($post_data[$attr])) {
-            return $post_data[$attr];
+        switch ($name) {
+            case 'relation':
+                return $this->relation();
+                break;
+            case 'foreign_id':
+                return $this->foreign_id();
+                break;
+            default:
+                $post_data = wp_slash((array) $this->post);
+                return isset($post_data[$name]) ? $post_data[$name] : null;
         }
-
-        return null;
     }
 
     /**
@@ -134,8 +271,7 @@ class Remote_CPT
             return null;
         }
 
-        $finger = new JSON_Finger($data);
-        if ($value = $finger->get($attr)) {
+        if ($value = (new JSON_Finger($data))->get($attr)) {
             return $value;
         }
 
@@ -143,52 +279,13 @@ class Remote_CPT
     }
 
     /**
-     * Gets the post's remote relation endpoint.
-     *
-     * @return string Post's relation endpoint.
-     */
-    public function endpoint()
-    {
-        $rel = $this->relation();
-        if ($rel->proto() === 'rest') {
-            $endpoint = $rel->endpoint();
-        } else {
-            $endpoint = Settings::get_setting('posts-bridge', 'rpc-api')
-                ->endpoint;
-        }
-
-        $url = parse_url($endpoint);
-        $endpoint = preg_replace('/\/$/', '', $url['path']);
-
-        if ($rel->proto() === 'rest') {
-            $endpoint .= '/' . $this->foreign_id();
-        }
-
-        if (isset($url['query'])) {
-            $endpoint .= '?' . $url['query'];
-        }
-
-        return apply_filters(
-            'posts_bridge_endpoint',
-            $endpoint,
-            $this->foreign_id(),
-            $this
-        );
-    }
-
-    /**
      * Gets remote relation instance.
      *
      * @return Remote_Relation Remote relation instance.
      */
-    public function relation()
+    private function relation()
     {
-        $relations = Settings::relations();
-        foreach ($relations as $rel) {
-            if ($rel->post_type() === $this->post_type) {
-                return $rel;
-            }
-        }
+        return apply_filters('posts_bridge_relation', null, $this->post_type);
     }
 
     /**
@@ -196,7 +293,7 @@ class Remote_CPT
      *
      * @return string|int Remote relation foreign key value.
      */
-    public function foreign_id()
+    private function foreign_id()
     {
         if (empty($this->foreign_id)) {
             $this->foreign_id = get_post_meta(
@@ -232,5 +329,25 @@ class Remote_CPT
     public function meta($field, $single = true)
     {
         return get_post_meta($this->ID, $field, $single);
+    }
+
+    /**
+     * I18n current language interceptor.
+     *
+     * @param string $lang API language locale.
+     */
+    public function language_interceptor($locale)
+    {
+        if ($this->locale) {
+            $locale = $this->locale;
+        }
+
+        remove_filter(
+            'wpct_i18n_current_language',
+            [$this, 'language_interceptor'],
+            99
+        );
+
+        return $locale;
     }
 }
