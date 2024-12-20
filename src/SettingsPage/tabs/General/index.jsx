@@ -13,11 +13,13 @@ import Backends from "../../../components/Backends";
 import Backend from "../../../components/Backends/Backend";
 import Addons from "../../../components/Addons";
 import Synchronize from "./Synchronize";
+import Logger from "./Logger";
 
 export default function GeneralSettings() {
   const __ = wp.i18n.__;
 
-  const [{ whitelist, backends, synchronize, addons }, save] = useGeneral();
+  const [{ whitelist, backends, synchronize, addons, debug }, save] =
+    useGeneral();
 
   const update = (field) =>
     save({ synchronize, whitelist, backends, addons, ...field });
@@ -63,6 +65,9 @@ export default function GeneralSettings() {
         </PanelRow>
       </PanelBody>
       <Addons />
+      <PanelBody title={__("Debug", "posts-bridge")} initialOpen={!!debug}>
+        <Logger />
+      </PanelBody>
     </>
   );
 }
