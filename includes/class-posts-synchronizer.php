@@ -250,13 +250,24 @@ class Posts_Synchronizer extends Singleton
             return;
         }
 
-        $this->sync_mode = isset($_POST['mode']) ? $_POST['mode'] : 'light';
+        [
+            'mode' => $mode,
+            'post_type' => $post_type,
+        ] = array_merge(
+            [
+                'mode' => 'light',
+                'post_type' => null,
+            ],
+            $_POST
+        );
 
-        $relations = apply_filters('posts_bridge_relations', []);
-        if (isset($_POST['relation'])) {
-            $relations = array_filter($relations, static function ($rel) {
-                $rel->api === $_POST['relation'];
-            });
+        $this->sync_mode = $mode;
+        if ($post_type) {
+            $relations = array_filter([
+                apply_filters('posts_bridge_relation', null, $post_type),
+            ]);
+        } else {
+            $relations = apply_filters('posts_bridge_relation', []);
         }
 
         try {

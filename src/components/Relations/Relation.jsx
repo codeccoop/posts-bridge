@@ -1,17 +1,20 @@
 // vendor
-import React from "react";
+import React, { useEffect } from "react";
 import {
   TextControl,
   SelectControl,
   Button,
   __experimentalSpacer as Spacer,
+  ToggleControl,
 } from "@wordpress/components";
+import { useState } from "@wordpress/element";
 
 // source
 import { usePostTypes } from "../../providers/PostTypes";
 import { useGeneral } from "../../providers/Settings";
 import RemoteFields from "../RemoteFields";
 import NewRelation from "./NewRelation";
+import useAjaxSync from "../../hooks/useAjaxSync";
 
 export default function Relation({
   data,
@@ -24,6 +27,9 @@ export default function Relation({
   if (data.name === "add") return template({ add: update, schema });
 
   const __ = wp.i18n.__;
+
+  const [fullMode, setFullMode] = useState(false);
+
   const [{ backends }] = useGeneral();
   const backendOptions = [{ label: "", value: "" }].concat(
     backends.map(({ name }) => ({
@@ -42,6 +48,19 @@ export default function Relation({
       }))
       .concat([{ label: data.post_type, value: data.post_type }])
   );
+
+  const {
+    loading: ajaxLoading,
+    error: ajaxError,
+    sync,
+  } = useAjaxSync({ fullMode, postType: data.post_type });
+
+  useEffect(() => {
+    if (ajaxLoading) return;
+    return () => {
+      setFullMode(false);
+    };
+  }, [ajaxLoading]);
 
   return (
     <div
@@ -94,50 +113,40 @@ export default function Relation({
       <div
         style={{
           display: "flex",
+          alignItems: "center",
           gap: "1em",
           flexWrap: "wrap",
         }}
       >
-        <div>
-          <label
-            style={{
-              display: "block",
-              fontWeight: 500,
-              textTransform: "uppercase",
-              fontSize: "11px",
-              marginBottom: "calc(4px)",
-            }}
-          >
-            {__("Map fields", "posts-bridge")}
-          </label>
-          <RemoteFields
-            fields={data.fields || []}
-            setFields={(fields) => update({ ...data, fields })}
-          />
-        </div>
-        <div>
-          <label
-            style={{
-              display: "block",
-              fontWeight: 500,
-              textTransform: "uppercase",
-              fontSize: "11px",
-              margin: 0,
-              marginBottom: "calc(4px)",
-              maxWidth: "100%",
-            }}
-          >
-            {__("Remove relation", "posts-bridge")}
-          </label>
-          <Button
-            isDestructive
-            variant="primary"
-            onClick={() => remove(data)}
-            style={{ width: "130px", justifyContent: "center", height: "32px" }}
-          >
-            {__("Remove", "posts-bridge")}
-          </Button>
-        </div>
+        <RemoteFields
+          fields={data.fields || []}
+          setFields={(fields) => update({ ...data, fields })}
+        />
+        <Button
+          isDestructive
+          variant="primary"
+          onClick={() => remove(data)}
+          style={{ width: "130px", justifyContent: "center", height: "32px" }}
+        >
+          {__("Remove", "posts-bridge")}
+        </Button>
+        <Button
+          variant="primary"
+          isBusy={ajaxLoading}
+          disabled={ajaxError}
+          isDestructive={ajaxError}
+          onClick={sync}
+          style={{ width: "130px", justifyContent: "center", height: "32px" }}
+          __next40pxDefaultSize
+        >
+          {__("Syncrhonize", "posts-bridge")}
+        </Button>
+        <ToggleControl
+          label={__("Run a full synchronization", "posts-bridge")}
+          checked={fullMode}
+          onChange={() => setFullMode(!fullMode)}
+          __nextHasNoMarginBottom
+        />
       </div>
     </div>
   );

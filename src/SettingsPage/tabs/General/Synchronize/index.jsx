@@ -1,5 +1,5 @@
 // vendor
-import React from "react";
+import React, { useEffect } from "react";
 import {
   __experimentalSpacer as Spacer,
   ToggleControl,
@@ -8,6 +8,9 @@ import {
   Button,
 } from "@wordpress/components";
 import { useState } from "@wordpress/element";
+
+// source
+import useAjaxSync from "../../../../hooks/useAjaxSync";
 
 const recurrenceOptions = [
   {
@@ -41,30 +44,18 @@ export default function Synchronize({ synchronize, setSynchronize }) {
 
   const { enabled, recurrence } = synchronize;
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
   const [fullMode, setFullMode] = useState(false);
 
+  const { loading, error, sync } = useAjaxSync({ fullMode });
+
+  useEffect(() => {
+    if (!loading) return;
+    return () => {
+      setFullMode(false);
+    };
+  }, [loading]);
+
   const update = (field) => setSynchronize({ ...synchronize, ...field });
-
-  const ajaxSync = () => {
-    setLoading(true);
-    const body = new URLSearchParams();
-    body.set("_ajax_nonce", postsBridgeAjaxSync.nonce);
-    body.set("action", postsBridgeAjaxSync.action);
-    body.set("mode", fullMode ? "full" : "light");
-
-    fetch(postsBridgeAjaxSync.url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: body.toString(),
-    })
-      .then(() => setLoading(false))
-      .catch(() => setError(true))
-      .finally(() => setFullMode(false));
-  };
 
   return (
     <>
@@ -75,7 +66,7 @@ export default function Synchronize({ synchronize, setSynchronize }) {
           isBusy={loading}
           disabled={error}
           isDestructive={error}
-          onClick={ajaxSync}
+          onClick={sync}
           __next40pxDefaultSize
         >
           {__("Synchronize", "posts-bridge")}
