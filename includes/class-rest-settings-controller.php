@@ -90,19 +90,16 @@ class REST_Settings_Controller extends Base_REST_Settings_Controller
     {
         $namespace = self::$namespace;
         $version = self::$version;
-        register_rest_route(
-            "{$namespace}/v{$version}",
-            '/posts-bridge/types/',
-            [
-                'methods' => WP_REST_Server::READABLE,
-                'callback' => function () {
-                    return $this->get_post_types();
-                },
-                'permission_callback' => function () {
-                    return $this->permission_callback();
-                },
-            ]
-        );
+        $slug = Posts_Bridge::slug();
+        register_rest_route("{$namespace}/v{$version}", "/{$slug}/types/", [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => function () {
+                return $this->get_post_types();
+            },
+            'permission_callback' => function () {
+                return $this->permission_callback();
+            },
+        ]);
     }
 
     /**

@@ -186,6 +186,13 @@ class Remote_CPT
 
         $this->post = $post;
         $this->foreign_id = $foreign_id;
+
+        $this->locale = apply_filters(
+            'wpct_i18n_post_language',
+            null,
+            $this->ID,
+            'locale'
+        );
     }
 
     /**
@@ -193,20 +200,13 @@ class Remote_CPT
      *
      * @return array|null $remote_data Remote data.
      */
-    private function fetch()
+    public function fetch()
     {
         if (is_wp_error($this->remote_data)) {
             return [];
         } elseif ($this->remote_data) {
             return $this->remote_data;
         }
-
-        self::$locale = apply_filters(
-            'wpct_i18n_post_language',
-            null,
-            $this->ID,
-            'locale'
-        );
 
         add_filter(
             'wpct_i18n_current_language',
@@ -223,11 +223,11 @@ class Remote_CPT
             return [];
         }
 
-        $this->remote_data = apply_filters(
+        $this->remote_data = (array) apply_filters(
             'posts_bridge_remote_data',
             $data,
             $this,
-            self::$locale
+            $this->locale
         );
 
         return $this->remote_data;
@@ -243,9 +243,6 @@ class Remote_CPT
     public function __get($name)
     {
         switch ($name) {
-            case 'endpoint':
-                return $this->endpoint();
-                break;
             case 'relation':
                 return $this->relation();
                 break;
@@ -282,33 +279,13 @@ class Remote_CPT
     }
 
     /**
-     * Gets the post's remote relation endpoint.
-     *
-     * @return string Post's relation endpoint.
-     */
-    private function endpoint()
-    {
-        return apply_filters(
-            'posts_bridge_endpoint',
-            $this->relation()->endpoint,
-            $this->foreign_id(),
-            $this
-        );
-    }
-
-    /**
      * Gets remote relation instance.
      *
      * @return Remote_Relation Remote relation instance.
      */
     private function relation()
     {
-        $relations = Remote_Relation::relations();
-        foreach ($relations as $rel) {
-            if ($rel->post_type === $this->post_type) {
-                return $rel;
-            }
-        }
+        return apply_filters('posts_bridge_relation', null, $this->post_type);
     }
 
     /**
@@ -361,7 +338,9 @@ class Remote_CPT
      */
     public function language_interceptor($locale)
     {
-        $locale = self::$locale;
+        if ($this->locale) {
+            $locale = $this->locale;
+        }
 
         remove_filter(
             'wpct_i18n_current_language',

@@ -143,10 +143,7 @@ class I18n extends Singleton
             return;
         }
 
-        // If post is published, then translate it
-        if ($post->post_status === 'publish') {
-            self::detach_translation($post_id);
-        }
+        self::detach_translation($post_id);
     }
 
     /**

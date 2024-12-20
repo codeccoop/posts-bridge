@@ -60,7 +60,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
     public function __construct($post_type)
     {
         $this->post_type = $post_type;
-        $this->rest_base = 'posts-bridge/' . $post_type;
+        $this->rest_base = Posts_Bridge::slug() . '/' . $post_type;
         $this->meta = new WP_REST_Post_Meta_Fields($this->post_type);
         $this->register_routes();
 
@@ -203,7 +203,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             ] = Remote_Featured_Media::default_thumbnail_id();
         }
 
-        $foreign_key = $relation->foreign_key();
+        $foreign_key = $relation->foreign_key;
 
         // Unalias foreign key on the request
         $schema_properties = $this->get_item_schema()['properties'];
@@ -263,7 +263,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         );
 
         // Use json fingers to get foreign key value from the request
-        $foreign_key = $relation->foreign_key();
+        $foreign_key = $relation->foreign_key;
         $foreign_id = (new JSON_Finger($request->get_params()))->get(
             $foreign_key
         );
@@ -272,7 +272,10 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         if (empty($foreign_id)) {
             return new WP_Error(
                 'required_foreign_key',
-                __('Remote CPT foreign key is unkown', 'posts-bridge')
+                __(
+                    'Remote CPT foreign key is unkown',
+                    Posts_Bridge::textdomain()
+                )
             );
         }
 

@@ -94,9 +94,9 @@ class Odoo_Remote_Relation extends Remote_Relation
             return self::$session;
         }
 
-        $session_id = 'posts-bridge-' . time();
-        $backend = $relation->backend;
+        $session_id = Posts_Bridge::slug() . '-' . time();
         $db = $relation->database;
+        $backend = $db->backend;
 
         $payload = self::rpc_payload($session_id, 'common', 'login', [
             $db->name,
@@ -107,12 +107,27 @@ class Odoo_Remote_Relation extends Remote_Relation
         $user_id = self::rpc_response(
             $backend->post($relation->endpoint, $payload)
         );
+
         if (is_wp_error($user_id)) {
-            $user_id;
+            return $user_id;
         }
 
         self::$session = [$session_id, $user_id];
         return self::$session;
+    }
+
+    /**
+     * Public remote relations getter.
+     *
+     * @return array Remote relation instances.
+     */
+    public static function relations()
+    {
+        $relations = apply_filters('posts_bridge_setting', null, 'odoo-api')
+            ->relations;
+        return array_map(function ($rel) {
+            return new Odoo_Remote_Relation($rel);
+        }, $relations);
     }
 
     public function __construct($data)
@@ -135,13 +150,18 @@ class Odoo_Remote_Relation extends Remote_Relation
                 $value = $this->backend();
                 break;
             case 'endpoint':
-                $value = '/jsonrpc';
+                $value = $this->endpoint();
                 break;
             default:
                 $value = parent::__get($name);
         }
 
         return apply_filters("posts_bridge_relation_{$name}", $value, $this);
+    }
+
+    private function endpoint()
+    {
+        return '/jsonrpc';
     }
 
     private function database()
@@ -155,7 +175,7 @@ class Odoo_Remote_Relation extends Remote_Relation
 
     private function backend()
     {
-        $this->database()->backend;
+        return $this->database()->backend;
     }
 
     public function fetch($foreign_id)
@@ -179,10 +199,10 @@ class Odoo_Remote_Relation extends Remote_Relation
         ]);
 
         $response = $this->backend->post($this->endpoint, $payload);
-        return self::rpc_response($response);
+        return self::rpc_response($response, true);
     }
 
-    public function search()
+    public function foreign_ids()
     {
         $session = self::rpc_login($this);
 

@@ -14,19 +14,13 @@
 namespace POSTS_BRIDGE;
 
 use WPCT_ABSTRACT\Plugin as BasePlugin;
+use WPCT_ABSTRACT\Setting;
 
 use function WPCT_ABSTRACT\is_list;
 
 if (!defined('ABSPATH')) {
     exit();
 }
-
-/**
- * Handle plugin version.
- *
- * @var string POSTS_BRIDGE_VERSION Current plugin version.
- */
-define('POSTS_BRIDGE_VERSION', '1.2.2');
 
 require_once 'abstracts/class-plugin.php';
 
@@ -72,20 +66,6 @@ class Posts_Bridge extends BasePlugin
      * @var string $menu_class Plugin menu class name.
      */
     protected static $menu_class = '\POSTS_BRIDGE\Menu';
-
-    /**
-     * Handle plugin name.
-     *
-     * @var string $name Plugin name.
-     */
-    protected static $name = 'Posts Bridge';
-
-    /**
-     * Handle plugin textdomain.
-     *
-     * @var string $textdomain Plugin text domain.
-     */
-    protected static $textdomain = 'posts-bridge';
 
     /**
      * Handle post types REST Controller instances
@@ -154,7 +134,7 @@ class Posts_Bridge extends BasePlugin
         add_filter(
             'wpct_setting_default',
             function ($default, $name) {
-                if ($name !== self::$textdomain . '_general') {
+                if ($name !== $this->slug() . '_general') {
                     return $default;
                 }
 
@@ -165,7 +145,7 @@ class Posts_Bridge extends BasePlugin
         );
 
         // Patch http bridge settings to plugin settings
-        add_filter('option_posts-bridge_general', function ($value) {
+        add_filter("option_{$this->slug()}_general", function ($value) {
             $http = Settings::get_setting('http-bridge', 'general');
             foreach (['backends', 'whitelist'] as $key) {
                 $value[$key] = $http->data($key);
@@ -175,35 +155,21 @@ class Posts_Bridge extends BasePlugin
             return $value;
         });
 
-        // Syncronize plugin settings with http bridge settings on option updates
-        function _posts_bridge_http_sync($option, $to)
-        {
-            if ($option !== 'posts-bridge_general') {
-                return;
-            }
-
-            $data = [];
-            foreach (['backends', 'whitelist'] as $key) {
-                $data[$key] = $to[$key];
-            }
-
-            $http = Settings::get_setting('http-bridge', 'general');
-            $http->update(array_merge($http->data(), $data));
-        }
-
-        add_action(
-            'add_option',
-            static function ($option, $to) {
-                _posts_bridge_http_sync($option, $to);
-            },
-            10,
-            2
-        );
-
+        // Syncronize plugin settings with http bridge settings
         add_action(
             'updated_option',
             static function ($option, $from, $to) {
-                _posts_bridge_http_sync($option, $to);
+                if ($option !== self::slug() . '_general') {
+                    return;
+                }
+
+                $data = [];
+                foreach (['backends', 'whitelist'] as $key) {
+                    $data[$key] = $to[$key];
+                }
+
+                $http = Settings::get_setting('http-bridge', 'general');
+                $http->update(array_merge($http->data(), $data));
             },
             10,
             3
@@ -271,7 +237,7 @@ class Posts_Bridge extends BasePlugin
 
                 $relations = Remote_Relation::relations();
                 foreach ($relations as $rel) {
-                    if ($rel->post_type() === $post_type) {
+                    if ($rel->post_type === $post_type) {
                         return $rel;
                     }
                 }
@@ -282,7 +248,7 @@ class Posts_Bridge extends BasePlugin
 
         add_filter(
             'posts_bridge_relations',
-            static function ($relations, $api = 'rest') {
+            static function ($relations, $api = null) {
                 if (!is_list($relations)) {
                     $relations = [];
                 }
@@ -300,11 +266,11 @@ class Posts_Bridge extends BasePlugin
         add_filter(
             'posts_bridge_setting',
             static function ($setting, $name) {
-                if ($setting instanceof \WPCT_ABSTRACT\Setting) {
+                if ($setting instanceof Setting) {
                     return $setting;
                 }
 
-                return Settings::get_setting('posts-bridge', $name);
+                return Settings::get_setting(self::slug(), $name);
             },
             5,
             2
@@ -372,7 +338,7 @@ class Posts_Bridge extends BasePlugin
      */
     private function admin_enqueue_scripts($admin_page)
     {
-        if ('settings_page_posts-bridge' !== $admin_page) {
+        if ('settings_page_' . $this->slug() !== $admin_page) {
             return;
         }
 
@@ -388,24 +354,24 @@ class Posts_Bridge extends BasePlugin
         ]);
 
         wp_enqueue_script(
-            self::$textdomain,
+            $this->slug(),
             plugins_url('assets/wppb.js', __FILE__),
             [],
-            POSTS_BRIDGE_VERSION,
+            $this->version(),
             ['in_footer' => false]
         );
 
         wp_enqueue_script(
-            self::$textdomain . '-admin',
+            $this->slug() . '-admin',
             plugins_url('assets/plugin.bundle.js', __FILE__),
             $dependencies,
-            POSTS_BRIDGE_VERSION,
+            $this->version(),
             ['in_footer' => true]
         );
 
         wp_set_script_translations(
-            self::$textdomain . '-admin',
-            self::$textdomain,
+            $this->slug() . '-admin',
+            $this->slug(),
             plugin_dir_path(__FILE__) . 'languages'
         );
 

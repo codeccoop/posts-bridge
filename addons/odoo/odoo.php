@@ -2,6 +2,8 @@
 
 namespace POSTS_BRIDGE;
 
+use Exception;
+
 use function WPCT_ABSTRACT\is_list;
 
 if (!defined('ABSPATH')) {
@@ -26,6 +28,41 @@ class Odoo_Addon extends Addon
 
     private function interceptors()
     {
+        add_filter(
+            'posts_bridge_relation',
+            function ($relation, $post_type) {
+                if ($relation instanceof Remote_Relation) {
+                    return $relation;
+                }
+
+                $relations = Odoo_Remote_Relation::relations();
+                foreach ($relations as $rel) {
+                    if ($rel->post_type === $post_type) {
+                        return $rel;
+                    }
+                }
+            },
+            10,
+            2
+        );
+
+        add_filter(
+            'posts_bridge_relations',
+            function ($relations, $api = null) {
+                if ($api && $api !== 'odoo-api') {
+                    return $relations;
+                }
+
+                return array_merge(
+                    $relations,
+                    array_map(function ($rel) {
+                        return new Odoo_Remote_Relation($rel);
+                    }, $this->setting()->relations)
+                );
+            },
+            10,
+            2
+        );
     }
 
     private function custom_hooks()
@@ -90,7 +127,7 @@ class Odoo_Addon extends Addon
                         'properties' => [
                             'post_type' => ['type' => 'string'],
                             'model' => ['type' => 'string'],
-                            'backend' => ['type' => 'string'],
+                            'database' => ['type' => 'string'],
                             'fields' => [
                                 'type' => 'array',
                                 'items' => [

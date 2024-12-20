@@ -63,7 +63,7 @@ abstract class Addon extends Singleton
         add_filter(
             'wpct_rest_settings',
             function ($settings, $group) {
-                if ($group !== Posts_Bridge::textdomain()) {
+                if ($group !== Posts_Bridge::slug()) {
                     return $settings;
                 }
 
@@ -80,7 +80,7 @@ abstract class Addon extends Singleton
         add_action(
             'wpct_register_settings',
             function ($group, $settings) {
-                if ($group === Posts_Bridge::textdomain()) {
+                if ($group === Posts_Bridge::slug()) {
                     $this->register_setting($settings);
                 }
             },
@@ -103,22 +103,19 @@ abstract class Addon extends Singleton
         add_action(
             'admin_enqueue_scripts',
             function ($admin_page) {
-                if (
-                    'settings_page_' . Posts_Bridge::textdomain() !==
-                    $admin_page
-                ) {
+                if ('settings_page_' . Posts_Bridge::slug() !== $admin_page) {
                     return;
                 }
 
                 $reflector = new ReflectionClass(static::class);
                 $__FILE__ = $reflector->getFileName();
 
-                $script_name = Posts_Bridge::textdomain() . '-' . static::$slug;
+                $script_name = Posts_Bridge::slug() . '-' . static::$slug;
                 wp_enqueue_script(
                     $script_name,
                     plugins_url('assets/addon.bundle.js', $__FILE__),
                     [],
-                    POSTS_BRIDGE_VERSION,
+                    Posts_Bridge::version(),
                     ['in_footer' => true]
                 );
 
@@ -136,7 +133,7 @@ abstract class Addon extends Singleton
     {
         if (
             $setting->full_name() !==
-            Posts_Bridge::textdomain() . '_' . static::$slug
+            Posts_Bridge::slug() . '_' . static::$slug
         ) {
             return $value;
         }

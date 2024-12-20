@@ -171,10 +171,13 @@ class Settings extends BaseSettings
     {
         $value['whitelist'] = (bool) $value['whitelist'];
 
-        $value['synchronize'] = array_merge((array) $value['synchronize'], [
-            'enabled' => false,
-            'recurrence' => 'hourly',
-        ]);
+        $value['synchronize'] = array_merge(
+            [
+                'enabled' => false,
+                'recurrence' => 'hourly',
+            ],
+            (array) $value['synchronize']
+        );
 
         $value['synchronize']['enabled'] =
             (bool) $value['synchronize']['enabled'];

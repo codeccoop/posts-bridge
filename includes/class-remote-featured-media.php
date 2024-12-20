@@ -180,12 +180,12 @@ class Remote_Featured_Media
      *
      * @return int ID of the created attachment.
      */
-    private static function attach($src, $content)
+    private static function attach($src, $content, $unlink = true)
     {
         $filename = basename($src);
 
         // unlink temp files
-        if (is_file($src)) {
+        if (is_file($src) && $unlink) {
             unlink($src);
         }
 
@@ -300,12 +300,14 @@ class Remote_Featured_Media
 
         $static_path = apply_filters(
             'posts_bridge_default_thumbnail',
-            plugin_dir_path(__FILE__) . 'assets/posts-bridge-thumbnail.webp'
+            dirname(plugin_dir_path(__FILE__)) .
+                '/assets/posts-bridge-thumbnail.webp'
         );
 
         $attachment_id = self::attach(
             $static_path,
-            file_get_contents($static_path)
+            file_get_contents($static_path),
+            false
         );
         add_option(
             Remote_Featured_Media::_default_thumbnail_handle,

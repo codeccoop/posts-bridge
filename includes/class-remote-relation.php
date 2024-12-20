@@ -121,7 +121,14 @@ class Remote_Relation
      */
     private function backend()
     {
-        return apply_filters('http_bridge_backend', null, $this->backend);
+        $backend_name = isset($this->data['backend'])
+            ? $this->data['backend']
+            : null;
+        if (!$backend_name) {
+            return $backend_name;
+        }
+
+        return apply_filters('http_bridge_backend', null, $backend_name);
     }
 
     /**
@@ -129,27 +136,29 @@ class Remote_Relation
      *
      * @return string Endpoint path.
      */
-    private function endpoint()
+    private function endpoint($foreign_id = null)
     {
-        $endpoint = $this->endpoint;
-        if (!empty($endpoint)) {
-            $url = parse_url($endpoint);
-            if (isset($url['path'])) {
-                $endpoint = $url['path'];
-                if (isset($url['query'])) {
-                    $endpoint .= '?' . $url['query'];
-                }
-            } else {
-                $endpoint = '';
-            }
+        $endpoint = isset($this->data['endpoint'])
+            ? $this->data['endpoint']
+            : '';
+        $parsed = parse_url($endpoint);
+
+        $endpoint = isset($parsed['path']) ? $parsed['path'] : '';
+
+        if ($foreign_id) {
+            $endpoint .= '/' . $foreign_id;
         }
 
-        return $endpoint;
-    }
+        if (isset($parsed['query'])) {
+            $endpoint .= '?' . $parsed['query'];
+        }
 
-    public function fetch($rcpt)
-    {
-        return $this->backend()->get($this->endpoint());
+        return apply_filters(
+            'posts_bridge_endpoint',
+            $endpoint,
+            $foreign_id,
+            $this
+        );
     }
 
     /**
@@ -157,7 +166,7 @@ class Remote_Relation
      *
      * @return array List of foreign ids.
      */
-    public function search()
+    public function foreign_ids()
     {
         $endpoint = $this->endpoint();
         $backend = $this->backend();
@@ -169,8 +178,26 @@ class Remote_Relation
         }
 
         return array_map(function ($model) {
-            return (new JSON_Finger($model))->get($this->foreign_id);
+            return (new JSON_Finger($model))->get($this->foreign_key);
         }, (array) $res['data']);
+    }
+
+    /**
+     * Fetches remote data for a given foreign key.
+     *
+     * @param int|string $foreign_id Foreig key value.
+     *
+     * @return array|WP_Error Remote data for the given id.
+     */
+    public function fetch($foreign_id)
+    {
+        $endpoint = $this->endpoint($foreign_id);
+        $res = $this->backend()->get($endpoint);
+        if (is_wp_error($res)) {
+            return $res;
+        }
+
+        return $res['data'];
     }
 
     /**

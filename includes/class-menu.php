@@ -19,8 +19,9 @@ class Menu extends BaseMenu
     protected function render_page($echo = true)
     {
         printf(
-            '<div class="wrap" id="posts-bridge">%s</div>',
-            esc_html__('Loading', 'posts-bridge')
+            '<div class="wrap" id="%s">%s</div>',
+            $this->slug(),
+            esc_html__('Loading', Posts_Bridge::textdomain())
         );
     }
 }

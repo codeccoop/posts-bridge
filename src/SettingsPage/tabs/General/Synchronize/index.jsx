@@ -52,7 +52,7 @@ export default function Synchronize({ synchronize, setSynchronize }) {
     const body = new URLSearchParams();
     body.set("_ajax_nonce", postsBridgeAjaxSync.nonce);
     body.set("action", postsBridgeAjaxSync.action);
-    body.set("sync_mode", fullMode ? "full" : "light");
+    body.set("mode", fullMode ? "full" : "light");
 
     fetch(postsBridgeAjaxSync.url, {
       method: "POST",
