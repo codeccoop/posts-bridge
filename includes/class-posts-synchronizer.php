@@ -347,7 +347,7 @@ class Posts_Synchronizer extends Singleton
 
             $data = $relation->fetch($foreign_id);
 
-            if (empty($data)) {
+            if (is_wp_error($data) || empty($data)) {
                 return false;
             }
 

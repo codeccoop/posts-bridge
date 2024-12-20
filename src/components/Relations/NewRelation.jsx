@@ -31,9 +31,9 @@ export default function NewRelation({ add, schema, children = () => {} }) {
     }))
   );
 
-  const [postType, setPostType] = useState("");
+  const [post_type, setPostType] = useState("");
   const [backend, setBackend] = useState("");
-  const [foreignKey, setForeignKey] = useState("");
+  const [foreign_key, setForeignKey] = useState("");
   const [customFields, setCustomFields] = useState({});
   const customFieldsSchema = useMemo(() =>
     schema.filter(
@@ -43,11 +43,11 @@ export default function NewRelation({ add, schema, children = () => {} }) {
 
   const onClick = () => {
     add({
-      ...customFields,
-      post_type: postType,
-      backend,
-      foreigh_key: foreignKey,
       fields: [],
+      ...customFields,
+      post_type,
+      backend,
+      foreign_key,
     });
     setPostType("");
     setBackend("");
@@ -58,15 +58,15 @@ export default function NewRelation({ add, schema, children = () => {} }) {
   const disabled = useMemo(
     () =>
       !(
-        postType &&
+        post_type &&
         (backend || !schema.includes("backend")) &&
-        (foreignKey || !schema.includes("foreign_key")) &&
+        (foreign_key || !schema.includes("foreign_key")) &&
         customFieldsSchema.reduce(
           (valid, field) => valid && customFields[field],
           true
         )
       ),
-    [postType, backend, foreignKey, customFields, customFieldsSchema]
+    [post_type, backend, foreign_key, customFields, customFieldsSchema]
   );
 
   return (
@@ -87,7 +87,7 @@ export default function NewRelation({ add, schema, children = () => {} }) {
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
           <SelectControl
             label={__("Post type", "posts-bridge")}
-            value={postType}
+            value={post_type}
             onChange={setPostType}
             options={postTypeOptions}
             __nextHasNoMarginBottom
@@ -108,14 +108,14 @@ export default function NewRelation({ add, schema, children = () => {} }) {
           <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
             <TextControl
               label={__("Foreign key", "posts-bridge")}
-              value={foreignKey}
+              value={foreign_key}
               onChange={setForeignKey}
               __nextHasNoMarginBottom
             />
           </div>
         )}
         {children({
-          data: customFields,
+          data: { ...customFields, post_type, backend, foreign_key },
           update: (customFields) => setCustomFields(customFields),
         })}
       </div>

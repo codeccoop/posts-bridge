@@ -54,7 +54,8 @@ export default function SettingsProvider({ children, handle = ["general"] }) {
           changed ||
           newState.general.addons[addon] !== previousState.general.addons[addon]
         );
-      }
+      },
+      false
     );
     setReload(reload);
   }).current;
@@ -93,7 +94,7 @@ export default function SettingsProvider({ children, handle = ["general"] }) {
 
   useEffect(() => {
     if (reload) window.location.reload();
-  }, []);
+  }, [reload]);
 
   const patchState = (partial) => setState({ ...state, ...partial });
 
