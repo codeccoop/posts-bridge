@@ -8,7 +8,7 @@
  * Author URI:      https://www.codeccoop.org
  * Text Domain:     posts-bridge
  * Domain Path:     /languages
- * Version:         2.1.1
+ * Version:         2.2.0
  */
 
 namespace POSTS_BRIDGE;
@@ -27,6 +27,7 @@ require_once 'abstracts/class-plugin.php';
 require_once 'deps/i18n/wpct-i18n.php';
 require_once 'deps/http/http-bridge.php';
 
+require_once 'includes/class-logger.php';
 require_once 'includes/class-i18n.php';
 require_once 'includes/class-remote-cpt.php';
 require_once 'includes/class-menu.php';
