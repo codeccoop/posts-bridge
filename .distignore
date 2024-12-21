@@ -59,6 +59,7 @@ CODE_OF_CONDUCT.md
 src/*
 deps/*/src/*
 addons/*/src/*
+custom-blocks/*/src/*
 *.husky*
 *.lintstagedrc.js
 *.prettier*

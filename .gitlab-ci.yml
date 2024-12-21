@@ -42,6 +42,7 @@ build:
     paths:
       - assets/plugin.bundle.js
       - addons/**/*/addon.bundle.js
+      - custom-blocks
 
 vendor:
   stage: build
