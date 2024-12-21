@@ -7,3 +7,12 @@ for addon in *; do
     cd $addon && npm run build && cd -
   fi
 done
+
+cd ../custom-blocks
+
+for block in *; do
+	if [ -d $block ]; then
+		cd $block && npm run build && cd -
+	fi
+done
+
