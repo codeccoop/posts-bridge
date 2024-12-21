@@ -47,7 +47,7 @@ vendor:
   stage: build
   image: composer:latest
   script:
-    - cd addongs/google-sheets && composer install
+    - cd addons/google-sheets && composer install
   artifacts:
     paths:
       - addons/google-sheets/vendor

@@ -22,7 +22,7 @@ export default function GeneralSettings() {
     useGeneral();
 
   const update = (field) =>
-    save({ synchronize, whitelist, backends, addons, ...field });
+    save({ synchronize, whitelist, backends, addons, debug, ...field });
 
   useEffect(() => {
     const img = document.querySelector("#general .addon-logo");
