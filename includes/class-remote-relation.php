@@ -292,7 +292,6 @@ class Remote_Relation
         }
 
         $data = $finger->data();
-        unset($data['ID']);
 
         // Prepare tags value for post insert
         if (isset($data['tags_input'])) {

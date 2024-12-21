@@ -1,0 +1,54 @@
+// vendor
+import React from "react";
+import { TextControl, SelectControl } from "@wordpress/components";
+
+// source
+import Relation from "../../../../src/components/Relations/Relation";
+import NewGSRelation from "./NewRelation";
+import { useSpreadsheets } from "../providers/Spreadsheets";
+
+export default function GSRelation({ data, update, remove }) {
+  const __ = wp.i18n.__;
+
+  const spreadsheets = useSpreadsheets();
+  const sheetOptions = [{ label: "", value: "" }].concat(
+    spreadsheets.map(({ title, id }) => ({
+      label: title,
+      value: id,
+    }))
+  );
+
+  return (
+    <Relation
+      data={data}
+      update={update}
+      remove={remove}
+      template={({ add, schema }) => (
+        <NewGSRelation add={add} schema={schema} />
+      )}
+      schema={["post_type", "foreign_key", "spreadsheet", "tab"]}
+    >
+      {({ data, update }) => (
+        <>
+          <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
+            <SelectControl
+              label={__("Spreadsheet", "posts-bridge")}
+              value={data.spreadsheet}
+              onChange={(spreadsheet) => update({ ...data, spreadsheet })}
+              options={sheetOptions}
+              __nextHasNoMarginBottom
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
+            <TextControl
+              label={__("Tab Name", "posts-bridge")}
+              value={data.tab}
+              onChange={(tab) => update({ ...data, tab })}
+              __nextHasNoMarginBottom
+            />
+          </div>
+        </>
+      )}
+    </Relation>
+  );
+}
