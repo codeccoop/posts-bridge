@@ -50,7 +50,7 @@ vendor:
     - cd addongs/google-sheets && composer install
   artifacts:
     paths:
-      - addongs/google-sheets/vendor
+      - addons/google-sheets/vendor
 
 package:
   image: javieraviles/zip:latest
