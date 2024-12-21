@@ -8,7 +8,7 @@
  * Author URI:      https://www.codeccoop.org
  * Text Domain:     posts-bridge
  * Domain Path:     /languages
- * Version:         2.3.0
+ * Version:         2.3.1
  */
 
 namespace POSTS_BRIDGE;
