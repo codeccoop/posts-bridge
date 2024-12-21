@@ -39,7 +39,7 @@ class WP_Remote_Relation extends Remote_Relation
                 $value = $this->endpoint();
                 break;
             default:
-                $value = parent::__get($name);
+                return parent::__get($name);
         }
 
         return apply_filters("posts_bridge_relation_{$name}", $value, $this);

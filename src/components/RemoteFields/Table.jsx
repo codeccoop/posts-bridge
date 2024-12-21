@@ -1,5 +1,5 @@
 // vendor
-import React, { useEffect } from "react";
+import React from "react";
 import {
   TextControl,
   Button,
@@ -8,6 +8,7 @@ import {
 import { useMemo } from "@wordpress/element";
 
 const postModel = {
+  ID: "ID",
   post_title: "Title",
   post_name: "Slug",
   post_excerpt: "Excerpt",
