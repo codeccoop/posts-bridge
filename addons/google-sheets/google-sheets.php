@@ -8,7 +8,10 @@ if (!defined('ABSPATH')) {
     exit();
 }
 
-if (!class_exists('\FORMS_BRIDGE\Forms_Bridge')) {
+if (
+    !class_exists('\FORMS_BRIDGE\Forms_Bridge') &&
+    !class_exists('\Google\Client')
+) {
     require_once 'vendor/autoload.php';
 }
 
