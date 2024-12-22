@@ -1,6 +1,4 @@
-# Posts Bridge
-
-![Posts Bridge]()
+![Posts Bridge](./assets/logo.png)
 
 Bridge backend data to WP posts collections.
 
