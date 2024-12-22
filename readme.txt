@@ -4,7 +4,7 @@ Tags: posts, bridge, http, api, backend
 License: GPLv2 or later
 License URI: https://git.coopdevs.org/codeccoop/wp/plugins/bridges/posts-bridge/-/raw/main/license.txt
 Requires PHP: 8.0
-Stable Tag: 2.1.1
+Stable Tag: 2.3.4
 Requires at least: 6.7
 Tested up to: 6.7
 
