@@ -199,11 +199,12 @@ class Remote_Featured_Media
 
         // Prevent filename collisions
         if (file_exists($filepath)) {
-            $filepath = dirname($filepath) . '/' . time();
+            $_filepath = dirname($filepath) . '/' . time();
             $pathinfo = pathinfo($filepath);
             if (isset($pathinfo['extension'])) {
-                $filepath .= '.' . $pathinfo['extension'];
+                $_filepath .= '.' . $pathinfo['extension'];
             }
+            $filepath = $_filepath;
         }
 
         $success = file_put_contents($filepath, $content);
