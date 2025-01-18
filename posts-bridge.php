@@ -345,7 +345,7 @@ class Posts_Bridge extends Base_Plugin
      */
     private static function register_meta()
     {
-        $relations = Remote_Relation::relations();
+        $relations = apply_filters('posts_bridge_relations', []);
         foreach ($relations as $rel) {
             $rel->register_meta();
         }

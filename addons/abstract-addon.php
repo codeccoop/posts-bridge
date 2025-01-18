@@ -6,6 +6,8 @@ use Exception;
 use ReflectionClass;
 use WPCT_ABSTRACT\Singleton;
 
+use function WPCT_ABSTRACT\is_list;
+
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -172,7 +174,7 @@ abstract class Addon extends Singleton
 
         add_filter(
             'posts_bridge_relations',
-            static function ($relations) {
+            static function ($relations = []) {
                 return self::relations($relations);
             },
             9,
@@ -207,6 +209,10 @@ abstract class Addon extends Singleton
      */
     private static function relations($relations = [])
     {
+        if (!is_list($relations)) {
+            $relations = [];
+        }
+
         return array_merge(
             $relations,
             array_map(static function ($relation_data) {

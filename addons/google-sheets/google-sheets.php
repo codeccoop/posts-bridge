@@ -41,31 +41,14 @@ class Google_Sheets_Addon extends Addon
     protected static $relation_class = '\POSTS_BRIDGE\Google_Sheets_Remote_Relation';
 
     /**
-     * Addon constructor. Inherits from the abstract addon and initialize interceptos
-     * and custom hooks.
+     * Addon constructor. Inherits from the abstract addon and sets up custom hooks.
      */
     protected function construct(...$args)
     {
         parent::construct(...$args);
 
-        self::interceptors();
         self::custom_hooks();
         self::wp_hooks();
-    }
-
-    private static function interceptors()
-    {
-        add_filter(
-            'posts_bridge_relations',
-            static function ($relations) {
-                return array_merge(
-                    $relations,
-                    Google_Sheets_Remote_Relation::relations()
-                );
-            },
-            10,
-            1
-        );
     }
 
     /**

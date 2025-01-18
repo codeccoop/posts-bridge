@@ -31,30 +31,6 @@ class WP_Addon extends Addon
     protected static $relation_class = '\POSTS_BRIDGE\WP_Remote_Relation';
 
     /**
-     * Addon construtor. Inherits from the abstract addon and initialize inteceptors.
-     */
-    protected function construct(...$args)
-    {
-        parent::construct(...$args);
-        self::interceptors();
-    }
-
-    /**
-     * Addon interceptors
-     */
-    private static function interceptors()
-    {
-        add_filter(
-            'posts_bridge_relations',
-            function ($relations) {
-                return array_merge($relations, WP_Remote_Relation::relations());
-            },
-            10,
-            1
-        );
-    }
-
-    /**
      * Addon settings configuration getter.
      *
      * @return array Addon's settings configuration.
