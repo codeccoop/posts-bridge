@@ -9,10 +9,11 @@ eslint.config.*
 .lintstagedrc.js
 .prettierrc
 .prettierrc-php
-.prettierignore
+.prettierrcignore
 .husky
 .git
 .gitignore
+.gitkept
 .gitmodules
 .github
 .gitlab-ci.yml
