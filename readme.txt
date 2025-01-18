@@ -2,7 +2,7 @@
 Contributors: codeccoop
 Tags: posts, bridge, http, api, backend
 License: GPLv2 or later
-License URI: https://git.coopdevs.org/codeccoop/wp/plugins/bridges/posts-bridge/-/raw/main/license.txt
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Stable Tag: 2.4.0
 Tested up to: 6.7
 
