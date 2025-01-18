@@ -117,10 +117,10 @@ class Posts_Bridge extends BasePlugin
 
         Addon::load();
 
-        $this->sync_http_settings();
-        $this->wp_hooks();
-        $this->rest_hooks();
-        $this->custom_hooks();
+        self::sync_http_settings();
+        self::wp_hooks();
+        self::rest_hooks();
+        self::custom_hooks();
     }
 
     /**
@@ -186,7 +186,7 @@ class Posts_Bridge extends BasePlugin
     /**
      * Registers plugin's custom hooks.
      */
-    private function custom_hooks()
+    private static function custom_hooks()
     {
         add_filter(
             'posts_bridge_post_types',

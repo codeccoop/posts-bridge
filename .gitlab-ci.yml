@@ -65,6 +65,7 @@ package:
     - find deps/i18n -name '*.php' -exec sed -i "s/'wpct-i18n'/'forms-bridge'/g" {} \;
     - find . -name '*.php' -exec sed -i 's/WPCT_I18N/POSTS_BRIDGE\\I18n/g' {} \;
     - wp dist-archive . ./$ZIP
+    - mkdir posts-bridge && mv addons posts-bridge && zip -r $ZIP posts-bridge/addons/**/vendor -x "*.sh" -x "*.asc" -x "*.phar*" -x "*.cnf" -x "*.pubkey"
   artifacts:
     paths:
       - $ZIP
