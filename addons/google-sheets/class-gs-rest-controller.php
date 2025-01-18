@@ -22,12 +22,12 @@ class Google_Sheet_REST_Controller extends Singleton
 
     protected function construct(...$args)
     {
-        add_action('rest_api_init', function () {
-            $this->register_spreadhseets_route();
+        add_action('rest_api_init', static function () {
+            self::init();
         });
     }
 
-    private function register_spreadhseets_route()
+    private static function init()
     {
         $namespace = self::$namespace;
         $version = self::$version;
@@ -55,9 +55,8 @@ class Google_Sheet_REST_Controller extends Singleton
      */
     private static function permission_callback()
     {
-        return current_user_can('manage_options')
-            ? true
-            : new WP_Error(
+        return current_user_can('manage_options') ?:
+            new WP_Error(
                 'rest_unauthorized',
                 __('You can\'t manage wp options', 'posts-bridge'),
                 ['code' => 403]

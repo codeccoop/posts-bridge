@@ -5,8 +5,6 @@ namespace POSTS_BRIDGE;
 use WP_REST_Server;
 use WPCT_ABSTRACT\REST_Settings_Controller as Base_Controller;
 
-use function WPCT_ABSTRACT\is_list;
-
 if (!defined('ABSPATH')) {
     exit();
 }

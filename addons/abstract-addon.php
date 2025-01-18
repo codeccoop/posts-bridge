@@ -290,10 +290,7 @@ abstract class Addon extends Singleton
      */
     private static function do_validation($data, $setting)
     {
-        if (
-            $setting->full_name() !==
-            Posts_Bridge::slug() . '_' . static::$slug
-        ) {
+        if ($setting->full_name() !== self::setting_name()) {
             return $data;
         }
 

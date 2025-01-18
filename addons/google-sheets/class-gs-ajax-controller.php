@@ -20,16 +20,16 @@ class Google_Sheets_Ajax_Controller extends Singleton
 
     protected function construct(...$args)
     {
-        add_action('wp_ajax_' . self::action, function () {
-            $this->ajax_handler();
+        add_action('wp_ajax_' . self::action, static function () {
+            self::ajax_handler();
         });
 
-        add_action('admin_enqueue_scripts', function () {
-            $this->localize_script();
+        add_action('admin_enqueue_scripts', static function () {
+            self::localize_script();
         });
     }
 
-    private function localize_script()
+    private static function localize_script()
     {
         wp_localize_script(
             'posts-bridge-google-sheets-api',
@@ -42,17 +42,17 @@ class Google_Sheets_Ajax_Controller extends Singleton
         );
     }
 
-    private function ajax_handler()
+    private static function ajax_handler()
     {
         check_ajax_referer(self::nonce, 'nonce');
 
         $status = 200;
         switch ($_SERVER['REQUEST_METHOD']) {
             case 'DELETE':
-                $success = $this->revoke_credentials($status);
+                $success = self::revoke_credentials($status);
                 break;
             case 'POST':
-                $success = $this->add_credentials($status);
+                $success = self::add_credentials($status);
                 break;
             default:
                 $success = false;
@@ -61,23 +61,31 @@ class Google_Sheets_Ajax_Controller extends Singleton
         wp_send_json(['success' => $success], $status);
     }
 
-    private function add_credentials(&$status)
+    private static function add_credentials(&$status)
     {
         if (!isset($_FILES['credentials'])) {
             $status = 400;
             return false;
         }
 
-        $credentials = $_FILES['credentials'];
+        $credentials = sanitize_text_field(
+            wp_unslash($_FILES['credentials']['tmp_name'])
+        );
+        if (!is_file($credentials)) {
+            $status = 400;
+            return false;
+        }
+
         Google_Sheets_Store::set(
             'credentials',
-            file_get_contents($credentials['tmp_name'])
+            file_get_contents($credentials)
         );
-        unlink($credentials['tmp_name']);
+
+        wp_delete_file($credentials);
         return true;
     }
 
-    private function revoke_credentials(&$status)
+    private static function revoke_credentials(&$status)
     {
         Google_Sheets_Store::delete('credentials');
         return true;

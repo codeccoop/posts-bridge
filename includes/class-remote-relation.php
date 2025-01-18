@@ -83,7 +83,7 @@ class Remote_Relation
     public function __construct($data)
     {
         $this->data = $data;
-        $this->api = 'rest';
+        $this->api = 'rest-api';
     }
 
     /**
@@ -134,12 +134,10 @@ class Remote_Relation
      */
     private function endpoint($foreign_id = null)
     {
-        $endpoint = isset($this->data['endpoint'])
-            ? $this->data['endpoint']
-            : '';
-        $parsed = parse_url($endpoint);
+        $endpoint = $this->data['endpoint'] ?? '';
+        $parsed = wp_parse_url($endpoint);
 
-        $endpoint = isset($parsed['path']) ? $parsed['path'] : '';
+        $endpoint = $parsed['path'] ?? '';
 
         if ($foreign_id) {
             $endpoint .= '/' . $foreign_id;

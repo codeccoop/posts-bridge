@@ -135,7 +135,7 @@ class Odoo_Remote_Relation extends Remote_Relation
                 'foreign_key' => 'id',
             ])
         );
-        $this->api = 'odoo';
+        $this->api = 'odoo-api';
     }
 
     public function __get($name)

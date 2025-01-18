@@ -19,13 +19,35 @@ require_once 'class-gs-remote-relation.php';
 
 class Google_Sheets_Addon extends Addon
 {
+    /**
+     * Handles the addon name.
+     *
+     * @var string
+     */
     protected static $name = 'Google Sheets';
+
+    /**
+     * Handles the addon slug.
+     *
+     * @var string
+     */
     protected static $slug = 'google-sheets-api';
+
+    /**
+     * Handles the addom's custom form hook class.
+     *
+     * @var string
+     */
     protected static $relation_class = '\POSTS_BRIDGE\Google_Sheets_Remote_Relation';
 
+    /**
+     * Addon constructor. Inherits from the abstract addon and initialize interceptos
+     * and custom hooks.
+     */
     protected function construct(...$args)
     {
         parent::construct(...$args);
+
         self::interceptors();
         self::custom_hooks();
         self::wp_hooks();
@@ -55,7 +77,7 @@ class Google_Sheets_Addon extends Addon
         add_filter(
             'wpct_setting_default',
             static function ($data, $name) {
-                if ($name !== Posts_Bridge::slug() . '_' . self::$slug) {
+                if ($name !== self::setting_name()) {
                     return $data;
                 }
 
@@ -66,6 +88,20 @@ class Google_Sheets_Addon extends Addon
             10,
             2
         );
+
+        add_filter(
+            'wpct_validate_setting',
+            static function ($data, $setting) {
+                if ($setting->full_name() !== self::setting_name()) {
+                    return $data;
+                }
+
+                unset($data['authorized']);
+                return $data;
+            },
+            9,
+            2
+        );
     }
 
     /**
@@ -74,9 +110,7 @@ class Google_Sheets_Addon extends Addon
     private static function wp_hooks()
     {
         // Patch authorized state on the setting value
-        $plugin_slug = Posts_Bridge::slug();
-        $addon_slug = self::$slug;
-        add_filter("option_{$plugin_slug}_{$addon_slug}", function ($data) {
+        add_filter('option_' . self::setting_name(), static function ($data) {
             $data['authorized'] = Google_Sheets_Service::is_authorized();
             return $data;
         });
@@ -85,7 +119,7 @@ class Google_Sheets_Addon extends Addon
     protected static function setting_config()
     {
         return [
-            'google-sheets-api',
+            self::$slug,
             [
                 'relations' => [
                     'type' => 'array',
@@ -118,12 +152,27 @@ class Google_Sheets_Addon extends Addon
         ];
     }
 
+    /**
+     * Sanitizes the setting value before updates.
+     *
+     * @param array $data Setting data.
+     * @param Setting $setting Setting instance.
+     *
+     * @return array Sanitized data.
+     */
     protected static function validate_setting($data, $setting)
     {
         $data['relations'] = self::validate_relations($data['relations']);
         return $data;
     }
 
+    /**
+     * Validates setting relations data.
+     *
+     * @param array $relations List with relations data.
+     *
+     * @return array Validated list with relations data.
+     */
     private static function validate_relations($relations)
     {
         if (!is_list($relations)) {

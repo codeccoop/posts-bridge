@@ -11,12 +11,36 @@ if (!defined('ABSPATH')) {
 require_once 'class-odoo-remote-relation.php';
 require_once 'class-odoo-db.php';
 
+/**
+ * Odoo Addon class.
+ */
 class Odoo_Addon extends Addon
 {
+    /**
+     * Handles the addon name.
+     *
+     * @var string
+     */
     protected static $name = 'Odoo JSON-RPC';
+
+    /**
+     * Handles the addon slug.
+     *
+     * @var string
+     */
     protected static $slug = 'odoo-api';
+
+    /**
+     * Handles the addom's custom relation class.
+     *
+     * @var string
+     */
     protected static $relation_class = '\POSTS_BRIDGE\Odoo_Remote_Relation';
 
+    /**
+     * Addon constructor. Inherits from the abstract addon and initialize interceptos
+     * and custom hooks.
+     */
     protected function construct(...$args)
     {
         parent::construct(...$args);
@@ -24,6 +48,9 @@ class Odoo_Addon extends Addon
         self::custom_hooks();
     }
 
+    /**
+     * Addon interceptors
+     */
     private static function interceptors()
     {
         add_filter(
@@ -39,24 +66,27 @@ class Odoo_Addon extends Addon
         );
     }
 
-    private function custom_hooks()
+    /**
+     * Addon custom hooks.
+     */
+    private static function custom_hooks()
     {
-        add_filter('posts_bridge_odoo_dbs', function ($dbs) {
+        add_filter('posts_bridge_odoo_dbs', static function ($dbs) {
             if (!is_list($dbs)) {
                 $dbs = [];
             }
 
-            return array_merge($dbs, $this->databases());
+            return array_merge($dbs, self::databases());
         });
 
         add_filter(
             'posts_bridge_odoo_db',
-            function ($db, $name) {
+            static function ($db, $name) {
                 if ($db instanceof Odoo_DB) {
                     return $db;
                 }
 
-                $dbs = $this->databases();
+                $dbs = self::databases();
                 foreach ($dbs as $db) {
                     if ($db->name === $name) {
                         return $db;
@@ -68,17 +98,27 @@ class Odoo_Addon extends Addon
         );
     }
 
-    private function databases()
+    /**
+     * Addon databases instances getter.
+     *
+     * @return array List with available databases instances.
+     */
+    private static function databases()
     {
         return array_map(function ($db_data) {
             return new Odoo_DB($db_data);
-        }, $this->setting()->databases);
+        }, self::setting()->databases);
     }
 
+    /**
+     * Addon settings config getter.
+     *
+     * @return array Settings config.
+     */
     protected static function setting_config()
     {
         return [
-            'odoo-api',
+            self::$slug,
             [
                 'databases' => [
                     'type' => 'array',
@@ -124,6 +164,14 @@ class Odoo_Addon extends Addon
         ];
     }
 
+    /**
+     * Validate setting data callback.
+     *
+     * @param array $data Setting data.
+     * @param Setting $setting Setting instance.
+     *
+     * @return array Validated setting data.
+     */
     protected static function validate_setting($data, $setting)
     {
         $data['databases'] = self::validate_databases($data['databases']);
@@ -135,6 +183,13 @@ class Odoo_Addon extends Addon
         return $data;
     }
 
+    /**
+     * Database setting field validation.
+     *
+     * @param array $dbs Databases data.
+     *
+     * @return array Validated databases data.
+     */
     private static function validate_databases($dbs)
     {
         if (!is_list($dbs)) {
@@ -155,6 +210,15 @@ class Odoo_Addon extends Addon
         });
     }
 
+    /**
+     * Validate relations settings. Filters relations with inconsistencies with the
+     * existing databases.
+     *
+     * @param array $relations Array with relation configurations.
+     * @param array $dbs Array with databases data.
+     *
+     * @return array Array with valid relation configurations.
+     */
     private static function validate_relations($relations, $dbs)
     {
         if (!is_list($relations)) {

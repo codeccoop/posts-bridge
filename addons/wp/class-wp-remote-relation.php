@@ -27,7 +27,7 @@ class WP_Remote_Relation extends Remote_Relation
                 'foreign_key' => 'id',
             ])
         );
-        $this->api = 'wp';
+        $this->api = 'wp-api';
     }
 
     public function __get($name)

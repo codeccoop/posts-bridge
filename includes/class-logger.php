@@ -10,15 +10,29 @@ if (!defined('ABSPATH')) {
     exit();
 }
 
+/**
+ * Admin logger class.
+ */
 class Logger extends Singleton
 {
+    /**
+     * Handles the log file name.
+     */
     private const log_file = '.posts-bridge.log';
 
+    /**
+     * Log file path getter.
+     */
     private static function log_path()
     {
         return wp_upload_dir()['basedir'] . '/' . self::log_file;
     }
 
+    /**
+     * Gets the log file contents.
+     *
+     * @return string Logs.
+     */
     private static function logs()
     {
         if (
@@ -39,12 +53,20 @@ class Logger extends Singleton
         return file_get_contents($log_path);
     }
 
+    /**
+     * Check if the debug mode is active.
+     *
+     * @return boolean
+     */
     public static function is_active()
     {
         $log_path = self::log_path();
         return is_file($log_path);
     }
 
+    /**
+     * Debug mode activator.
+     */
     public static function activate()
     {
         if (!self::is_active()) {
@@ -55,6 +77,9 @@ class Logger extends Singleton
         }
     }
 
+    /**
+     * Debug mode deactivator.
+     */
     public static function deactivate()
     {
         if (self::is_active()) {
@@ -65,6 +90,9 @@ class Logger extends Singleton
         }
     }
 
+    /**
+     * Logger's setup method. Initializes php log configurations.
+     */
     public static function setup()
     {
         if (self::is_active()) {
@@ -81,6 +109,14 @@ class Logger extends Singleton
         return self::get_instance();
     }
 
+    /**
+     * Log lines getter by offsets.
+     *
+     * @param int $offset Lines offset. If negative, returns the n last lines.
+     * @param int $len Number of lines to be returned. Is used if offset is positive.
+     *
+     * @return array Array of log lines.
+     */
     public static function lines($offset = 0, $len = null)
     {
         $logs = self::logs();
@@ -96,6 +132,9 @@ class Logger extends Singleton
         return array_values(array_filter(array_slice($lines, $offset, $len)));
     }
 
+    /**
+     * Logger singleton constructor. Binds the logger to wp and custom hooks
+     */
     protected function construct(...$args)
     {
         add_action('rest_api_init', static function () {
@@ -149,28 +188,33 @@ class Logger extends Singleton
         );
     }
 
+    /**
+     * Registers the logger REST API route.
+     */
     private static function register_log_route()
     {
         register_rest_route('posts-bridge/v1', '/logs/', [
             'methods' => WP_REST_Server::READABLE,
-            'callback' => function () {
+            'callback' => static function () {
                 return self::lines(-500);
             },
-            'permission_callback' => function () {
+            'permission_callback' => static function () {
                 return self::permission_callback();
             },
         ]);
     }
 
+    /**
+     * REST API route's permission callback.
+     *
+     * @return boolean|WP_Error
+     */
     private static function permission_callback()
     {
-        return current_user_can('manage_options')
-            ? true
-            : new WP_Error(
-                'rest_unauthorized',
-                'You can\'t manage wp options',
-                ['status' => 403]
-            );
+        return current_user_can('manage_options') ?:
+            new WP_Error('rest_unauthorized', 'You can\'t manage wp options', [
+                'status' => 403,
+            ]);
     }
 }
 

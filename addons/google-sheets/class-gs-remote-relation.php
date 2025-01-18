@@ -27,7 +27,7 @@ class Google_Sheets_Remote_Relation extends Remote_Relation
     public function __construct($data)
     {
         parent::__construct($data);
-        $this->api = 'google-sheets';
+        $this->api = 'google-sheets-api';
     }
 
     public function __get($name)

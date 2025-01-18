@@ -4,11 +4,11 @@ namespace POSTS_BRIDGE;
 
 use WPCT_ABSTRACT\SettingsStore as BaseSettingsStore;
 
+use function WPCT_ABSTRACT\is_list;
+
 if (!defined('ABSPATH')) {
     exit();
 }
-
-require_once 'class-rest-settings-controller.php';
 
 /**
  * Plugin settings.
@@ -22,6 +22,10 @@ class Settings extends BaseSettingsStore
      */
     protected static $rest_controller_class = '\POSTS_BRIDGE\REST_Settings_Controller';
 
+    /**
+     * Class constructor. Inherits the parent constructor and setup settings validation
+     * callbacks.
+     */
     protected function construct(...$args)
     {
         parent::construct(...$args);
@@ -37,7 +41,7 @@ class Settings extends BaseSettingsStore
     }
 
     /**
-     * Register plugin settings.
+     * Plugin's settings configuration.
      */
     public static function config()
     {
@@ -170,7 +174,7 @@ class Settings extends BaseSettingsStore
     private static function validate_general($data)
     {
         $data['synchronize'] = [
-            'enabled' => boolval($data['synchronize']['enabled'] ?? false),
+            'enabled' => $data['synchronize']['enabled'] ?? false,
             'recurrence' => $data['synchronize']['recurrence'] ?? 'hourly',
         ];
 
@@ -182,11 +186,11 @@ class Settings extends BaseSettingsStore
     }
 
     /*+
-     * Apply API setting validations before db updates.
+     * Apply settings' data validations before db updates.
      *
-     * @param array $data API setting data.
+     * @param array $data Setting data.
      *
-     * @return array Validated API setting data.
+     * @return array Validated setting data.
      */
     private static function validate_api($data)
     {
@@ -201,7 +205,7 @@ class Settings extends BaseSettingsStore
     }
 
     /**
-     * Validate API setting remote relations.
+     * Validate remote relations settings.
      *
      * @param array $relations List of API remote relations data.
      * @param array $backends List of available backends data.
@@ -210,6 +214,10 @@ class Settings extends BaseSettingsStore
      */
     protected static function validate_relations($relations, $backends)
     {
+        if (!is_list($relations)) {
+            return [];
+        }
+
         $post_types = get_post_types();
 
         $valid_relations = [];

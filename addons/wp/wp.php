@@ -10,18 +10,38 @@ if (!defined('ABSPATH')) {
 
 require_once 'class-wp-remote-relation.php';
 
+/**
+ * WP Addon class.
+ */
 class WP_Addon extends Addon
 {
+    /**
+     * Handles the addon name.
+     */
     protected static $name = 'WP REST API';
+
+    /**
+     * Handles the addon slug.
+     */
     protected static $slug = 'wp-api';
+
+    /**
+     * Handles the addon's custom relation class.
+     */
     protected static $relation_class = '\POSTS_BRIDGE\WP_Remote_Relation';
 
+    /**
+     * Addon construtor. Inherits from the abstract addon and initialize inteceptors.
+     */
     protected function construct(...$args)
     {
         parent::construct(...$args);
         self::interceptors();
     }
 
+    /**
+     * Addon interceptors
+     */
     private static function interceptors()
     {
         add_filter(
@@ -34,6 +54,11 @@ class WP_Addon extends Addon
         );
     }
 
+    /**
+     * Addon settings configuration getter.
+     *
+     * @return array Addon's settings configuration.
+     */
     protected static function setting_config()
     {
         return [
@@ -81,6 +106,14 @@ class WP_Addon extends Addon
         ];
     }
 
+    /**
+     * Validate setting data callback.
+     *
+     * @param array $data Setting data.
+     * @param Setting $setting Setting instance.
+     *
+     * @return array Validated setting data.
+     */
     protected static function validate_setting($data, $setting)
     {
         $backends = Posts_Bridge::setting('general')->backends;
@@ -92,6 +125,15 @@ class WP_Addon extends Addon
         return $data;
     }
 
+    /**
+     * Validate relations settings. Filters relations with inconsistencies with the
+     * existing post types.
+     *
+     * @param array $relations Array with relation configurations.
+     * @param array $backends Array with backends data.
+     *
+     * @return array Array with valid relation configurations.
+     */
     private static function validate_relations($relations, $backends)
     {
         if (!is_list($relations)) {
