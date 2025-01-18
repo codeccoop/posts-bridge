@@ -15,11 +15,9 @@ class WP_Remote_Relation extends Remote_Relation
      */
     public static function relations()
     {
-        $relations = apply_filters('posts_bridge_setting', null, 'wp-api')
-            ->relations;
-        return array_map(function ($rel) {
+        return array_map(static function ($rel) {
             return new WP_Remote_Relation($rel);
-        }, $relations);
+        }, Posts_Bridge::setting('wp-api')->relations);
     }
 
     public function __construct($data)
@@ -47,14 +45,10 @@ class WP_Remote_Relation extends Remote_Relation
 
     private function endpoint($foreign_id = null)
     {
-        $post_type = $this->post_type;
-        if ($post_type === 'post') {
-            $post_type = 'posts';
-        } elseif ($post_type === 'page') {
-            $post_type = 'pages';
-        }
+        $post_type = get_post_type_object($this->post_type);
+        $rest_base = $post_type->rest_base ?? $post_type;
 
-        $endpoint = '/wp-json/wp/v2/' . $post_type;
+        $endpoint = '/wp-json/wp/v2/' . $rest_base;
 
         if ($foreign_id) {
             $endpoint .= '/' . $foreign_id;
@@ -136,7 +130,8 @@ class WP_Remote_Relation extends Remote_Relation
             unset($data[$alias]);
         }
 
-        foreach ($data['_links']['wp:attachments'] as $attachment) {
+        $attachments = $data['_links']['wp:attachments'] ?? [];
+        foreach ($attachments as $attachment) {
             $res = http_bridge_get($attachment['href']);
             $attachments = $res['data'];
 
@@ -163,7 +158,8 @@ class WP_Remote_Relation extends Remote_Relation
             }
         }
 
-        foreach ($data['_links']['wp:term'] as $tax) {
+        $taxonomies = $data['_links']['wp:term'] ?? [];
+        foreach ($taxonomies as $tax) {
             if (!in_array($tax['taxonomy'], ['category', 'post_tag'])) {
                 continue;
             }
@@ -224,8 +220,7 @@ class WP_Remote_Relation extends Remote_Relation
 
     private function authorization()
     {
-        $credentials = apply_filters('posts_bridge_setting', null, 'wp-api')
-            ->credentials;
+        $credentials = Posts_Bridge::setting('wp-api')->credentials;
         return 'Basic ' .
             base64_encode(
                 "{$credentials['username']}:{$credentials['password']}"

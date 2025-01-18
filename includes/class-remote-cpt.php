@@ -58,12 +58,17 @@ class Remote_CPT
      */
     public static function post_types($api = null)
     {
-        $relations = apply_filters('posts_bridge_relations', [], $api);
+        $relations = apply_filters('posts_bridge_relations', []);
         return array_values(
             array_unique(
-                array_map(function ($rel) {
-                    return $rel->post_type;
-                }, $relations)
+                array_map(
+                    static function ($rel) {
+                        return $rel->post_type;
+                    },
+                    array_filter($relations, static function ($rel) use ($api) {
+                        return $api !== null ? $rel->api === $api : true;
+                    })
+                )
             )
         );
     }
@@ -110,7 +115,7 @@ class Remote_CPT
         // Checks if there are values for the fields and exits if it isn't
         $is_empty = array_reduce(
             $fields,
-            function ($handle, $field) use ($remote_cpt) {
+            static function ($handle, $field) use ($remote_cpt) {
                 return $handle && $remote_cpt->get($field) === null;
             },
             false
@@ -120,7 +125,7 @@ class Remote_CPT
         }
 
         // Get remote field values
-        $values = array_map(function ($field) use ($remote_cpt) {
+        $values = array_map(static function ($field) use ($remote_cpt) {
             return $remote_cpt->get($field, '');
         }, $fields);
 
@@ -136,7 +141,7 @@ class Remote_CPT
                 );
             }
 
-            return $content;
+            return wp_kses_post($content);
         } catch (ValueError $e) {
             return $e->getMessage();
         }
@@ -251,7 +256,7 @@ class Remote_CPT
                 break;
             default:
                 $post_data = wp_slash((array) $this->post);
-                return isset($post_data[$name]) ? $post_data[$name] : null;
+                return $post_data[$name] ?? null;
         }
     }
 

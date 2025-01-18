@@ -6,6 +6,7 @@ import {
   __experimentalSpacer as Spacer,
   TextControl,
 } from "@wordpress/components";
+import { useState, useEffect, useRef } from "@wordpress/element";
 
 // source
 import Relations from "../../../../src/components/Relations";
@@ -17,6 +18,15 @@ export default function WPSetting() {
   const [{ credentials, relations }, save] = useWPApi();
 
   const update = (field) => save({ credentials, relations, ...field });
+
+  const [credentialsState, setCredentialsState] = useState(credentials);
+  const timeout = useRef(0);
+  useEffect(() => {
+    clearTimeout(timeout.current);
+    timeout.current = setTimeout(() => {
+      update({ credentials: credentialsState });
+    }, 1000);
+  }, [credentialsState]);
 
   return (
     <>
@@ -46,9 +56,9 @@ with the process of creating new application passwords.`,
         <div style={{ width: "300px" }}>
           <TextControl
             label={__("Username", "posts-bridge")}
-            value={credentials.username || ""}
+            value={credentialsState.username || ""}
             onChange={(username) =>
-              update({ credentials: { ...credentials, username } })
+              setCredentialsState({ ...credentialsState, username })
             }
             __nextHasNoMarginBottom
           />
@@ -58,9 +68,9 @@ with the process of creating new application passwords.`,
           <TextControl
             type="password"
             label={__("Application password", "posts-bridge")}
-            value={credentials.password || ""}
+            value={credentialsState.password || ""}
             onChange={(password) =>
-              update({ credentials: { ...credentials, password } })
+              setCredentialsState({ ...credentialsState, password })
             }
             __nextHasNoMarginBottom
           />

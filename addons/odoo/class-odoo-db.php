@@ -23,7 +23,7 @@ class Odoo_DB
             case 'relations':
                 return $this->relations();
             default:
-                return isset($this->data[$name]) ? $this->data[$name] : null;
+                return $this->data[$name] ?? null;
         }
     }
 
@@ -38,11 +38,10 @@ class Odoo_DB
 
     private function relations()
     {
-        $relations = apply_filter('posts_bridge_relations', [], 'odoo-api');
+        $relations = Odoo_Remote_Relation::relations();
         return array_values(
             array_filter($relations, function ($rel) {
-                return $rel->api === 'odoo' &&
-                    $rel->database === $this->data['name'];
+                return $rel->database === $this->data['name'];
             })
         );
     }

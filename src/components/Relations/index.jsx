@@ -136,6 +136,7 @@ export default function Relations({ relations, setRelations, Relation }) {
       fields: JSON.parse(JSON.stringify(relation.fields || [])),
     };
 
+    copy.post_type = postTypes[0];
     setRelations(relations.concat(copy));
     setCurrentTab(copy.post_type);
   };

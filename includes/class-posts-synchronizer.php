@@ -43,7 +43,7 @@ class Posts_Synchronizer extends Singleton
      *
      * @var string $sync_mode Full or light mode.
      */
-    private $sync_mode = 'light';
+    private static $sync_mode = 'light';
 
     /**
      * Public class initializer.
@@ -66,17 +66,17 @@ class Posts_Synchronizer extends Singleton
     {
         $schedules['minutly'] = [
             'interval' => 60,
-            'display' => __('Minutly', Posts_Bridge::textdomain()),
+            'display' => __('Minutly', 'posts-bridge'),
         ];
 
         $schedules['quarterly'] = [
             'interval' => 60 * 15,
-            'display' => __('Quarterly', Posts_Bridge::textdomain()),
+            'display' => __('Quarterly', 'posts-bridge'),
         ];
 
         $schedules['twicehourly'] = [
             'interval' => 60 * 30,
-            'display' => __('Twice Hourly', Posts_Bridge::textdomain()),
+            'display' => __('Twice Hourly', 'posts-bridge'),
         ];
 
         return $schedules;
@@ -146,7 +146,7 @@ class Posts_Synchronizer extends Singleton
         [
             'enabled' => $enabled,
             'recurrence' => $recurrence,
-        ] = apply_filters('posts_bridge_setting', null, 'general')->synchronize;
+        ] = Posts_Bridge::setting('general')->synchronize;
 
         if (empty($enabled) || empty($recurrence)) {
             self::unschedule();
@@ -174,6 +174,8 @@ class Posts_Synchronizer extends Singleton
                 case 'weekly':
                     $next_run += 60 * 60 * 24 * 7;
                     break;
+                default:
+                    return;
             }
 
             self::add_schedule($next_run, $recurrence, []);
@@ -183,7 +185,7 @@ class Posts_Synchronizer extends Singleton
     private static function ajax_localization()
     {
         wp_localize_script(
-            Posts_Bridge::textdomain() . '-admin',
+            Posts_Bridge::slug() . '-admin',
             'postsBridgeAjaxSync',
             [
                 'url' => admin_url('admin-ajax.php'),
@@ -201,7 +203,7 @@ class Posts_Synchronizer extends Singleton
         add_action(
             'updated_option',
             static function ($option) {
-                if ($option === Posts_Bridge::textdomain() . '_general') {
+                if ($option === Posts_Bridge::slug() . '_general') {
                     self::schedule();
                 }
             },
@@ -212,10 +214,7 @@ class Posts_Synchronizer extends Singleton
         add_action(
             'admin_enqueue_scripts',
             static function ($admin_page) {
-                if (
-                    'settings_page_' . Posts_Bridge::textdomain() !==
-                    $admin_page
-                ) {
+                if ('settings_page_' . Posts_Bridge::slug() !== $admin_page) {
                     return;
                 }
 
@@ -224,18 +223,22 @@ class Posts_Synchronizer extends Singleton
             11
         );
 
-        add_action('wp_ajax_' . self::ajax_action, function () {
-            $this->ajax_callback();
+        add_action('wp_ajax_' . self::ajax_action, static function () {
+            self::ajax_callback();
         });
 
         add_filter('cron_schedules', static function ($schedules) {
             return self::register_custom_schedules($schedules);
         });
 
-        add_action(self::schedule_hook, function () {
+        add_action(self::schedule_hook, static function () {
             $relations = apply_filters('posts_bridge_relations', []);
             foreach ($relations as $relation) {
-                $this->sync($relation);
+                try {
+                    self::sync($relation);
+                } catch (Exception) {
+                    // Skip relation
+                }
             }
         });
     }
@@ -243,45 +246,48 @@ class Posts_Synchronizer extends Singleton
     /**
      * Ajax synchronization callback.
      */
-    private function ajax_callback()
+    private static function ajax_callback()
     {
         check_ajax_referer(self::ajax_nonce);
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-
-        [
-            'mode' => $mode,
-            'post_type' => $post_type,
-        ] = array_merge(
-            [
-                'mode' => 'light',
-                'post_type' => null,
-            ],
-            $_POST
-        );
-
-        $this->sync_mode = $mode;
-        if ($post_type) {
-            $relations = array_filter([
-                apply_filters('posts_bridge_relation', null, $post_type),
-            ]);
-        } else {
-            $relations = apply_filters('posts_bridge_relation', []);
-        }
-
         try {
-            $success = true;
-            foreach ($relations as $relation) {
-                $success &= $this->sync($relation);
+            if (!current_user_can('manage_options')) {
+                throw new Exception('ajax_unauthorized', 401);
             }
-        } catch (Exception) {
-            $success = false;
-        } finally {
-            $this->sync_mode = 'light';
-        }
 
-        wp_send_json(['success' => $success], 200);
+            $mode = isset($_POST)
+                ? sanitize_text_field(wp_unslash($_POST['mode']))
+                : null;
+            $post_type = isset($_POST)
+                ? sanitize_text_field(wp_unslash($_POST['post_type']))
+                : null;
+
+            if (!in_array($mode, ['light', 'full'], true)) {
+                throw new Exception('bad_request', 400);
+            }
+
+            self::$sync_mode = $mode;
+            if ($post_type) {
+                $relations = array_filter([
+                    apply_filters('posts_bridge_relation', null, $post_type),
+                ]);
+            } else {
+                $relations = apply_filters('posts_bridge_relations', []);
+            }
+
+            foreach ($relations as $relation) {
+                self::sync($relation);
+            }
+
+            wp_send_json(['success' => true], 200);
+        } catch (Exception $e) {
+            error_log(print_r($e, true));
+            wp_send_json(
+                ['success' => false, 'error' => $e->getMessage()],
+                $e->getCode()
+            );
+        } finally {
+            self::$sync_mode = 'light';
+        }
     }
 
     /**
@@ -291,7 +297,7 @@ class Posts_Synchronizer extends Singleton
      *
      * @return boolean True if success, false otherwise.
      */
-    private function sync($relation)
+    private static function sync($relation)
     {
         global $remote_cpt;
 
@@ -323,7 +329,7 @@ class Posts_Synchronizer extends Singleton
                 // if post does not exists on the remote backend, then remove it.
                 wp_delete_post(get_the_ID());
             } else {
-                if ($this->sync_mode === 'light') {
+                if (self::$sync_mode === 'light') {
                     // if light mode, skip syncrhonization for existing ones
                     unset($remote_pairs[$foreign_id]);
                 } else {
@@ -334,6 +340,7 @@ class Posts_Synchronizer extends Singleton
 
         wp_reset_postdata();
 
+        // $locale = apply_filters('wpct_i18n_current_language', null, 'locale');
         foreach ($remote_pairs as $foreign_id => $post) {
             // if is a new remote model, mock a post as its local counterpart
             if (empty($post)) {
@@ -345,11 +352,22 @@ class Posts_Synchronizer extends Singleton
                 );
             }
 
-            $data = $relation->fetch($foreign_id);
+            $data = (new Remote_CPT($post, $foreign_id))->fetch();
+            // $rcpt = new Remote_CPT($post);
+            // do_action('posts_bridge_before_fetch', $rcpt);
+            // $data = $relation->fetch($foreign_id);
+            // do_action('posts_bridge_after_fetch', $data, $rcpt);
 
             if (is_wp_error($data) || empty($data)) {
-                return false;
+                throw new Exception('sync_error', 500);
             }
+
+            // $data = (array) apply_filters(
+            //     'posts_bridge_remote_data',
+            //     $data,
+            //     $relation,
+            //     $locale,
+            // );
 
             $data = $relation->map_remote_fields($data);
 
@@ -360,7 +378,7 @@ class Posts_Synchronizer extends Singleton
 
             $post_id = wp_insert_post($data);
             if (is_wp_error($post_id) || !$post_id) {
-                return false;
+                throw new Exception('insert_error', 500);
             }
 
             update_post_meta(
@@ -379,8 +397,6 @@ class Posts_Synchronizer extends Singleton
 
             set_post_thumbnail($post_id, $featured_media);
         }
-
-        return true;
     }
 }
 

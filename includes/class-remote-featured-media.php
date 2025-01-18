@@ -34,7 +34,7 @@ class Remote_Featured_Media
      */
     public static function default_thumbnail_id()
     {
-        return (int) get_option(static::_default_thumbnail_handle);
+        return (int) get_option(self::_default_thumbnail_handle);
     }
 
     /**
@@ -44,7 +44,7 @@ class Remote_Featured_Media
      */
     public static function default_thumbnail()
     {
-        return get_post($this->default_thumbnail_id());
+        return get_post(self::default_thumbnail_id());
     }
 
     /**
@@ -216,13 +216,13 @@ class Remote_Featured_Media
 
         // exits if unkown file type
         if (!$filetype['type']) {
-            unlink($filepath);
+            wp_delete_file($filepath);
             return null;
         }
 
         // exits if file is not an image
         if (!preg_match('/image\/(.*)$/', $filetype['type'])) {
-            unlink($filepath);
+            wp_delete_file($filepath);
             return null;
         }
 
@@ -239,7 +239,7 @@ class Remote_Featured_Media
 
         // exits if attach process error
         if (is_wp_error($attachment_id)) {
-            unlink($filepath);
+            wp_delete_file($filepath);
             return $attachment_id;
         }
 
@@ -328,8 +328,12 @@ class Remote_Featured_Media
                 'meta_value' => $attachment_id,
             ]);
             if (!$query->found_posts) {
+                $file = get_attached_file($attachment_id);
                 wp_delete_attachment($attachment_id, true);
                 delete_option(self::_default_thumbnail_handle);
+                if (is_file($file)) {
+                    wp_delete_file($file);
+                }
             }
         }
     }

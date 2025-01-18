@@ -123,11 +123,9 @@ class Odoo_Remote_Relation extends Remote_Relation
      */
     public static function relations()
     {
-        $relations = apply_filters('posts_bridge_setting', null, 'odoo-api')
-            ->relations;
-        return array_map(function ($rel) {
+        return array_map(static function ($rel) {
             return new Odoo_Remote_Relation($rel);
-        }, $relations);
+        }, Posts_Bridge::setting('odoo-api')->relations);
     }
 
     public function __construct($data)

@@ -19,51 +19,24 @@ class WP_Addon extends Addon
     protected function construct(...$args)
     {
         parent::construct(...$args);
-        $this->interceptors();
+        self::interceptors();
     }
 
-    private function interceptors()
+    private static function interceptors()
     {
-        add_filter(
-            'posts_bridge_relation',
-            function ($relation, $post_type) {
-                if ($relation instanceof Remote_Relation) {
-                    return $relation;
-                }
-
-                $relations = WP_Remote_Relation::relations();
-                foreach ($relations as $rel) {
-                    if ($rel->post_type === $post_type) {
-                        return $rel;
-                    }
-                }
-            },
-            10,
-            2
-        );
-
         add_filter(
             'posts_bridge_relations',
-            function ($relations, $api = null) {
-                if ($api && $api !== 'wp-api') {
-                    return $relations;
-                }
-
-                return array_merge(
-                    $relations,
-                    array_map(function ($rel) {
-                        return new WP_Remote_Relation($rel);
-                    }, $this->setting()->relations)
-                );
+            function ($relations) {
+                return array_merge($relations, WP_Remote_Relation::relations());
             },
             10,
-            2
+            1
         );
     }
 
-    protected function register_setting($settings)
+    protected static function setting_config()
     {
-        $settings->register_setting(
+        return [
             'wp-api',
             [
                 'relations' => [
@@ -90,8 +63,12 @@ class WP_Addon extends Addon
                     ],
                 ],
                 'credentials' => [
-                    'username' => ['type' => 'string'],
-                    'password' => ['type' => 'string'],
+                    'type' => 'object',
+                    'additionalProperties' => false,
+                    'properties' => [
+                        'username' => ['type' => 'string'],
+                        'password' => ['type' => 'string'],
+                    ],
                 ],
             ],
             [
@@ -100,23 +77,22 @@ class WP_Addon extends Addon
                     'username' => '',
                     'password' => '',
                 ],
-            ]
-        );
+            ],
+        ];
     }
 
-    protected function sanitize_setting($value, $setting)
+    protected static function validate_setting($data, $setting)
     {
-        $backends = apply_filters('posts_bridge_setting', null, 'general')
-            ->backends;
-        $value['relations'] = $this->validate_relations(
-            $value['relations'],
+        $backends = Posts_Bridge::setting('general')->backends;
+        $data['relations'] = self::validate_relations(
+            $data['relations'],
             $backends
         );
 
-        return $value;
+        return $data;
     }
 
-    private function validate_relations($relations, $backends)
+    private static function validate_relations($relations, $backends)
     {
         if (!is_list($relations)) {
             return [];
@@ -132,7 +108,7 @@ class WP_Addon extends Addon
             $is_valid =
                 array_reduce(
                     $backends,
-                    function ($is_valid, $backend) use ($rel) {
+                    static function ($is_valid, $backend) use ($rel) {
                         return $rel['backend'] === $backend['name'] ||
                             $is_valid;
                     },
@@ -141,22 +117,13 @@ class WP_Addon extends Addon
 
             if ($is_valid) {
                 // filter empty fields
-                $rel['fields'] = isset($rel['fields'])
-                    ? (array) $rel['fields']
-                    : [];
                 $rel['fields'] = array_values(
-                    array_filter($rel['fields'], static function ($field) {
+                    array_filter((array) $rel['fields'], static function (
+                        $field
+                    ) {
                         return $field['foreign'] && $field['name'];
                     })
                 );
-
-                $fields = [];
-                foreach ($rel['fields'] as $field) {
-                    $field['name'] = sanitize_text_field($field['name']);
-                    $field['foreign'] = sanitize_text_field($field['foreign']);
-                    $fields[] = $field;
-                }
-                $rel['fields'] = $fields;
 
                 $valid_relations[] = $rel;
             }
