@@ -254,10 +254,10 @@ class Posts_Synchronizer extends Singleton
                 throw new Exception('ajax_unauthorized', 401);
             }
 
-            $mode = isset($_POST)
+            $mode = isset($_POST['mode'])
                 ? sanitize_text_field(wp_unslash($_POST['mode']))
                 : null;
-            $post_type = isset($_POST)
+            $post_type = isset($_POST['post_type'])
                 ? sanitize_text_field(wp_unslash($_POST['post_type']))
                 : null;
 
