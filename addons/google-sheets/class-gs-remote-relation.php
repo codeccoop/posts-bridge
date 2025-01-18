@@ -19,14 +19,9 @@ class Google_Sheets_Remote_Relation extends Remote_Relation
      */
     public static function relations()
     {
-        $relations = apply_filters(
-            'posts_bridge_setting',
-            null,
-            'google-sheets-api'
-        )->relations;
-        return array_map(function ($rel) {
+        return array_map(static function ($rel) {
             return new Google_Sheets_Remote_Relation($rel);
-        }, $relations);
+        }, Posts_Bridge::setting('google-sheets-api')->relations);
     }
 
     public function __construct($data)
@@ -84,8 +79,10 @@ class Google_Sheets_Remote_Relation extends Remote_Relation
             return [];
         }
 
-        return array_map(function ($row) {
-            return $row[$this->foreign_key];
-        }, $this->rows);
+        return array_filter(
+            array_map(function ($row) {
+                return $row[$this->foreign_key] ?? null;
+            }, $this->rows)
+        );
     }
 }

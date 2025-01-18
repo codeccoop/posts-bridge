@@ -49,7 +49,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
      *
      * @var string $namespace REST API namespace.
      */
-    protected $namespace = 'wp-bridges/v1';
+    protected $namespace = 'posts-bridge/v1';
 
     /**
      * Binds the controlled post type, setup the rest_base, registers the
@@ -60,7 +60,8 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
     public function __construct($post_type)
     {
         $this->post_type = $post_type;
-        $this->rest_base = Posts_Bridge::slug() . '/' . $post_type;
+        $this->rest_base =
+            get_post_type_object($post_type)->rest_base ?? $post_type;
         $this->meta = new WP_REST_Post_Meta_Fields($this->post_type);
         $this->register_routes();
 
@@ -135,7 +136,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             }
         }
 
-        $prepared_data = $relation->map_remote_fields($payload);
+        $prepared_data = wp_slash($relation->map_remote_fields($payload));
         $prepared_post = array_merge((array) $prepared_post, $prepared_data);
 
         return (object) $prepared_post;
@@ -230,6 +231,10 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
      */
     public function rest_pre_dispatch($result, $server, $request)
     {
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
         // Exits if request is not for the own remote cpt
         if (!$this->is_own_route($request)) {
             return $result;
@@ -272,10 +277,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         if (empty($foreign_id)) {
             return new WP_Error(
                 'required_foreign_key',
-                __(
-                    'Remote CPT foreign key is unkown',
-                    Posts_Bridge::textdomain()
-                )
+                __('Remote CPT foreign key is unkown', 'posts-bridge')
             );
         }
 

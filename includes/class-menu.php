@@ -16,12 +16,11 @@ class Menu extends BaseMenu
     /**
      * Render plugin menu page.
      */
-    protected function render_page($echo = true)
+    protected static function render_page($echo = true)
     {
         printf(
-            '<div class="wrap" id="%s">%s</div>',
-            $this->slug(),
-            esc_html__('Loading', Posts_Bridge::textdomain())
+            '<div class="wrap" id="posts-bridge">%s</div>',
+            esc_html__('Loading', 'posts-bridge')
         );
     }
 }

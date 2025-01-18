@@ -57,8 +57,14 @@ package:
   image: javieraviles/zip:latest
   stage: package
   script:
-    - zip -r $ZIP * -x $(cat .distignore | grep -v '^#' | tr '\n' '#' | sed 's/#/ -x /g') foo
-    - zip -r $ZIP addons/**/vendor
+    - find abstracts -name '*.php' -exec sed -i "s/'wpct-plugin-abstracts'/'forms-bridge'/g" {} \;
+    - find . -name "*.php" -exec sed -i 's/WPCT_ABSTRACT/POSTS_BRIDGE\\Abstracts/g' {} \;
+    - find deps/http -name '*.php' -exec sed -i "s/'http-bridge'/'forms-bridge'/g" {} \;
+    - find . -name "*.php" -exec sed -i 's/HTTP_BRIDGE_/POSTS_BRIDGE_/g' {} \;
+    - find . -name '*.php' -exec sed -i 's/HTTP_BRIDGE/POSTS_BRIDGE\\Http/g' {} \;
+    - find deps/i18n -name '*.php' -exec sed -i "s/'wpct-i18n'/'forms-bridge'/g" {} \;
+    - find . -name '*.php' -exec sed -i 's/WPCT_I18N/POSTS_BRIDGE\\I18n/g' {} \;
+    - wp dist-archive . ./$ZIP
   artifacts:
     paths:
       - $ZIP

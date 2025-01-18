@@ -53,7 +53,7 @@ class I18n extends Singleton
 
         if (count($errors) > 0) {
             $to = get_bloginfo('admin_email');
-            $subject = __('Posts Bridge translation error');
+            $subject = __('Posts Bridge translation error', 'posts-bridge');
             $body = print_r($errors, true);
             wp_mail($to, $subject, $body);
         }

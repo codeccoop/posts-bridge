@@ -3,7 +3,7 @@
 namespace POSTS_BRIDGE;
 
 use WP_REST_Server;
-use WPCT_ABSTRACT\REST_Settings_Controller as Base_REST_Settings_Controller;
+use WPCT_ABSTRACT\REST_Settings_Controller as Base_Controller;
 
 use function WPCT_ABSTRACT\is_list;
 
@@ -14,22 +14,8 @@ if (!defined('ABSPATH')) {
 /**
  * Plugin REST API controller
  */
-class REST_Settings_Controller extends Base_REST_Settings_Controller
+class REST_Settings_Controller extends Base_Controller
 {
-    /**
-     * Handle REST API controller namespace.
-     *
-     * @var string $namespace REST API namespace.
-     */
-    protected static $namespace = 'wp-bridges';
-
-    /**
-     * Handle REST API controller namespace version.
-     *
-     * @var int $version REST API namespace version.
-     */
-    protected static $version = 1;
-
     /**
      * Handle internat WP post types excluded from relations.
      *
@@ -53,51 +39,30 @@ class REST_Settings_Controller extends Base_REST_Settings_Controller
     ];
 
     /**
-     * Overwrite of the parent constructor to register the post types route
+     * Inherits the parent initialized and register the post types route
      *
      * @param string $group Plugin settings group name.
      */
-    public function construct(...$args)
+    protected static function init()
     {
-        parent::construct(...$args);
-
-        add_action('rest_api_init', function () {
-            $this->register_post_types_route();
-        });
-
-        add_filter(
-            'wpct_rest_settings',
-            function ($settings, $group) {
-                if ($group !== $this->group) {
-                    return $settings;
-                }
-
-                if (!is_list($settings)) {
-                    $settings = [];
-                }
-
-                return array_merge($settings, ['rest-api']);
-            },
-            10,
-            2
-        );
+        parent::init();
+        self::register_post_types_route();
     }
 
     /**
      * Registers the post types REST API route.
      */
-    private function register_post_types_route()
+    private static function register_post_types_route()
     {
-        $namespace = self::$namespace;
-        $version = self::$version;
-        $slug = Posts_Bridge::slug();
-        register_rest_route("{$namespace}/v{$version}", "/{$slug}/types/", [
+        $namespace = self::namespace();
+        $version = self::version();
+        register_rest_route("{$namespace}/v{$version}", '/types/', [
             'methods' => WP_REST_Server::READABLE,
-            'callback' => function () {
-                return $this->get_post_types();
+            'callback' => static function () {
+                return self::get_post_types();
             },
-            'permission_callback' => function () {
-                return $this->permission_callback();
+            'permission_callback' => static function () {
+                return self::permission_callback();
             },
         ]);
     }
@@ -107,10 +72,12 @@ class REST_Settings_Controller extends Base_REST_Settings_Controller
      *
      * @return array Array of post type slugs.
      */
-    private function get_post_types()
+    private static function get_post_types()
     {
         return array_values(
-            array_filter(array_values(get_post_types()), function ($post_type) {
+            array_filter(array_values(get_post_types()), static function (
+                $post_type
+            ) {
                 return !in_array($post_type, self::$_excluded_post_types);
             })
         );

@@ -10,5 +10,5 @@ $is_remote_frontend = shortcode_exists('remote_fields');
 if ($is_remote_frontend) {
     echo do_shortcode("[remote_fields]{$content}[/remote_fields]");
 } else {
-    echo $content;
+    echo wp_kses_post($content);
 }

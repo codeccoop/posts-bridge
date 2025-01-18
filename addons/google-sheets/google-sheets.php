@@ -8,12 +8,7 @@ if (!defined('ABSPATH')) {
     exit();
 }
 
-if (
-    !class_exists('\FORMS_BRIDGE\Forms_Bridge') &&
-    !class_exists('\Google\Client')
-) {
-    require_once 'vendor/autoload.php';
-}
+require_once 'vendor/autoload.php';
 
 require_once 'class-gs-store.php';
 require_once 'class-gs-client.php';
@@ -31,64 +26,40 @@ class Google_Sheets_Addon extends Addon
     protected function construct(...$args)
     {
         parent::construct(...$args);
-        $this->interceptors();
-        $this->custom_hooks();
-        $this->wp_hooks();
+        self::interceptors();
+        self::custom_hooks();
+        self::wp_hooks();
     }
 
-    private function interceptors()
+    private static function interceptors()
     {
         add_filter(
-            'posts_bridge_relation',
-            function ($relation, $post_type) {
-                if ($relation instanceof Remote_Relation) {
-                    return $relation;
-                }
-
-                $relations = Google_Sheets_Remote_Relation::relations();
-                foreach ($relations as $rel) {
-                    if ($rel->post_type === $post_type) {
-                        return $rel;
-                    }
-                }
-            },
-            10,
-            2
-        );
-
-        add_filter(
             'posts_bridge_relations',
-            function ($relations, $api = null) {
-                if ($api && $api !== 'google-sheets-api') {
-                    return $relations;
-                }
-
+            static function ($relations) {
                 return array_merge(
                     $relations,
-                    array_map(function ($rel) {
-                        return new Google_Sheets_Remote_Relation($rel);
-                    }, $this->setting()->relations)
+                    Google_Sheets_Remote_Relation::relations()
                 );
             },
             10,
-            2
+            1
         );
     }
 
     /**
      * Binds plugin custom hooks.
      */
-    private function custom_hooks()
+    private static function custom_hooks()
     {
         // Patch authorized state on the setting default value
         add_filter(
             'wpct_setting_default',
-            function ($value, $name) {
+            static function ($data, $name) {
                 if ($name !== Posts_Bridge::slug() . '_' . self::$slug) {
-                    return $value;
+                    return $data;
                 }
 
-                return array_merge($value, [
+                return array_merge($data, [
                     'authorized' => Google_Sheets_Service::is_authorized(),
                 ]);
             },
@@ -100,20 +71,20 @@ class Google_Sheets_Addon extends Addon
     /**
      * Binds wp standard hooks.
      */
-    private function wp_hooks()
+    private static function wp_hooks()
     {
         // Patch authorized state on the setting value
         $plugin_slug = Posts_Bridge::slug();
         $addon_slug = self::$slug;
-        add_filter("option_{$plugin_slug}_{$addon_slug}", function ($value) {
-            $value['authorized'] = Google_Sheets_Service::is_authorized();
-            return $value;
+        add_filter("option_{$plugin_slug}_{$addon_slug}", function ($data) {
+            $data['authorized'] = Google_Sheets_Service::is_authorized();
+            return $data;
         });
     }
 
-    protected function register_setting($settings)
+    protected static function setting_config()
     {
-        $settings->register_setting(
+        return [
             'google-sheets-api',
             [
                 'relations' => [
@@ -143,17 +114,17 @@ class Google_Sheets_Addon extends Addon
             ],
             [
                 'relations' => [],
-            ]
-        );
+            ],
+        ];
     }
 
-    protected function sanitize_setting($value, $setting)
+    protected static function validate_setting($data, $setting)
     {
-        $value['relations'] = $this->validate_relations($value['relations']);
-        return $value;
+        $data['relations'] = self::validate_relations($data['relations']);
+        return $data;
     }
 
-    private function validate_relations($relations)
+    private static function validate_relations($relations)
     {
         if (!is_list($relations)) {
             return [];
@@ -170,22 +141,13 @@ class Google_Sheets_Addon extends Addon
 
             if ($is_valid) {
                 // filter empty fields
-                $rel['fields'] = isset($rel['fields'])
-                    ? (array) $rel['fields']
-                    : [];
                 $rel['fields'] = array_values(
-                    array_filter($rel['fields'], static function ($field) {
+                    array_filter((array) $rel['fields'], static function (
+                        $field
+                    ) {
                         return $field['foreign'] && $field['name'];
                     })
                 );
-
-                $fields = [];
-                foreach ($rel['fields'] as $field) {
-                    $field['name'] = sanitize_text_field($field['name']);
-                    $field['foreign'] = sanitize_text_field($field['foreign']);
-                    $fields[] = $field;
-                }
-                $rel['fields'] = $fields;
 
                 $valid_relations[] = $rel;
             }

@@ -1,5 +1,4 @@
 // vendor
-import React from "react";
 import {
   createContext,
   useContext,
@@ -7,6 +6,8 @@ import {
   useEffect,
   useRef,
 } from "@wordpress/element";
+
+import useDiff from "../hooks/useDiff";
 
 const defaults = {
   general: {
@@ -33,6 +34,8 @@ export default function SettingsProvider({ children, handle = ["general"] }) {
   const [state, setState] = useState(defaults);
   const [reload, setReload] = useState(false);
   currentState.current = state;
+
+  const onPatch = useRef((state) => setState(state)).current;
 
   const onFetch = useRef((settings) => {
     const newState = {
@@ -74,18 +77,20 @@ export default function SettingsProvider({ children, handle = ["general"] }) {
 
   const beforeUnload = useRef((ev) => {
     const state = currentState.current;
-    if (JSON.stringify(state) !== JSON.stringify(initialState.current)) {
+    if (useDiff(state, initialState.current) && !window.__wppbReloading) {
       ev.preventDefault();
       ev.returnValue = true;
     }
   }).current;
 
   useEffect(() => {
+    wppb.on("patch", onPatch);
     wppb.on("fetch", onFetch);
     wppb.join("submit", onSubmit);
     window.addEventListener("beforeunload", (ev) => beforeUnload(ev));
 
     () => {
+      wppb.off("patch", onPatch);
       wppb.off("fetch", onFetch);
       wppb.leave("submit", onSubmit);
       window.removeEventListener("beforeunload", (ev) => beforeUnload(ev));
@@ -93,10 +98,13 @@ export default function SettingsProvider({ children, handle = ["general"] }) {
   }, []);
 
   useEffect(() => {
-    if (reload) window.location.reload();
+    if (reload) {
+      window.__wppbReloading = true;
+      window.location.reload();
+    }
   }, [reload]);
 
-  const patchState = (partial) => setState({ ...state, ...partial });
+  const patchState = (partial) => wppb.emit("patch", { ...state, ...partial });
 
   return (
     <SettingsContext.Provider value={[state, patchState]}>

@@ -6,26 +6,161 @@ use Exception;
 use ReflectionClass;
 use WPCT_ABSTRACT\Singleton;
 
-use function WPCT_ABSTRACT\is_list;
-
 if (!defined('ABSPATH')) {
     exit();
 }
 
+/**
+ * Abstract addon class to be used by addons.
+ */
 abstract class Addon extends Singleton
 {
-    protected static $name;
-    protected static $slug;
-    protected static $hook_class;
+    /**
+     * Handles addon's registry option name.
+     *
+     * @var string registry
+     */
+    private const registry = 'posts_bridge_addons';
 
-    public static function setup(...$args)
+    /**
+     * Handles addon public name.
+     *
+     * @var string $name
+     */
+    protected static $name;
+
+    /**
+     * Handles addon unique slug.
+     *
+     * @var string $slug
+     */
+    protected static $slug;
+
+    /**
+     * Handles addon custom hook class name.
+     *
+     * @var string Class name.
+     */
+    protected static $relation_class;
+
+    /**
+     * Public singleton initializer.
+     */
+    final public static function setup(...$args)
     {
-        return self::get_instance(...$args);
+        return static::get_instance(...$args);
     }
 
-    abstract protected function register_setting($settings);
-    abstract protected function sanitize_setting($value, $setting);
+    /**
+     * Public addons registry getter.
+     *
+     * @return array Addons registry state.
+     */
+    final public static function registry()
+    {
+        $state = (array) get_option(self::registry, []);
+        $addons_dir = dirname(__FILE__);
+        $addons = array_diff(scandir($addons_dir), ['.', '..']);
+        $registry = [];
+        foreach ($addons as $addon) {
+            $addon_dir = "{$addons_dir}/{$addon}";
+            $index = "{$addon_dir}/{$addon}.php";
+            if (is_file($index)) {
+                $registry[$addon] = isset($state[$addon])
+                    ? (bool) $state[$addon]
+                    : false;
+            }
+        }
 
+        return $registry;
+    }
+
+    /**
+     * Updates the addons' registry state.
+     *
+     * @param array $value Plugin's general setting data.
+     */
+    private static function update_registry($addons = [])
+    {
+        $registry = self::registry();
+        foreach ($addons as $addon => $enabled) {
+            if (!isset($registry[$addon])) {
+                continue;
+            }
+
+            $registry[$addon] = (bool) $enabled;
+        }
+
+        update_option(self::registry, $registry);
+    }
+
+    /**
+     * Public addons loader.
+     */
+    final public static function load()
+    {
+        $registry = self::registry();
+        foreach ($registry as $addon => $enabled) {
+            if ($enabled) {
+                require_once dirname(__FILE__) . "/{$addon}/{$addon}.php";
+            }
+        }
+
+        $general_setting = Posts_Bridge::slug() . '_general';
+        add_filter(
+            'wpct_setting_default',
+            static function ($default, $name) use ($general_setting) {
+                if ($name !== $general_setting) {
+                    return $default;
+                }
+
+                return array_merge($default, ['addons' => self::registry()]);
+            },
+            10,
+            2
+        );
+
+        add_filter("option_{$general_setting}", static function ($value) {
+            return array_merge($value, ['addons' => self::registry()]);
+        });
+
+        add_filter(
+            'wpct_validate_setting',
+            static function ($data, $setting) use ($general_setting) {
+                if ($setting->full_name() !== $general_setting) {
+                    return $data;
+                }
+
+                self::update_registry((array) $data['addons']);
+                unset($data['addons']);
+
+                return $data;
+            },
+            9,
+            2
+        );
+    }
+
+    /**
+     * Abstract setting registration method to be overwriten by its descendants.
+     */
+    abstract protected static function setting_config();
+
+    /**
+     * Abstract setting validation method to be overwriten by its descendants.
+     * This method will be executed before each database update on the options table.
+     *
+     * @param array $data Setting value.
+     * @param Setting $setting Setting instance.
+     *
+     * @return array Validated value.
+     */
+    abstract protected static function validate_setting($value, $setting);
+
+    /**
+     * Private class constructor. Add addons scripts as dependency to the
+     * plugin's scripts and setup settings hooks.
+     */
     protected function construct(...$args)
     {
         if (!(static::$name && static::$slug)) {
@@ -34,75 +169,90 @@ abstract class Addon extends Singleton
 
         $this->handle_settings();
         $this->admin_scripts();
+
+        add_filter(
+            'posts_bridge_relations',
+            static function ($relations) {
+                return self::relations($relations);
+            },
+            9,
+            3
+        );
     }
 
-    protected function setting()
+    /**
+     * Addon's setting name getter.
+     *
+     * @return string Setting name.
+     */
+    final protected static function setting_name()
     {
-        return apply_filters('posts_bridge_setting', null, static::$slug);
+        return Posts_Bridge::slug() . '_' . static::$slug;
     }
 
-    protected function form_hooks($form_id = null)
+    /**
+     * Addon setting getter.
+     */
+    final protected static function setting()
     {
-        $form_hooks = array_map(function ($hook_data) {
-            return new static::$hook_class($hook_data);
-        }, $this->setting()->form_hooks);
-
-        if ($form_id) {
-            $form_hooks = array_values(
-                array_filter($form_hooks, function ($hook) use ($form_id) {
-                    return (int) $hook->form_id === (int) $form_id;
-                })
-            );
-        }
-
-        return $form_hooks;
+        return Posts_Bridge::setting(static::$slug);
     }
 
-    private function handle_settings()
+    /**
+     * Adds addons' remote relations to the available relations.
+     *
+     * @param array $relations Inherit relations list value.
+     *
+     * @return array List with available remote relations.
+     */
+    private static function relations($relations = [])
+    {
+        return array_merge(
+            $relations,
+            array_map(static function ($relation_data) {
+                return new static::$relation_class($relation_data);
+            }, static::setting()->relations)
+        );
+    }
+
+    /**
+     * Settings hooks interceptors to register on the plugin's settings store
+     * the addon setting.
+     */
+    private static function handle_settings()
     {
         add_filter(
-            'wpct_rest_settings',
-            function ($settings, $group) {
+            'wpct_settings_config',
+            static function ($config, $group) {
                 if ($group !== Posts_Bridge::slug()) {
-                    return $settings;
+                    return $config;
                 }
 
-                if (!is_list($settings)) {
-                    $settings = [];
-                }
-
-                return array_merge($settings, [static::$slug]);
-            },
-            20,
-            2
-        );
-
-        add_action(
-            'wpct_register_settings',
-            function ($group, $settings) {
-                if ($group === Posts_Bridge::slug()) {
-                    $this->register_setting($settings);
-                }
+                return array_merge($config, [static::setting_config()]);
             },
             10,
             2
         );
 
         add_filter(
-            'wpct_sanitize_setting',
-            function ($value, $setting) {
-                return $this->_sanitize_setting($value, $setting);
+            'wpct_validate_setting',
+            static function ($data, $setting) {
+                return self::do_validation($data, $setting);
             },
             10,
             2
         );
     }
 
-    private function admin_scripts()
+    /**
+     * Enqueue addon scripts as wordpress scripts and shifts it
+     * as dependency to the posts bridge admin script.
+     */
+    private static function admin_scripts()
     {
         add_action(
             'admin_enqueue_scripts',
-            function ($admin_page) {
+            static function ($admin_page) {
                 if ('settings_page_' . Posts_Bridge::slug() !== $admin_page) {
                     return;
                 }
@@ -129,15 +279,24 @@ abstract class Addon extends Singleton
         );
     }
 
-    private function _sanitize_setting($value, $setting)
+    /**
+     * Middelware to the addon settings validation method to filter out of domain
+     * setting updates.
+     *
+     * @param array $data Setting data.
+     * @param Setting $setting Setting instance.
+     *
+     * @return array Validated setting data.
+     */
+    private static function do_validation($data, $setting)
     {
         if (
             $setting->full_name() !==
             Posts_Bridge::slug() . '_' . static::$slug
         ) {
-            return $value;
+            return $data;
         }
 
-        return $this->sanitize_setting($value, $setting);
+        return static::validate_setting($data, $setting);
     }
 }

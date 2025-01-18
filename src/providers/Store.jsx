@@ -9,7 +9,7 @@ export default function StoreProvider({ children, setLoading }) {
   const fetchSettings = () => {
     setLoading(true);
     return apiFetch({
-      path: `${window.wpApiSettings.root}wp-bridges/v1/posts-bridge/settings`,
+      path: `${window.wpApiSettings.root}posts-bridge/v1/settings`,
       headers: {
         "X-WP-Nonce": wpApiSettings.nonce,
       },
@@ -25,7 +25,7 @@ export default function StoreProvider({ children, setLoading }) {
   const fetchPostTypes = () => {
     setLoading(true);
     return apiFetch({
-      path: `${window.wpApiSettings.root}wp-bridges/v1/posts-bridge/types`,
+      path: `${window.wpApiSettings.root}posts-bridge/v1/types`,
       headers: {
         "X-WP-Nonce": wpApiSettings.nonce,
       },
@@ -45,7 +45,7 @@ export default function StoreProvider({ children, setLoading }) {
 
     const settings = wppb.bus("submit", {});
     return apiFetch({
-      path: `${window.wpApiSettings.root}wp-bridges/v1/posts-bridge/settings`,
+      path: `${window.wpApiSettings.root}posts-bridge/v1/settings`,
       method: "POST",
       headers: {
         "X-WP-Nonce": wpApiSettings.nonce,

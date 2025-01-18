@@ -1,4 +1,7 @@
 {
+  "name": "codeccoop/posts-bridge-google-sheets-addon",
+  "description": "Posts Bridge addon to bridge Google Sheets to WordPress post collections",
+  "license": "GPL-2.0-or-later",
   "require": {
     "google/apiclient": "^2.18"
   },

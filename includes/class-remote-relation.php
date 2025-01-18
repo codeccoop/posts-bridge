@@ -72,11 +72,9 @@ class Remote_Relation
      */
     public static function relations()
     {
-        $relations = apply_filters('posts_bridge_setting', null, 'rest-api')
-            ->relations;
-        return array_map(function ($rel) {
+        return array_map(static function ($rel) {
             return new Remote_Relation($rel);
-        }, $relations);
+        }, Posts_Bridge::setting('rest-api')->relations);
     }
 
     /**
@@ -108,7 +106,7 @@ class Remote_Relation
                 $value = $this->endpoint();
                 break;
             default:
-                $value = isset($this->data[$name]) ? $this->data[$name] : null;
+                $value = $this->data[$name] ?? null;
         }
 
         return apply_filters("posts_bridge_relation_{$name}", $value, $this);
@@ -121,9 +119,7 @@ class Remote_Relation
      */
     private function backend()
     {
-        $backend_name = isset($this->data['backend'])
-            ? $this->data['backend']
-            : null;
+        $backend_name = $this->data['backend'] ?? null;
         if (!$backend_name) {
             return $backend_name;
         }

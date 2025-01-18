@@ -63,7 +63,9 @@ class JSON_Finger
                     }
 
                     if (!((int) $index == $index)) {
-                        throw new ValueError('Invalid array index at ' . $from);
+                        throw new ValueError(
+                            'Invalid array index at ' . esc_attr($from)
+                        );
                     }
 
                     $index = (int) $index;
@@ -72,7 +74,7 @@ class JSON_Finger
                     if (strlen($finger) > $i) {
                         if ($finger[$i] !== '.') {
                             throw new ValueError(
-                                'Invalid finger syntax at ' . $i
+                                'Invalid finger syntax at ' . (int) $i
                             );
                         }
                     }
@@ -193,9 +195,11 @@ class JSON_Finger
             $partial = &$data;
             for ($i = 0; $i < count($keys) - 1; $i++) {
                 if (!is_array($partial)) {
-                    throw new TypeError('Finger points to a non traversable value');
+                    throw new TypeError(
+                        'Finger points to a non traversable value'
+                    );
                 }
-                
+
                 $key = $keys[$i];
                 if (!isset($partial[$key])) {
                     $partial[$key] = [];
