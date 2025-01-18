@@ -17,7 +17,7 @@
 
 namespace POSTS_BRIDGE;
 
-use WPCT_ABSTRACT\Plugin as BasePlugin;
+use WPCT_ABSTRACT\Plugin as Base_Plugin;
 
 use function WPCT_ABSTRACT\is_list;
 
@@ -37,6 +37,7 @@ require_once 'includes/class-menu.php';
 require_once 'includes/class-settings-store.php';
 require_once 'includes/class-posts-synchronizer.php';
 require_once 'includes/class-rest-remote-posts-controller.php';
+require_once 'includes/class-rest-settings-controller.php';
 require_once 'includes/class-remote-relation.php';
 require_once 'includes/class-remote-featured-media.php';
 require_once 'includes/class-json-finger.php';
@@ -55,14 +56,14 @@ $remote_cpt = null;
 /**
  * Posts Bridge plugin.
  */
-class Posts_Bridge extends BasePlugin
+class Posts_Bridge extends Base_Plugin
 {
     /**
      * Handle plugin's settings store class name.
      *
      * @var string $settings_class Plugin's settings store class name.
      */
-    protected static $settings_class = '\POSTS_BRIDGE\Settings';
+    protected static $settings_class = '\POSTS_BRIDGE\Settings_Store';
 
     /**
      * Handle plugin menu class name.
@@ -131,7 +132,7 @@ class Posts_Bridge extends BasePlugin
         $slug = self::slug();
         // Patch http bridge settings to plugin settings
         add_filter("option_{$slug}_general", static function ($value) {
-            $http = \HTTP_BRIDGE\SettingsStore::setting('general');
+            $http = \HTTP_BRIDGE\Settings_Store::setting('general');
 
             $data = [];
             foreach (['backends', 'whitelist'] as $key) {
@@ -154,7 +155,7 @@ class Posts_Bridge extends BasePlugin
                     $data[$key] = $to[$key];
                 }
 
-                $http = \HTTP_BRIDGE\SettingsStore::setting('general');
+                $http = \HTTP_BRIDGE\Settings_Store::setting('general');
                 $http->update(array_merge($http->data(), $data));
             },
             10,

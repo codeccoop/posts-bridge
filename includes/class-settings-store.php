@@ -2,7 +2,7 @@
 
 namespace POSTS_BRIDGE;
 
-use WPCT_ABSTRACT\SettingsStore as BaseSettingsStore;
+use WPCT_ABSTRACT\Settings_Store as Base_Settings_Store;
 
 use function WPCT_ABSTRACT\is_list;
 
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 /**
  * Plugin settings.
  */
-class Settings extends BaseSettingsStore
+class Settings_Store extends Base_Settings_Store
 {
     /**
      * Handle REST Settings Controller class name.
@@ -178,7 +178,7 @@ class Settings extends BaseSettingsStore
             'recurrence' => $data['synchronize']['recurrence'] ?? 'hourly',
         ];
 
-        $data['backends'] = \HTTP_BRIDGE\SettingsStore::validate_backends(
+        $data['backends'] = \HTTP_BRIDGE\Settings_Store::validate_backends(
             $data['backends']
         );
 
