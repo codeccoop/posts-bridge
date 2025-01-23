@@ -14,6 +14,7 @@ import Backend from "../../../components/Backends/Backend";
 import Addons from "../../../components/Addons";
 import Synchronize from "./Synchronize";
 import Logger from "./Logger";
+import Exporter from "./Exporter";
 
 export default function GeneralSettings() {
   const __ = wp.i18n.__;
@@ -67,6 +68,12 @@ export default function GeneralSettings() {
       <Addons />
       <PanelBody title={__("Debug", "posts-bridge")} initialOpen={!!debug}>
         <Logger />
+      </PanelBody>
+      <PanelBody
+        title={__("Import / Export", "posts-bridge")}
+        initialOpen={false}
+      >
+        <Exporter />
       </PanelBody>
     </>
   );
