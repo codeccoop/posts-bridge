@@ -6,7 +6,9 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Stable Tag: 2.4.0
 Tested up to: 6.7
 
-Bridge backend data to posts collections.
+Bridge any backend or service data to posts collections.
+
+== How it works ==
 
 Posts Bridge handles posts collections as indexes that represents your backend data and allows the use of Gutenberg, the powerful page builder of WordPress, as your backend frontend builder.
 
