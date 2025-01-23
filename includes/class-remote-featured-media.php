@@ -165,7 +165,7 @@ class Remote_Featured_Media
             return $attachment_id;
         }
 
-        $url = parse_url($src);
+        $url = wp_parse_url($src);
         if (isset($url['query'])) {
             $src = str_replace('?' . $url['query'], '', $src);
         }
@@ -186,7 +186,7 @@ class Remote_Featured_Media
 
         // unlink temp files
         if (is_file($src) && $unlink) {
-            unlink($src);
+            wp_delete_file($src);
         }
 
         // get wp current upload dir
