@@ -153,8 +153,8 @@ class I18n extends Singleton
      */
     public static function do_translations($post_id)
     {
-        global $remote_cpt;
-        $global = $remote_cpt;
+        global $posts_bridge_remote_cpt;
+        $global = $posts_bridge_remote_cpt;
         $actives = apply_filters('wpct_i18n_active_languages', []);
         $default = apply_filters('wpct_i18n_default_language', null);
         $translated = apply_filters(
@@ -178,14 +178,14 @@ class I18n extends Singleton
                 ]);
             }
 
-            $remote_cpt = new Remote_CPT($trans_id);
+            $posts_bridge_remote_cpt = new Remote_CPT($trans_id);
             do_action('posts_bridge_translation', [
                 'post_id' => $trans_id,
                 'lang' => $lang,
                 'bound' => $post_id,
             ]);
 
-            $remote_cpt = $global;
+            $posts_bridge_remote_cpt = $global;
         }
     }
 

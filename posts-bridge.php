@@ -49,9 +49,9 @@ require_once 'custom-blocks/remote-fields/remote-fields.php';
 /**
  * Handle global Remote_CPT instances.
  *
- * @var Remote_CPT|null $remote_cpt Global Remote_CPT instance.
+ * @var Remote_CPT|null
  */
-$remote_cpt = null;
+$posts_bridge_remote_cpt = null;
 
 /**
  * Posts Bridge plugin.
@@ -203,8 +203,8 @@ class Posts_Bridge extends Base_Plugin
         );
 
         add_filter('posts_bridge_is_remote', static function () {
-            global $remote_cpt;
-            return !empty($remote_cpt);
+            global $posts_bridge_remote_cpt;
+            return !empty($posts_bridge_remote_cpt);
         });
 
         add_filter(
@@ -327,11 +327,14 @@ class Posts_Bridge extends Base_Plugin
             return;
         }
 
-        add_shortcode('remote_fields', static function ($atts, $content = '') {
+        add_shortcode('posts_bridge_remote_fields', static function (
+            $atts,
+            $content = ''
+        ) {
             return Remote_CPT::do_shortcode($content);
         });
 
-        add_shortcode('remote_callback', static function (
+        add_shortcode('posts_bridge_remote_callback', static function (
             $atts,
             $content = ''
         ) {
@@ -352,22 +355,22 @@ class Posts_Bridge extends Base_Plugin
     }
 
     /**
-     * Callback to `the_post` hook to populate the global $remote_cpt variable with
+     * Callback to `the_post` hook to populate the global $posts_bridge_remote_cpt variable with
      * the current post wrapped as a Remote CPT.
      *
      * @param WP_Post $post Global WP post.
      */
     private static function the_post($post)
     {
-        global $remote_cpt;
+        global $posts_bridge_remote_cpt;
         if (
             empty($post) ||
             !$post->ID ||
             !in_array($post->post_type, Remote_CPT::post_types())
         ) {
-            $remote_cpt = null;
+            $posts_bridge_remote_cpt = null;
         } else {
-            $remote_cpt = new Remote_CPT($post);
+            $posts_bridge_remote_cpt = new Remote_CPT($post);
         }
     }
 }

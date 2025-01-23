@@ -299,7 +299,7 @@ class Posts_Synchronizer extends Singleton
      */
     private static function sync($relation)
     {
-        global $remote_cpt;
+        global $posts_bridge_remote_cpt;
 
         $foreign_ids = apply_filters(
             'posts_bridge_foreign_ids',
@@ -324,7 +324,7 @@ class Posts_Synchronizer extends Singleton
 
         while ($query->have_posts()) {
             $query->the_post();
-            $foreign_id = $remote_cpt->foreign_id;
+            $foreign_id = $posts_bridge_remote_cpt->foreign_id;
             if (!isset($remote_pairs[$foreign_id])) {
                 // if post does not exists on the remote backend, then remove it.
                 wp_delete_post(get_the_ID());
@@ -353,21 +353,10 @@ class Posts_Synchronizer extends Singleton
             }
 
             $data = (new Remote_CPT($post, $foreign_id))->fetch();
-            // $rcpt = new Remote_CPT($post);
-            // do_action('posts_bridge_before_fetch', $rcpt);
-            // $data = $relation->fetch($foreign_id);
-            // do_action('posts_bridge_after_fetch', $data, $rcpt);
 
             if (is_wp_error($data) || empty($data)) {
                 throw new Exception('sync_error', 500);
             }
-
-            // $data = (array) apply_filters(
-            //     'posts_bridge_remote_data',
-            //     $data,
-            //     $relation,
-            //     $locale,
-            // );
 
             $data = $relation->map_remote_fields($data);
 

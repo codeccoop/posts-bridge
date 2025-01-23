@@ -74,7 +74,7 @@ class Remote_CPT
     }
 
     /**
-     * Do the `remote_field` shortcode fetching remote data of the current Remote CPT
+     * Do the `posts_bridge_remote_fields` shortcode fetching remote data of the current Remote CPT
      *
      * @param string $content Shortcode content.
      *
@@ -82,10 +82,10 @@ class Remote_CPT
      */
     public static function do_shortcode($content)
     {
-        global $remote_cpt;
+        global $posts_bridge_remote_cpt;
 
         // Exit if global post is not Remote CPT
-        if (empty($remote_cpt)) {
+        if (empty($posts_bridge_remote_cpt)) {
             return $content;
         }
 
@@ -115,8 +115,10 @@ class Remote_CPT
         // Checks if there are values for the fields and exits if it isn't
         $is_empty = array_reduce(
             $fields,
-            static function ($handle, $field) use ($remote_cpt) {
-                return $handle && $remote_cpt->get($field) === null;
+            static function ($handle, $field) {
+                global $posts_bridge_remote_cpt;
+                return $handle &&
+                    $posts_bridge_remote_cpt->get($field) === null;
             },
             false
         );
@@ -125,8 +127,9 @@ class Remote_CPT
         }
 
         // Get remote field values
-        $values = array_map(static function ($field) use ($remote_cpt) {
-            return $remote_cpt->get($field, '');
+        $values = array_map(static function ($field) {
+            global $posts_bridge_remote_cpt;
+            return $posts_bridge_remote_cpt->get($field, '');
         }, $fields);
 
         try {
@@ -148,7 +151,7 @@ class Remote_CPT
     }
 
     /**
-     * Do the `remote_callback` shortcode ussing the current remote cpt as the first param.
+     * Do the `posts_bridge_remote_callback` shortcode ussing the current remote cpt as the first param.
      * This shortcode pass control of the fetch process to the user's function.
      *
      * @param array $atts Shortcode's attributes.
@@ -158,8 +161,8 @@ class Remote_CPT
      */
     public static function do_remote_callback($atts, $content)
     {
-        global $remote_cpt;
-        if (empty($remote_cpt)) {
+        global $posts_bridge_remote_cpt;
+        if (empty($posts_bridge_remote_cpt)) {
             return $content;
         }
 
@@ -175,7 +178,7 @@ class Remote_CPT
             return $content;
         }
 
-        return $callback($remote_cpt, $atts, $content);
+        return $callback($posts_bridge_remote_cpt, $atts, $content);
     }
 
     /**
