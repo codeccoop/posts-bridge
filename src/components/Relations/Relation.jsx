@@ -1,20 +1,19 @@
-// vendor
-import React, { useEffect } from "react";
-import {
-  TextControl,
-  SelectControl,
-  Button,
-  __experimentalSpacer as Spacer,
-  ToggleControl,
-} from "@wordpress/components";
-import { useState } from "@wordpress/element";
-
 // source
 import { usePostTypes } from "../../providers/PostTypes";
 import { useGeneral } from "../../providers/Settings";
 import RemoteFields from "../RemoteFields";
 import NewRelation from "./NewRelation";
 import useAjaxSync from "../../hooks/useAjaxSync";
+
+const {
+  TextControl,
+  SelectControl,
+  Button,
+  __experimentalSpacer: Spacer,
+  ToggleControl,
+} = wp.components;
+const { useState, useEffect } = wp.element;
+const { __ } = wp.i18n;
 
 export default function Relation({
   data,
@@ -25,8 +24,6 @@ export default function Relation({
   children = () => {},
 }) {
   if (data.name === "add") return template({ add: update, schema });
-
-  const __ = wp.i18n.__;
 
   const [fullMode, setFullMode] = useState(false);
 

@@ -1,20 +1,13 @@
-// vendor
-import React from "react";
-import {
-  TextControl,
-  Button,
-  __experimentalSpacer as Spacer,
-} from "@wordpress/components";
-import { useState, useRef, useEffect } from "@wordpress/element";
-
 // source
 import { useGeneral } from "../../providers/Settings";
 import useBackendNames from "../../hooks/useBackendNames";
 import BackendHeaders from "./Headers";
 
-function NewBackend({ add }) {
-  const __ = wp.i18n.__;
+const { TextControl, Button, __experimentalSpacer: Spacer } = wp.components;
+const { useState, useRef, useEffect } = wp.element;
+const { __ } = wp.i18n;
 
+function NewBackend({ add }) {
   const { backends } = useGeneral();
   const backendNames = useBackendNames(backends);
 

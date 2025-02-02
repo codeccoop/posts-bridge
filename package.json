@@ -1,7 +1,6 @@
 {
   "name": "posts-bridge-admin-client",
   "version": "2.4.0",
-  "main": "Gruntfile.js",
   "author": "Còdec",
   "license": "GPL-2.0-or-later",
   "scripts": {
@@ -12,27 +11,14 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@eslint/js": "^9.14.0",
-    "@prettier/plugin-php": "^0.22.2",
-    "@wordpress/scripts": "^26.15.0",
-    "esbuild": "^0.24.0",
-    "eslint": "^9.14.0",
-    "eslint-config-prettier": "^9.1.0",
-    "globals": "^15.12.0",
-    "husky": "^9.1.6",
-    "lint-staged": "^15.2.10",
-    "prettier": "^3.3.3"
-  },
-  "dependencies": {
-    "@wordpress/api-fetch": "^7.11.0",
-    "@wordpress/block-editor": "^12.26.0",
-    "@wordpress/blocks": "^13.2.0",
-    "@wordpress/components": "^28.11.0",
-    "@wordpress/core-data": "^6.35.0",
-    "@wordpress/data": "^9.28.0",
-    "@wordpress/dom-ready": "^4.11.0",
-    "@wordpress/element": "^6.11.0",
-    "@wordpress/i18n": "^4.58.0",
-    "dompurify": "^3.0.9"
+    "@eslint/js": "^9.19.0",
+    "@prettier/plugin-php": "^0.22.4",
+    "esbuild": "^0.24.2",
+    "eslint": "^9.19.0",
+    "eslint-config-prettier": "^10.0.1",
+    "globals": "^15.14.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.2",
+    "prettier": "^3.4.2"
   }
 }

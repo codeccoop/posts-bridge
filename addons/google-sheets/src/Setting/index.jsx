@@ -1,22 +1,20 @@
-// vendor
-import React from "react";
-import {
-  PanelBody,
-  PanelRow,
-  ToggleControl,
-  FormFileUpload,
-  __experimentalSpacer as Spacer,
-} from "@wordpress/components";
-import { useState, useEffect } from "@wordpress/element";
-
 // source
 import Relations from "../../../../src/components/Relations";
 import GSRelation from "./Relation";
 import useGSApi from "../hooks/useGSApi";
 import useAjaxGrant from "../hooks/useAjaxGrant";
 
+const {
+  PanelBody,
+  PanelRow,
+  ToggleControl,
+  FormFileUpload,
+  __experimentalSpacer: Spacer,
+} = wp.components;
+const { useState, useEffect } = wp.element;
+const { __ } = wp.i18n;
+
 export default function GoogleSheetsSetting() {
-  const __ = wp.i18n.__;
   const [{ authorized, relations }, save] = useGSApi();
 
   const { grant, revoke, loading, result } = useAjaxGrant();

@@ -1,13 +1,10 @@
-// vendor
-import React from "react";
-import {
+const {
   TextControl,
   SelectControl,
   Button,
-  __experimentalSpacer as Spacer,
-} from "@wordpress/components";
-import { useEffect } from "@wordpress/element";
-
+  __experimentalSpacer: Spacer,
+} = wp.components;
+const { useEffect } = wp.element;
 const { __ } = wp.i18n;
 
 const WELL_KNOWN_CONTENT_TYPES = {
@@ -84,8 +81,6 @@ function ContentTypeHeader({ setValue, value }) {
 }
 
 export default function BackendHeaders({ headers, setHeaders }) {
-  const __ = wp.i18n.__;
-
   const contentType =
     headers.find((header) => header.name === "Content-Type")?.value || "";
 

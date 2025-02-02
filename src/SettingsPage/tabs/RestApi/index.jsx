@@ -1,8 +1,3 @@
-// vendor
-import React from "react";
-import { PanelRow } from "@wordpress/components";
-import { useEffect } from "react";
-
 // source
 import Relations from "../../../components/Relations";
 import RestRelation from "./Relation";
@@ -10,6 +5,9 @@ import useRestApi from "./useRestApi";
 
 // assets
 import logo from "../../../../assets/rest.png";
+
+const { PanelRow } = wp.components;
+const { useEffect } = wp.element;
 
 export default function RestApiSettings() {
   const [{ relations }, save] = useRestApi();

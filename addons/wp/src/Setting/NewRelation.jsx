@@ -1,9 +1,9 @@
-// vendor
-import React, { useEffect } from "react";
-import { TextControl } from "@wordpress/components";
-
 // source
 import NewRelation from "../../../../src/components/Relations/NewRelation";
+
+const { TextControl } = wp.components;
+const { useEffect } = wp.element;
+const { __ } = wp.i18n;
 
 const DEFAULT_MAPPERS = Object.entries({
   post_title: "title.raw",
@@ -18,8 +18,6 @@ const DEFAULT_MAPPERS = Object.entries({
 }).map(([name, foreign]) => ({ name, foreign }));
 
 function RemotePostTypeField({ data, update }) {
-  const __ = wp.i18n.__;
-
   useEffect(() => {
     update({ ...data, remote_type: data.post_type, fields: DEFAULT_MAPPERS });
   }, [data.post_type]);

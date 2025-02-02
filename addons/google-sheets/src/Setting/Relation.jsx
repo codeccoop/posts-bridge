@@ -1,15 +1,12 @@
-// vendor
-import React from "react";
-import { TextControl, SelectControl } from "@wordpress/components";
-
 // source
 import Relation from "../../../../src/components/Relations/Relation";
 import NewGSRelation from "./NewRelation";
 import { useSpreadsheets } from "../providers/Spreadsheets";
 
-export default function GSRelation({ data, update, remove }) {
-  const __ = wp.i18n.__;
+const { TextControl, SelectControl } = wp.components;
+const { __ } = wp.i18n;
 
+export default function GSRelation({ data, update, remove }) {
   const spreadsheets = useSpreadsheets();
   const sheetOptions = [{ label: "", value: "" }].concat(
     spreadsheets.map(({ title, id }) => ({

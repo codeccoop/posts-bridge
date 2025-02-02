@@ -1,14 +1,11 @@
-// vendor
-import React from "react";
-import { TextControl, SelectControl } from "@wordpress/components";
-
 // source
 import NewRelation from "../../../../src/components/Relations/NewRelation";
 import useOdooApi from "../hooks/useOdooApi";
 
-export default function NewOdooRelation({ add, schema }) {
-  const __ = wp.i18n.__;
+const { TextControl, SelectControl } = wp.components;
+const { __ } = wp.i18n;
 
+export default function NewOdooRelation({ add, schema }) {
   const [{ databases }] = useOdooApi();
   const dbOptions = [{ label: "", value: "" }].concat(
     databases.map(({ name }) => ({

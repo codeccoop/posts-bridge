@@ -1,7 +1,5 @@
-// vendor
-import React from "react";
-import { TabPanel } from "@wordpress/components";
-import { useState, useEffect, useRef } from "@wordpress/element";
+const { TabPanel } = wp.components;
+const { useState, useEffect, useRef } = wp.element;
 
 const CopyIcon = ({ onClick }) => {
   const [focus, setFocus] = useState(false);

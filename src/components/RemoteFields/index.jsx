@@ -1,13 +1,11 @@
-// vendor
-import React from "react";
-import { Button, Modal } from "@wordpress/components";
-import { useState } from "@wordpress/element";
-
 // source
 import RemoteFieldsTable from "./Table";
 
+const { Button, Modal } = wp.components;
+const { useState } = wp.element;
+const { __ } = wp.i18n;
+
 export default function RemoteFields({ fields, setFields }) {
-  const __ = wp.i18n.__;
   const [open, setOpen] = useState(false);
 
   const handleSetFields = (fields) => {

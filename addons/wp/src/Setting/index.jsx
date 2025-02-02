@@ -1,20 +1,18 @@
-// vendor
-import React from "react";
-import {
-  PanelBody,
-  PanelRow,
-  __experimentalSpacer as Spacer,
-  TextControl,
-} from "@wordpress/components";
-import { useState, useEffect, useRef } from "@wordpress/element";
-
 // source
 import Relations from "../../../../src/components/Relations";
 import WPRelation from "./Relation";
 import useWPApi from "../hooks/useWPApi";
 
+const {
+  PanelBody,
+  PanelRow,
+  __experimentalSpacer: Spacer,
+  TextControl,
+} = wp.components;
+const { useState, useEffect, useRef } = wp.element;
+const { __ } = wp.i18n;
+
 export default function WPSetting() {
-  const __ = wp.i18n.__;
   const [{ credentials, relations }, save] = useWPApi();
 
   const update = (field) => save({ credentials, relations, ...field });

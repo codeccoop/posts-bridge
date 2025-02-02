@@ -1,13 +1,9 @@
-import { __ } from "@wordpress/i18n";
-import {
-  useBlockProps,
-  InspectorControls,
-  InnerBlocks,
-} from "@wordpress/block-editor";
-import { useEntityProp } from "@wordpress/core-data";
-import { PanelBody } from "@wordpress/components";
+import "./editor.css";
 
-import "./editor.scss";
+const { __ } = wp.i18n;
+const { useBlockProps, InspectorControls, InnerBlocks } = wp.blockEditor;
+const { useEntityProp } = wp.coreData;
+const { PanelBody } = wp.components;
 
 export default function Edit({ context: { postType, postId } }) {
   const blockProps = useBlockProps();

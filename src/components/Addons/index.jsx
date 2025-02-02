@@ -1,9 +1,7 @@
-// vendor
-import React from "react";
-import { PanelBody, PanelRow, ToggleControl } from "@wordpress/components";
-
 // source
 import { useGeneral } from "../../providers/Settings";
+
+const { PanelBody, PanelRow, ToggleControl } = wp.components;
 
 export default function Addons() {
   const __ = wp.i18n.__;

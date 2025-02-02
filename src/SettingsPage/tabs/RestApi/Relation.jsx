@@ -1,14 +1,11 @@
-// vendor
-import React from "react";
-import { TextControl, SelectControl } from "@wordpress/components";
-
 // source
 import Relation from "../../../components/Relations/Relation";
 import NewRestRelation from "./NewRelation";
 
-export default function RestRelation({ data, update, remove }) {
-  const __ = wp.i18n.__;
+const { TextControl } = wp.components;
+const { __ } = wp.i18n;
 
+export default function RestRelation({ data, update, remove }) {
   return (
     <Relation
       data={data}

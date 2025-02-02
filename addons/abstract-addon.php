@@ -270,7 +270,16 @@ abstract class Addon extends Singleton
                 wp_enqueue_script(
                     $script_name,
                     plugins_url('assets/addon.bundle.js', $__FILE__),
-                    [],
+                    [
+                        'react',
+                        'react-jsx-runtime',
+                        'wp-api-fetch',
+                        'wp-components',
+                        'wp-dom-ready',
+                        'wp-element',
+                        'wp-i18n',
+                        'wp-api',
+                    ],
                     Posts_Bridge::version(),
                     ['in_footer' => true]
                 );

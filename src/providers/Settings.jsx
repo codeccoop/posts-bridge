@@ -1,13 +1,6 @@
-// vendor
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useRef,
-} from "@wordpress/element";
-
 import useDiff from "../hooks/useDiff";
+
+const { createContext, useContext, useState, useEffect, useRef } = wp.element;
 
 const defaults = {
   general: {

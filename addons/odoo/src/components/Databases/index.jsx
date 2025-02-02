@@ -1,10 +1,9 @@
-// vendor
-import React from "react";
-import { TabPanel } from "@wordpress/components";
-import { useState, useEffect, useRef } from "@wordpress/element";
-
 // source
 import Database from "./Database";
+
+const { TabPanel } = wp.components;
+const { useState, useEffect, useRef } = wp.element;
+const { __ } = wp.i18n;
 
 const CopyIcon = ({ onClick }) => {
   const [focus, setFocus] = useState(false);
@@ -62,8 +61,6 @@ function TabTitle({ name, focus, setFocus, copy }) {
 }
 
 export default function Databases({ databases, setDatabases }) {
-  const __ = wp.i18n.__;
-
   const [currentTab, setCurrentTab] = useState(
     String(databases.length ? 0 : -1)
   );
