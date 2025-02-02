@@ -10,7 +10,7 @@
  * License URI:         http://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:         posts-bridge
  * Domain Path:         /languages
- * Version:             2.4.0
+ * Version:             2.4.1
  * Requires PHP:        8.0
  * Requires at least:   6.7
  */
