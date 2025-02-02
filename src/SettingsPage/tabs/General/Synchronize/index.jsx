@@ -68,6 +68,7 @@ export default function Synchronize({ synchronize, setSynchronize }) {
           isDestructive={error}
           onClick={sync}
           __next40pxDefaultSize
+          style={{ width: "150px", justifyContent: "center" }}
         >
           {__("Synchronize", "posts-bridge")}
         </Button>
@@ -111,6 +112,8 @@ export default function Synchronize({ synchronize, setSynchronize }) {
             label: __(opt.label, "posts-bridge"),
           }))}
           __nextHasNoMarginBottom
+          __next40pxDefaultSize
+          style={{ width: "150px" }}
         />
       </PanelRow>
     </>

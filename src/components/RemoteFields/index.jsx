@@ -22,7 +22,8 @@ export default function RemoteFields({ fields, setFields }) {
       <Button
         variant="secondary"
         onClick={() => setOpen(true)}
-        style={{ width: "130px", justifyContent: "center", height: "32px" }}
+        style={{ width: "150px", justifyContent: "center" }}
+        __next40pxDefaultSize
       >
         {__("Remote fields", "posts-bridge")}
       </Button>

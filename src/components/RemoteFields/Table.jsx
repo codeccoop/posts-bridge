@@ -92,7 +92,14 @@ export default function CustomFieldsTable({ fields, setFields, done }) {
       >
         {__("Post fields", "posts-bridge")}
       </label>
-      <table style={{ width: "100%", minWidth: "500px" }}>
+      <table
+        style={{
+          width: "calc(100% + 10px)",
+          minWidth: "500px",
+          borderSpacing: "5px",
+          margin: "0 -5px",
+        }}
+      >
         <tbody>
           {postFields.map(({ name, foreign, index }) => (
             <tr key={name}>
@@ -105,6 +112,7 @@ export default function CustomFieldsTable({ fields, setFields, done }) {
                   value={foreign || ""}
                   onChange={(value) => setPostField(name, index, value)}
                   __nextHasNoMarginBottom
+                  __next40pxDefaultSize
                 />
               </td>
             </tr>
@@ -124,19 +132,15 @@ export default function CustomFieldsTable({ fields, setFields, done }) {
         >
           {__("Custom fields", "posts-bridge")}
         </label>
-        <Button
-          variant="secondary"
-          onClick={() => addField()}
-          style={{
-            marginLeft: "1em",
-            height: "32px",
-            marginBottom: "calc(8px)",
-          }}
-        >
-          {__("Add", "posts-bridge")}
-        </Button>
       </div>
-      <table style={{ width: "100%", minWidth: "500px" }}>
+      <table
+        style={{
+          width: "calc(100% + 10px)",
+          minWidth: "500px",
+          borderSpacing: "5px",
+          margin: "0 -5px",
+        }}
+      >
         <tbody>
           {customFields.map(({ foreign, name, index }) => (
             <tr key={index}>
@@ -146,6 +150,7 @@ export default function CustomFieldsTable({ fields, setFields, done }) {
                   value={name}
                   onChange={(value) => setField("name", index, value)}
                   __nextHasNoMarginBottom
+                  __next40pxDefaultSize
                 />
               </td>
               <td>
@@ -154,14 +159,16 @@ export default function CustomFieldsTable({ fields, setFields, done }) {
                   value={foreign}
                   onChange={(value) => setField("foreign", index, value)}
                   __nextHasNoMarginBottom
+                  __next40pxDefaultSize
                 />
               </td>
-              <td style={{ borderLeft: "1rem solid transparent" }}>
+              <td>
                 <Button
+                  disabled={index === 0 && customFields.length === 1}
                   isDestructive
                   variant="secondary"
                   onClick={() => dropField(index)}
-                  style={{ height: "32px" }}
+                  __next40pxDefaultSize
                 >
                   {__("Drop", "posts-bridge")}
                 </Button>
@@ -170,14 +177,19 @@ export default function CustomFieldsTable({ fields, setFields, done }) {
           ))}
         </tbody>
       </table>
-      <Spacer paddingY="calc(3px)" />
-      <Button
-        variant="primary"
-        onClick={() => done()}
-        style={{ height: "32px" }}
-      >
-        {__("Done", "posts-bridge")}
-      </Button>
+      <Spacer paddingY="calc(8px)" />
+      <div style={{ display: "flex", gap: "0.5rem" }}>
+        <Button
+          variant="secondary"
+          onClick={() => addField()}
+          __next40pxDefaultSize
+        >
+          {__("Add", "posts-bridge")}
+        </Button>
+        <Button variant="primary" onClick={() => done()} __next40pxDefaultSize>
+          {__("Done", "posts-bridge")}
+        </Button>
+      </div>
     </>
   );
 }

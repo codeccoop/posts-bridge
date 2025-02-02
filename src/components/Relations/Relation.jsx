@@ -84,6 +84,7 @@ export default function Relation({
             onChange={(post_type) => update({ ...data, post_type })}
             options={postTypeOptions}
             __nextHasNoMarginBottom
+            __next40pxDefaultSize
           />
         </div>
         {schema.includes("backend") && (
@@ -94,6 +95,7 @@ export default function Relation({
               onChange={(backend) => update({ ...data, backend })}
               options={backendOptions}
               __nextHasNoMarginBottom
+              __next40pxDefaultSize
             />
           </div>
         )}
@@ -104,6 +106,7 @@ export default function Relation({
               value={data.foreign_key}
               onChange={(foreign_key) => update({ ...data, foreign_key })}
               __nextHasNoMarginBottom
+              __next40pxDefaultSize
             />
           </div>
         )}
@@ -114,8 +117,7 @@ export default function Relation({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "1em",
-          flexWrap: "wrap",
+          gap: "0.5rem",
         }}
       >
         <RemoteFields
@@ -126,7 +128,8 @@ export default function Relation({
           isDestructive
           variant="primary"
           onClick={() => remove(data)}
-          style={{ width: "130px", justifyContent: "center", height: "32px" }}
+          style={{ width: "150px", justifyContent: "center" }}
+          __next40pxDefaultSize
         >
           {__("Remove", "posts-bridge")}
         </Button>
@@ -136,7 +139,7 @@ export default function Relation({
           disabled={ajaxError}
           isDestructive={ajaxError}
           onClick={sync}
-          style={{ width: "130px", justifyContent: "center", height: "32px" }}
+          style={{ width: "150px", justifyContent: "center" }}
           __next40pxDefaultSize
         >
           {__("Syncrhonize", "posts-bridge")}

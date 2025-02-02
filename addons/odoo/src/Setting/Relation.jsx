@@ -37,6 +37,7 @@ export default function OdooRelation({ data, update, remove }) {
               onChange={(database) => update({ ...data, database })}
               options={dbOptions}
               __nextHasNoMarginBottom
+              __next40pxDefaultSize
             />
           </div>
           <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
@@ -45,6 +46,7 @@ export default function OdooRelation({ data, update, remove }) {
               value={data.model}
               onChange={(model) => update({ ...data, model })}
               __nextHasNoMarginBottom
+              __next40pxDefaultSize
             />
           </div>
         </>

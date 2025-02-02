@@ -18,6 +18,7 @@ export default function NewRestRelation({ add, schema }) {
               value={data.endpoint || ""}
               onChange={(endpoint) => update({ ...data, endpoint })}
               __nextHasNoMarginBottom
+              __next40pxDefaultSize
             />
           </div>
         </>

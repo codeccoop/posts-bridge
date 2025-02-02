@@ -79,6 +79,7 @@ export default function NewDatabase({ add, databases }) {
             value={name}
             onChange={handleSetName}
             __nextHasNoMarginBottom
+            __next40pxDefaultSize
           />
         </div>
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
@@ -88,6 +89,7 @@ export default function NewDatabase({ add, databases }) {
             onChange={setBackend}
             options={backendOptions}
             __nextHasNoMarginBottom
+            __next40pxDefaultSize
           />
         </div>
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
@@ -96,6 +98,7 @@ export default function NewDatabase({ add, databases }) {
             value={user}
             onChange={setUser}
             __nextHasNoMarginBottom
+            __next40pxDefaultSize
           />
         </div>
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
@@ -105,6 +108,7 @@ export default function NewDatabase({ add, databases }) {
             value={password}
             onChange={setPassword}
             __nextHasNoMarginBottom
+            __next40pxDefaultSize
           />
         </div>
       </div>
@@ -112,33 +116,18 @@ export default function NewDatabase({ add, databases }) {
       <div
         style={{
           display: "flex",
-          gap: "1em",
-          flexWrap: "wrap",
+          gap: "0.5em",
         }}
       >
-        <div>
-          <label
-            style={{
-              display: "block",
-              fontWeight: 500,
-              textTransform: "uppercase",
-              fontSize: "11px",
-              margin: 0,
-              marginBottom: "calc(4px)",
-              maxWidth: "100%",
-            }}
-          >
-            {__("Add database", "forms-bridge")}
-          </label>
-          <Button
-            variant="primary"
-            onClick={() => onClick()}
-            style={{ width: "130px", justifyContent: "center", height: "32px" }}
-            disabled={disabled}
-          >
-            {__("Add", "forms-bridge")}
-          </Button>
-        </div>
+        <Button
+          variant="primary"
+          onClick={() => onClick()}
+          style={{ width: "150px", justifyContent: "center" }}
+          disabled={disabled}
+          __next40pxDefaultSize
+        >
+          {__("Add", "forms-bridge")}
+        </Button>
       </div>
     </div>
   );

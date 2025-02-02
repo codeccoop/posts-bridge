@@ -27,6 +27,7 @@ export default function RestRelation({ data, update, remove }) {
               value={data.endpoint || ""}
               onChange={(endpoint) => update({ ...data, endpoint })}
               __nextHasNoMarginBottom
+              __next40pxDefaultSize
             />
           </div>
         </>
