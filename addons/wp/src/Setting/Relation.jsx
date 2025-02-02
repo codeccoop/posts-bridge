@@ -27,6 +27,7 @@ export default function WPRelation({ data, update, remove }) {
               value={data.remote_type}
               onChange={(remote_type) => update({ ...data, remote_type })}
               __nextHasNoMarginBottom
+              __next40pxDefaultSize
             />
           </div>
         </>

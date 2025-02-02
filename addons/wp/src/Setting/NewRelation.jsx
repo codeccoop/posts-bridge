@@ -31,6 +31,7 @@ function RemotePostTypeField({ data, update }) {
         value={data.remote_type || data.post_type}
         onChange={(remote_type) => update({ ...data, remote_type })}
         __nextHasNoMarginBottom
+        __next40pxDefaultSize
       />
     </div>
   );

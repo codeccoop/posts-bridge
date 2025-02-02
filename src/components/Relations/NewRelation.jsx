@@ -91,6 +91,7 @@ export default function NewRelation({ add, schema, children = () => {} }) {
             onChange={setPostType}
             options={postTypeOptions}
             __nextHasNoMarginBottom
+            __next40pxDefaultSize
           />
         </div>
         {schema.includes("backend") && (
@@ -101,6 +102,7 @@ export default function NewRelation({ add, schema, children = () => {} }) {
               onChange={setBackend}
               options={backendOptions}
               __nextHasNoMarginBottom
+              __next40pxDefaultSize
             />
           </div>
         )}
@@ -111,6 +113,7 @@ export default function NewRelation({ add, schema, children = () => {} }) {
               value={foreign_key}
               onChange={setForeignKey}
               __nextHasNoMarginBottom
+              __next40pxDefaultSize
             />
           </div>
         )}
@@ -123,33 +126,18 @@ export default function NewRelation({ add, schema, children = () => {} }) {
       <div
         style={{
           display: "flex",
-          gap: "1em",
-          flexWrap: "wrap",
+          gap: "0.5em",
         }}
       >
-        <div>
-          <label
-            style={{
-              display: "block",
-              fontWeight: 500,
-              textTransform: "uppercase",
-              fontSize: "11px",
-              margin: 0,
-              marginBottom: "calc(4px)",
-              maxWidth: "100%",
-            }}
-          >
-            {__("Add relation", "posts-bridge")}
-          </label>
-          <Button
-            variant="primary"
-            onClick={() => onClick()}
-            style={{ width: "130px", justifyContent: "center", height: "32px" }}
-            disabled={disabled}
-          >
-            {__("Add", "posts-bridge")}
-          </Button>
-        </div>
+        <Button
+          variant="primary"
+          onClick={() => onClick()}
+          style={{ width: "150px", justifyContent: "center" }}
+          disabled={disabled}
+          __next40pxDefaultSize
+        >
+          {__("Add", "posts-bridge")}
+        </Button>
       </div>
     </div>
   );

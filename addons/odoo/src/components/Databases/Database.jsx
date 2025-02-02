@@ -78,6 +78,7 @@ export default function Database({ data, update, remove, databases }) {
             onFocus={() => (focus = true)}
             onBlur={() => (focus = false)}
             __nextHasNoMarginBottom
+            __next40pxDefaultSize
           />
         </div>
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
@@ -87,6 +88,7 @@ export default function Database({ data, update, remove, databases }) {
             onChange={(backend) => update({ ...data, backend })}
             options={backendOptions}
             __nextHasNoMarginBottom
+            __next40pxDefaultSize
           />
         </div>
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
@@ -95,6 +97,7 @@ export default function Database({ data, update, remove, databases }) {
             value={data.user}
             onChange={(user) => update({ ...data, user })}
             __nextHasNoMarginBottom
+            __next40pxDefaultSize
           />
         </div>
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
@@ -104,6 +107,7 @@ export default function Database({ data, update, remove, databases }) {
             value={data.password}
             onChange={(password) => update({ ...data, password })}
             __nextHasNoMarginBottom
+            __next40pxDefaultSize
           />
         </div>
       </div>
@@ -111,33 +115,18 @@ export default function Database({ data, update, remove, databases }) {
       <div
         style={{
           display: "flex",
-          gap: "1em",
-          flexWrap: "wrap",
+          gap: "0.5em",
         }}
       >
-        <div>
-          <label
-            style={{
-              display: "block",
-              fontWeight: 500,
-              textTransform: "uppercase",
-              fontSize: "11px",
-              margin: 0,
-              marginBottom: "calc(4px)",
-              maxWidth: "100%",
-            }}
-          >
-            {__("Remove database", "forms-bridge")}
-          </label>
-          <Button
-            isDestructive
-            variant="primary"
-            onClick={() => remove(data)}
-            style={{ width: "130px", justifyContent: "center", height: "32px" }}
-          >
-            {__("Remove", "forms-bridge")}
-          </Button>
-        </div>
+        <Button
+          isDestructive
+          variant="primary"
+          onClick={() => remove(data)}
+          style={{ width: "150px", justifyContent: "center" }}
+          __next40pxDefaultSize
+        >
+          {__("Remove", "forms-bridge")}
+        </Button>
       </div>
     </div>
   );

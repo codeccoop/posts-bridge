@@ -61,6 +61,7 @@ with the process of creating new application passwords.`,
               setCredentialsState({ ...credentialsState, username })
             }
             __nextHasNoMarginBottom
+            __next40pxDefaultSize
           />
         </div>
         <Spacer paddingY="calc(8px)" />
@@ -73,6 +74,7 @@ with the process of creating new application passwords.`,
               setCredentialsState({ ...credentialsState, password })
             }
             __nextHasNoMarginBottom
+            __next40pxDefaultSize
           />
         </div>
       </PanelBody>
