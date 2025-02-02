@@ -50,29 +50,6 @@ class Settings_Store extends Base_Settings_Store
                 'general',
                 [
                     'debug' => ['type' => 'boolean'],
-                    'whitelist' => ['type' => 'boolean'],
-                    'backends' => [
-                        'type' => 'array',
-                        'items' => [
-                            'type' => 'object',
-                            'additionalProperties' => false,
-                            'properties' => [
-                                'name' => ['type' => 'string'],
-                                'base_url' => ['type' => 'string'],
-                                'headers' => [
-                                    'type' => 'array',
-                                    'items' => [
-                                        'type' => 'object',
-                                        'additionalProperties' => false,
-                                        'properties' => [
-                                            'name' => ['type' => 'string'],
-                                            'value' => ['type' => 'string'],
-                                        ],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
                     'synchronize' => [
                         'type' => 'object',
                         'additionalProperties' => false,
@@ -94,8 +71,6 @@ class Settings_Store extends Base_Settings_Store
                 ],
                 [
                     'debug' => false,
-                    'whitelist' => false,
-                    'backends' => [],
                     'synchronize' => [
                         'enabled' => false,
                         'recurrence' => 'hourly',
@@ -177,10 +152,6 @@ class Settings_Store extends Base_Settings_Store
             'enabled' => $data['synchronize']['enabled'] ?? false,
             'recurrence' => $data['synchronize']['recurrence'] ?? 'hourly',
         ];
-
-        $data['backends'] = \HTTP_BRIDGE\Settings_Store::validate_backends(
-            $data['backends']
-        );
 
         return $data;
     }

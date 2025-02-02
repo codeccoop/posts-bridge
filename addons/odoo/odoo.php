@@ -178,7 +178,7 @@ class Odoo_Addon extends Addon
 
         $backends = array_map(static function ($backend) {
             return $backend['name'];
-        }, Posts_Bridge::setting('general')->backends);
+        }, \HTTP_BRIDGE\Settings_Store::setting('general')->backends);
 
         return array_filter($dbs, static function ($db_data) use ($backends) {
             return isset(
