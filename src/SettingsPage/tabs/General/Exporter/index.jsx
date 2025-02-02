@@ -114,7 +114,7 @@ export default function Exporter() {
           <Button
             variant="primary"
             description={__(
-              "Export Forms Bridge config as JSON",
+              "Export Posts Bridge config as JSON",
               "posts-bridge"
             )}
             onClick={downloadConfig}
@@ -127,7 +127,7 @@ export default function Exporter() {
         <li>
           <Button
             variant="secondary"
-            description={__("Import Forms Bridge JSON config", "posts-bridge")}
+            description={__("Import Posts Bridge JSON config", "posts-bridge")}
             onClick={() => setShowModal(true)}
             style={{ width: "150px", justifyContent: "center" }}
             __next40pxDefaultSize
@@ -143,7 +143,7 @@ export default function Exporter() {
         >
           <p>
             {__(
-              "Import a new configuration is a destructive action. Your current configuration will be replaced with the new one. If there are some errors on the new config, Forms Bridge will filter it to avoid bugs.",
+              "Import a new configuration is a destructive action. Your current configuration will be replaced with the new one. If there are some errors on the new config, Posts Bridge will filter it to avoid bugs.",
               "posts-bridge"
             )}
           </p>
