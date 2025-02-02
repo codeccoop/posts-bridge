@@ -169,17 +169,29 @@ abstract class Addon extends Singleton
             throw new Exception('Invalid addon registration');
         }
 
-        $this->handle_settings();
-        $this->admin_scripts();
+        self::load_templates();
+        self::handle_settings();
+        self::admin_scripts();
 
         add_filter(
             'posts_bridge_relations',
             static function ($relations = []) {
                 return self::relations($relations);
             },
-            9,
-            3
+            9
         );
+    }
+
+    /**
+     * Addon templates getter.
+     *
+     * @todo Define abstract template and implementations.
+     *
+     * @return array List with addon template instances.
+     */
+    final protected static function templates()
+    {
+        return apply_filters('posts_bridge_addon_templates', [], static::$slug);
     }
 
     /**
@@ -248,6 +260,31 @@ abstract class Addon extends Singleton
             10,
             2
         );
+
+        add_filter(
+            'wpct_setting_default',
+            static function ($default, $name) {
+                if ($name !== self::setting_name()) {
+                    return $default;
+                }
+
+                return array_merge($default, [
+                    'templates' => static::templates(),
+                ]);
+            },
+            10,
+            2
+        );
+
+        add_filter(
+            'option_' . self::setting_name(),
+            static function ($value) {
+                return array_merge($value, [
+                    'templates' => static::templates(),
+                ]);
+            },
+            10
+        );
     }
 
     /**
@@ -309,6 +346,30 @@ abstract class Addon extends Singleton
             return $data;
         }
 
+        unset($data['templates']);
         return static::validate_setting($data, $setting);
+    }
+
+    /**
+     * Loads addon templates.
+     */
+    private static function load_templates()
+    {
+        $__FILE__ = (new ReflectionClass(static::class))->getFileName();
+        $dir = dirname($__FILE__) . '/templates';
+        if (!is_dir($dir)) {
+            $result = mkdir($dir);
+            if (!$result) {
+                return;
+            }
+        }
+
+        if (!is_readable($dir)) {
+            return;
+        }
+
+        foreach (array_diff(scandir($dir), ['.', '..']) as $file) {
+            include_once $file;
+        }
     }
 }
