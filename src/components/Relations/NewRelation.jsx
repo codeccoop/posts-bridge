@@ -1,20 +1,17 @@
-// vendor
-import React from "react";
-import {
-  TextControl,
-  SelectControl,
-  Button,
-  __experimentalSpacer as Spacer,
-} from "@wordpress/components";
-import { useState, useMemo } from "@wordpress/element";
-
 // source
 import { usePostTypes } from "../../providers/PostTypes";
 import { useGeneral } from "../../providers/Settings";
 
-export default function NewRelation({ add, schema, children = () => {} }) {
-  const __ = wp.i18n.__;
+const {
+  TextControl,
+  SelectControl,
+  Button,
+  __experimentalSpacer: Spacer,
+} = wp.components;
+const { useState, useMemo } = wp.element;
+const { __ } = wp.i18n;
 
+export default function NewRelation({ add, schema, children = () => {} }) {
   const [{ backends }] = useGeneral();
   const backendOptions = [{ label: "", value: "" }].concat(
     backends.map(({ name }) => ({

@@ -1,12 +1,13 @@
 {
-  "name": "posts-bridge-remote-fields",
+  "name": "posts-bridge/remote-fields",
   "version": "1.2.0",
   "description": "Remote fields custom block.",
   "author": "Còdec",
   "license": "GPL-2.0-or-later",
   "main": "build/index.js",
   "scripts": {
-    "build": "wp-scripts build --webpack-copy-php",
-    "start": "wp-scripts start --webpack-copy-php"
+    "start": "npm run dev",
+    "build": "node esbuild/build.cjs",
+    "dev": "node esbuild/dev.cjs"
   }
 }

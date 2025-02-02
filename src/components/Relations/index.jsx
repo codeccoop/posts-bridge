@@ -1,10 +1,9 @@
-// vendor
-import React from "react";
-import { TabPanel } from "@wordpress/components";
-import { useState } from "@wordpress/element";
-
 // source
 import { usePostTypes } from "../../providers/PostTypes";
+
+const { TabPanel } = wp.components;
+const { useState } = wp.element;
+const { __ } = wp.i18n;
 
 const CopyIcon = ({ onClick }) => {
   const [focus, setFocus] = useState(false);
@@ -62,8 +61,6 @@ function TabTitle({ name, focus, setFocus, copy }) {
 }
 
 export default function Relations({ relations, setRelations, Relation }) {
-  const __ = wp.i18n.__;
-
   const postTypes = usePostTypes({ filter: true });
 
   const [currentTab, setCurrentTab] = useState(relations[0]?.name || "add");

@@ -1,7 +1,5 @@
-// vendor
-import React from "react";
-import apiFetch from "@wordpress/api-fetch";
-import { createContext, useContext, useEffect } from "@wordpress/element";
+const apiFetch = wp.apiFetch;
+const { createContext, useContext, useEffect } = wp.element;
 
 const StoreContext = createContext(() => {});
 
@@ -9,10 +7,7 @@ export default function StoreProvider({ children, setLoading }) {
   const fetchSettings = () => {
     setLoading(true);
     return apiFetch({
-      path: `${window.wpApiSettings.root}posts-bridge/v1/settings`,
-      headers: {
-        "X-WP-Nonce": wpApiSettings.nonce,
-      },
+      path: "posts-bridge/v1/settings",
     })
       .then((settings) => {
         wppb.emit("fetch", settings);
@@ -25,10 +20,7 @@ export default function StoreProvider({ children, setLoading }) {
   const fetchPostTypes = () => {
     setLoading(true);
     return apiFetch({
-      path: `${window.wpApiSettings.root}posts-bridge/v1/types`,
-      headers: {
-        "X-WP-Nonce": wpApiSettings.nonce,
-      },
+      path: "posts-bridge/v1/types",
     })
       .then((postTypes) => {
         wppb.emit("postTypes", postTypes);

@@ -1,14 +1,7 @@
-// vendor
-import React from "react";
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-} from "@wordpress/element";
-
 // source
 import useRelationPostTypes from "../hooks/useRelationPostTypes";
+
+const { createContext, useContext, useState, useEffect } = wp.element;
 
 const PostTypesContext = createContext([]);
 

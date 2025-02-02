@@ -1,20 +1,12 @@
-// vendor
-import React from "react";
-import { useState, useEffect } from "@wordpress/element";
-import {
-  __experimentalSpacer as Spacer,
-  Button,
-  Modal,
-  Notice,
-} from "@wordpress/components";
-
 // source
 import { useStoreSubmit } from "../../../../providers/Store";
 import { useGeneral, useApis } from "../../../../providers/Settings";
 
-export default function Exporter() {
-  const __ = wp.i18n.__;
+const { useState, useEffect } = wp.element;
+const { __experimentalSpacer: Spacer, Button, Modal, Notice } = wp.components;
+const { __ } = wp.i18n;
 
+export default function Exporter() {
   const [general] = useGeneral();
   const [apis] = useApis();
   const submit = useStoreSubmit();

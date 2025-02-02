@@ -1,19 +1,13 @@
-// vendor
-import React from "react";
-import {
-  PanelBody,
-  PanelRow,
-  __experimentalSpacer as Spacer,
-} from "@wordpress/components";
-
 // source
 import Relations from "../../../../src/components/Relations";
 import OdooRelation from "./Relation";
 import useOdooApi from "../hooks/useOdooApi";
 import Databases from "../components/Databases";
 
+const { PanelBody, PanelRow, __experimentalSpacer: Spacer } = wp.components;
+const { __ } = wp.i18n;
+
 export default function OdooSetting() {
-  const __ = wp.i18n.__;
   const [{ databases, relations }, save] = useOdooApi();
 
   const update = (field) => save({ databases, relations, ...field });

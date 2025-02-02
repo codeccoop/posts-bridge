@@ -1,6 +1,5 @@
-// vendor
-import apiFetch from "@wordpress/api-fetch";
-import { useState, useEffect, useRef } from "@wordpress/element";
+const apiFetch = wp.apiFetch;
+const { useState, useEffect, useRef } = wp.element;
 
 export default function useLogs({ debug }) {
   const [logs, setLogs] = useState([]);

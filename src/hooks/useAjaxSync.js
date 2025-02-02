@@ -1,5 +1,4 @@
-// vendor
-import { useState } from "@wordpress/element";
+const { useState } = wp.element;
 
 export default function useAjaxSync({ fullMode, postType }) {
   const [loading, setLoading] = useState(false);

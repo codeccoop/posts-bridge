@@ -1,16 +1,15 @@
-// vendor
-import React, { useEffect } from "react";
-import {
-  __experimentalSpacer as Spacer,
+// source
+import useAjaxSync from "../../../../hooks/useAjaxSync";
+
+const {
+  __experimentalSpacer: Spacer,
   ToggleControl,
   PanelRow,
   SelectControl,
   Button,
-} from "@wordpress/components";
-import { useState } from "@wordpress/element";
-
-// source
-import useAjaxSync from "../../../../hooks/useAjaxSync";
+} = wp.components;
+const { useState, useEffect } = wp.element;
+const { __ } = wp.i18n;
 
 const recurrenceOptions = [
   {
@@ -40,8 +39,6 @@ const recurrenceOptions = [
 ];
 
 export default function Synchronize({ synchronize, setSynchronize }) {
-  const __ = wp.i18n.__;
-
   const { enabled, recurrence } = synchronize;
 
   const [fullMode, setFullMode] = useState(false);

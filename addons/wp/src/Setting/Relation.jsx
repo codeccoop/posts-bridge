@@ -1,14 +1,11 @@
-// vendor
-import React from "react";
-import { TextControl } from "@wordpress/components";
-
 // source
 import Relation from "../../../../src/components/Relations/Relation";
 import NewWPRelation from "./NewRelation";
 
-export default function WPRelation({ data, update, remove }) {
-  const __ = wp.i18n.__;
+const { TextControl } = wp.components;
+const { __ } = wp.i18n;
 
+export default function WPRelation({ data, update, remove }) {
   return (
     <Relation
       data={data}

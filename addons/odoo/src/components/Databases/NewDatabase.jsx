@@ -1,19 +1,16 @@
-// vendor
-import React from "react";
-import {
-  TextControl,
-  SelectControl,
-  Button,
-  __experimentalSpacer as Spacer,
-} from "@wordpress/components";
-import { useState, useMemo } from "@wordpress/element";
-
 // source
 import { useGeneral } from "../../../../../src/providers/Settings";
 
-export default function NewDatabase({ add, databases }) {
-  const __ = wp.i18n.__;
+const {
+  TextControl,
+  SelectControl,
+  Button,
+  __experimentalSpacer: Spacer,
+} = wp.components;
+const { useState, useMemo } = wp.element;
+const { __ } = wp.i18n;
 
+export default function NewDatabase({ add, databases }) {
   const [{ backends }] = useGeneral();
   const backendOptions = [{ label: "", value: "" }].concat(
     backends.map(({ name }) => ({

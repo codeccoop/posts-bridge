@@ -1,11 +1,6 @@
-// vendor
-import React from "react";
-import {
-  TextControl,
-  Button,
-  __experimentalSpacer as Spacer,
-} from "@wordpress/components";
-import { useMemo } from "@wordpress/element";
+const { TextControl, Button, __experimentalSpacer: Spacer } = wp.components;
+const { useMemo } = wp.element;
+const { __ } = wp.i18n;
 
 const postModel = {
   ID: "ID",
@@ -21,8 +16,6 @@ const postModel = {
 };
 
 export default function CustomFieldsTable({ fields, setFields, done }) {
-  const __ = wp.i18n.__;
-
   const postFields = useMemo(() => {
     return Object.keys(postModel).map((key) => {
       const field = fields.find(({ name }) => name === key);
