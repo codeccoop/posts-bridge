@@ -101,33 +101,26 @@ export default function Exporter() {
           {error}
         </Notice>
       )}
-      <ul style={{ display: "flex", gap: "1rem" }}>
-        <li>
-          <Button
-            variant="primary"
-            description={__(
-              "Export Posts Bridge config as JSON",
-              "posts-bridge"
-            )}
-            onClick={downloadConfig}
-            style={{ width: "150px", justifyContent: "center" }}
-            __next40pxDefaultSize
-          >
-            {__("Download config", "posts-bridge")}
-          </Button>
-        </li>
-        <li>
-          <Button
-            variant="secondary"
-            description={__("Import Posts Bridge JSON config", "posts-bridge")}
-            onClick={() => setShowModal(true)}
-            style={{ width: "150px", justifyContent: "center" }}
-            __next40pxDefaultSize
-          >
-            {__("Import config", "posts-bridge")}
-          </Button>
-        </li>
-      </ul>
+      <div style={{ display: "flex", gap: "0.5rem" }}>
+        <Button
+          variant="primary"
+          description={__("Export Posts Bridge config as JSON", "posts-bridge")}
+          onClick={downloadConfig}
+          style={{ width: "150px", justifyContent: "center" }}
+          __next40pxDefaultSize
+        >
+          {__("Download config", "posts-bridge")}
+        </Button>
+        <Button
+          variant="secondary"
+          description={__("Import Posts Bridge JSON config", "posts-bridge")}
+          onClick={() => setShowModal(true)}
+          style={{ width: "150px", justifyContent: "center" }}
+          __next40pxDefaultSize
+        >
+          {__("Import config", "posts-bridge")}
+        </Button>
+      </div>
       {showModal && (
         <Modal
           title={__("Config import warning", "posts-bridge")}

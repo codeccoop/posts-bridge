@@ -31,12 +31,11 @@ export default function GeneralSettings() {
 
   return (
     <>
-      <PanelBody title={__("Syncrhonization", "posts-bridge")}>
-        <Synchronize
-          synchronize={synchronize}
-          setSynchronize={(synchronize) => update({ synchronize })}
-        />
-      </PanelBody>
+      <Synchronize
+        synchronize={synchronize}
+        setSynchronize={(synchronize) => update({ synchronize })}
+      />
+      <Spacer paddingY="calc(8px)" />
       <PanelBody
         title={__("Backends", "posts-bridge")}
         initialOpen={backends.length === 0}

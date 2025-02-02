@@ -37,11 +37,8 @@ export default function StoreProvider({ children, setLoading }) {
 
     const settings = wppb.bus("submit", {});
     return apiFetch({
-      path: `${window.wpApiSettings.root}posts-bridge/v1/settings`,
+      path: "posts-bridge/v1/settings",
       method: "POST",
-      headers: {
-        "X-WP-Nonce": wpApiSettings.nonce,
-      },
       data: settings,
     }).then(fetchSettings);
   };

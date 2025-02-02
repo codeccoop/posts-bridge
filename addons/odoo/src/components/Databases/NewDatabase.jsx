@@ -67,10 +67,10 @@ export default function NewDatabase({ add, databases }) {
       >
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
           <TextControl
-            label={__("Name", "forms-bridge")}
+            label={__("Name", "posts-bridge")}
             help={
               nameConflict
-                ? __("This name is already in use", "forms-bridge")
+                ? __("This name is already in use", "posts-bridge")
                 : ""
             }
             value={name}
@@ -81,7 +81,7 @@ export default function NewDatabase({ add, databases }) {
         </div>
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
           <SelectControl
-            label={__("Backend", "forms-bridge")}
+            label={__("Backend", "posts-bridge")}
             value={backend}
             onChange={setBackend}
             options={backendOptions}
@@ -91,7 +91,7 @@ export default function NewDatabase({ add, databases }) {
         </div>
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
           <TextControl
-            label={__("User", "forms-bridge")}
+            label={__("User", "posts-bridge")}
             value={user}
             onChange={setUser}
             __nextHasNoMarginBottom
@@ -101,7 +101,7 @@ export default function NewDatabase({ add, databases }) {
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
           <TextControl
             type="password"
-            label={__("Password", "forms-bridge")}
+            label={__("Password", "posts-bridge")}
             value={password}
             onChange={setPassword}
             __nextHasNoMarginBottom
@@ -123,7 +123,7 @@ export default function NewDatabase({ add, databases }) {
           disabled={disabled}
           __next40pxDefaultSize
         >
-          {__("Add", "forms-bridge")}
+          {__("Add", "posts-bridge")}
         </Button>
       </div>
     </div>

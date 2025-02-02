@@ -64,10 +64,10 @@ export default function Database({ data, update, remove, databases }) {
       >
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
           <TextControl
-            label={__("Name", "forms-bridge")}
+            label={__("Name", "posts-bridge")}
             help={
               nameConflict
-                ? __("This name is already in use", "forms-bridge")
+                ? __("This name is already in use", "posts-bridge")
                 : ""
             }
             value={name}
@@ -80,7 +80,7 @@ export default function Database({ data, update, remove, databases }) {
         </div>
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
           <SelectControl
-            label={__("Backend", "forms-bridge")}
+            label={__("Backend", "posts-bridge")}
             value={data.backend}
             onChange={(backend) => update({ ...data, backend })}
             options={backendOptions}
@@ -90,7 +90,7 @@ export default function Database({ data, update, remove, databases }) {
         </div>
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
           <TextControl
-            label={__("User", "forms-bridge")}
+            label={__("User", "posts-bridge")}
             value={data.user}
             onChange={(user) => update({ ...data, user })}
             __nextHasNoMarginBottom
@@ -100,7 +100,7 @@ export default function Database({ data, update, remove, databases }) {
         <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
           <TextControl
             type="password"
-            label={__("Password", "forms-bridge")}
+            label={__("Password", "posts-bridge")}
             value={data.password}
             onChange={(password) => update({ ...data, password })}
             __nextHasNoMarginBottom
@@ -122,7 +122,7 @@ export default function Database({ data, update, remove, databases }) {
           style={{ width: "150px", justifyContent: "center" }}
           __next40pxDefaultSize
         >
-          {__("Remove", "forms-bridge")}
+          {__("Remove", "posts-bridge")}
         </Button>
       </div>
     </div>

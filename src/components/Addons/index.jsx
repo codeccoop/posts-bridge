@@ -2,10 +2,9 @@
 import { useGeneral } from "../../providers/Settings";
 
 const { PanelBody, PanelRow, ToggleControl } = wp.components;
+const { __ } = wp.i18n;
 
 export default function Addons() {
-  const __ = wp.i18n.__;
-
   const [general, patch] = useGeneral();
 
   const toggle = (addon) =>

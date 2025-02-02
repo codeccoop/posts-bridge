@@ -11,10 +11,7 @@ export default function useLogs({ debug }) {
   const fetch = () => {
     setLoading(true);
     return apiFetch({
-      path: `${window.wpApiSettings.root}posts-bridge/v1/logs`,
-      headers: {
-        "X-WP-Nonce": wpApiSettings.nonce,
-      },
+      path: "posts-bridge/v1/logs",
     })
       .then((logs) => setLogs(logs))
       .catch(() => setError(true))

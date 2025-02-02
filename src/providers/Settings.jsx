@@ -33,12 +33,16 @@ export default function SettingsProvider({ children, handle = ["general"] }) {
   const onFetch = useRef((settings) => {
     const newState = {
       general: { ...defaults.general, ...settings.general },
+      apis: Object.fromEntries(
+        Object.entries(settings)
+          .filter(([key]) => key !== "general")
+          .map(([key, data]) => [
+            key,
+            { ...(defaults.apis[key] || {}), ...data },
+          ])
+      ),
     };
-    newState.apis = Object.fromEntries(
-      Object.entries(settings)
-        .filter(([key]) => key !== "general")
-        .map(([key, data]) => [key, { ...defaults.apis[key], ...data }])
-    );
+
     setState(newState);
     const previousState = initialState.current;
     initialState.current = { ...newState };
@@ -80,13 +84,13 @@ export default function SettingsProvider({ children, handle = ["general"] }) {
     wppb.on("patch", onPatch);
     wppb.on("fetch", onFetch);
     wppb.join("submit", onSubmit);
-    window.addEventListener("beforeunload", (ev) => beforeUnload(ev));
+    window.addEventListener("beforeunload", beforeUnload);
 
     () => {
       wppb.off("patch", onPatch);
       wppb.off("fetch", onFetch);
       wppb.leave("submit", onSubmit);
-      window.removeEventListener("beforeunload", (ev) => beforeUnload(ev));
+      window.removeEventListener("beforeunload", beforeUnload);
     };
   }, []);
 

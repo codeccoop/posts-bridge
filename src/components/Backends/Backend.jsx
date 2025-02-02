@@ -85,7 +85,6 @@ let focus = false;
 export default function Backend({ update, remove, ...data }) {
   if (data.name === "add") return <NewBackend add={update} />;
 
-  const __ = wp.i18n.__;
   const [name, setName] = useState(data.name);
   const initialName = useRef(data.name);
   const nameInput = useRef();
