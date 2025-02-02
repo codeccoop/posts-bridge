@@ -118,77 +118,9 @@ class Posts_Bridge extends Base_Plugin
 
         Addon::load();
 
-        self::sync_http_settings();
         self::wp_hooks();
         self::rest_hooks();
         self::custom_hooks();
-    }
-
-    /**
-     * Synchronize plugin and http-bridge settings
-     */
-    private static function sync_http_settings()
-    {
-        $slug = self::slug();
-
-        // Patch http bridge default settings to plugin settings
-        add_filter(
-            'wpct_setting_default',
-            static function ($default, $name) use ($slug) {
-                if ($name !== $slug . '_general') {
-                    return $default;
-                }
-
-                $http = \HTTP_BRIDGE\Settings_Store::setting('general');
-
-                $data = [];
-                foreach (['backends', 'whitelist'] as $key) {
-                    $data[$key] = $http->$key;
-                }
-
-                return array_merge($default, $data);
-            },
-            10,
-            2
-        );
-
-        // Patch http bridge settings to plugin settings
-        add_filter("option_{$slug}_general", static function ($value) {
-            $http = \HTTP_BRIDGE\Settings_Store::setting('general');
-
-            $data = [];
-            foreach (['backends', 'whitelist'] as $key) {
-                $data[$key] = $http->$key;
-            }
-
-            return array_merge($value, $data);
-        });
-
-        // Syncronize plugin settings with http bridge settings
-        add_filter(
-            'wpct_validate_setting',
-            static function ($data, $setting) use ($slug) {
-                if ($setting->full_name() !== $slug . '_general') {
-                    return $data;
-                }
-
-                $http_settings = [
-                    'whitelist' => boolval($data['whitelist'] ?? false),
-                    'backends' => \HTTP_BRIDGE\Settings_Store::validate_backends(
-                        isset($data['backends']) && is_array($data['backends'])
-                            ? $data['backends']
-                            : []
-                    ),
-                ];
-
-                $http = \HTTP_BRIDGE\Settings_Store::setting('general');
-                $http->update(array_merge($http->data(), $http_settings));
-
-                return $data;
-            },
-            10,
-            2
-        );
     }
 
     /**

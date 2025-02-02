@@ -30,14 +30,40 @@ class Settings_Store extends Base_Settings_Store
     {
         parent::construct(...$args);
 
+        $slug = Posts_Bridge::slug();
+
+        // Patch http bridge default settings to plugin settings
         add_filter(
-            'wpct_validate_setting',
-            static function ($data, $setting) {
-                return self::validate_setting($data, $setting);
+            'wpct_setting_default',
+            static function ($default, $name) use ($slug) {
+                if ($name !== $slug . '_general') {
+                    return $default;
+                }
+
+                $http = \HTTP_BRIDGE\Settings_Store::setting('general');
+
+                $data = [];
+                foreach (['backends', 'whitelist'] as $key) {
+                    $data[$key] = $http->$key;
+                }
+
+                return array_merge($default, $data);
             },
             10,
             2
         );
+
+        // Patch http bridge settings to plugin settings
+        add_filter("option_{$slug}_general", static function ($value) {
+            $http = \HTTP_BRIDGE\Settings_Store::setting('general');
+
+            $data = [];
+            foreach (['backends', 'whitelist'] as $key) {
+                $data[$key] = $http->$key;
+            }
+
+            return array_merge($value, $data);
+        });
     }
 
     /**
@@ -49,7 +75,6 @@ class Settings_Store extends Base_Settings_Store
             [
                 'general',
                 [
-                    'debug' => ['type' => 'boolean'],
                     'synchronize' => [
                         'type' => 'object',
                         'additionalProperties' => false,
@@ -113,19 +138,15 @@ class Settings_Store extends Base_Settings_Store
     }
 
     /**
-     * Sanitize setting data before database inserts.
+     * Validates setting data before database inserts.
      *
      * @param array $data Setting data.
      * @param Setting $setting Setting instance.
      *
-     * @return array $value Sanitized setting data.
+     * @return array $value Validated setting data.
      */
     protected static function validate_setting($data, $setting)
     {
-        if ($setting->group() !== self::group()) {
-            return $data;
-        }
-
         $name = $setting->name();
         switch ($name) {
             case 'general':
@@ -152,6 +173,22 @@ class Settings_Store extends Base_Settings_Store
             'enabled' => $data['synchronize']['enabled'] ?? false,
             'recurrence' => $data['synchronize']['recurrence'] ?? 'hourly',
         ];
+
+        $http_settings = [
+            'whitelist' => boolval($data['whitelist'] ?? false),
+            'backends' => \HTTP_BRIDGE\Settings_Store::validate_backends(
+                isset($data['backends']) && is_array($data['backends'])
+                    ? $data['backends']
+                    : []
+            ),
+        ];
+
+        $http = \HTTP_BRIDGE\Settings_Store::setting('general');
+        $http->update(array_merge($http->data(), $http_settings));
+
+        foreach (array_keys($http_settings) as $field) {
+            unset($data[$field]);
+        }
 
         return $data;
     }
