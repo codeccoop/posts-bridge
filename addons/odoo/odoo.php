@@ -2,8 +2,6 @@
 
 namespace POSTS_BRIDGE;
 
-use function WPCT_ABSTRACT\is_list;
-
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -52,7 +50,7 @@ class Odoo_Addon extends Addon
     private static function custom_hooks()
     {
         add_filter('posts_bridge_odoo_dbs', static function ($dbs) {
-            if (!is_list($dbs)) {
+            if (!wp_is_numeric_array($dbs)) {
                 $dbs = [];
             }
 
@@ -172,7 +170,7 @@ class Odoo_Addon extends Addon
      */
     private static function validate_databases($dbs)
     {
-        if (!is_list($dbs)) {
+        if (!wp_is_numeric_array($dbs)) {
             return [];
         }
 
@@ -180,7 +178,7 @@ class Odoo_Addon extends Addon
             static function ($backend) {
                 return $backend['name'];
             },
-            Posts_Bridge::setting('general')->backends ?: []
+            \HTTP_BRIDGE\Settings_Store::setting('general')->backends ?: []
         );
 
         return array_filter($dbs, static function ($db_data) use ($backends) {
@@ -204,7 +202,7 @@ class Odoo_Addon extends Addon
      */
     private static function validate_relations($relations, $dbs)
     {
-        if (!is_list($relations)) {
+        if (!wp_is_numeric_array($relations)) {
             return [];
         }
 

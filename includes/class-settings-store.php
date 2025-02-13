@@ -4,8 +4,6 @@ namespace POSTS_BRIDGE;
 
 use WPCT_ABSTRACT\Settings_Store as Base_Settings_Store;
 
-use function WPCT_ABSTRACT\is_list;
-
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -222,7 +220,7 @@ class Settings_Store extends Base_Settings_Store
      */
     protected static function validate_relations($relations, $backends)
     {
-        if (!is_list($relations)) {
+        if (!wp_is_numeric_array($relations)) {
             return [];
         }
 

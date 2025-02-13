@@ -6,8 +6,6 @@ use Exception;
 use ReflectionClass;
 use WPCT_ABSTRACT\Singleton;
 
-use function WPCT_ABSTRACT\is_list;
-
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -221,7 +219,7 @@ abstract class Addon extends Singleton
      */
     private static function relations($relations = [])
     {
-        if (!is_list($relations)) {
+        if (!wp_is_numeric_array($relations)) {
             $relations = [];
         }
 

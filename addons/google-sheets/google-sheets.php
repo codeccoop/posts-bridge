@@ -2,8 +2,6 @@
 
 namespace POSTS_BRIDGE;
 
-use function WPCT_ABSTRACT\is_list;
-
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -158,7 +156,7 @@ class Google_Sheets_Addon extends Addon
      */
     private static function validate_relations($relations)
     {
-        if (!is_list($relations)) {
+        if (!wp_is_numeric_array($relations)) {
             return [];
         }
 

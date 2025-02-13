@@ -19,8 +19,6 @@ namespace POSTS_BRIDGE;
 
 use WPCT_ABSTRACT\Plugin as Base_Plugin;
 
-use function WPCT_ABSTRACT\is_list;
-
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -152,7 +150,7 @@ class Posts_Bridge extends Base_Plugin
         add_filter(
             'posts_bridge_post_types',
             static function ($remote_cpts, $api = null) {
-                if (!is_list($remote_cpts)) {
+                if (!wp_is_numeric_array($remote_cpts)) {
                     $remote_cpts = [];
                 }
 
@@ -170,7 +168,7 @@ class Posts_Bridge extends Base_Plugin
         add_filter(
             'posts_bridge_relations',
             static function ($relations) {
-                if (!is_list($relations)) {
+                if (!wp_is_numeric_array($relations)) {
                     $relations = [];
                 }
 

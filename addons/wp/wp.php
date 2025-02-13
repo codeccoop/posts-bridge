@@ -2,8 +2,6 @@
 
 namespace POSTS_BRIDGE;
 
-use function WPCT_ABSTRACT\is_list;
-
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -92,7 +90,8 @@ class WP_Addon extends Addon
      */
     protected static function validate_setting($data, $setting)
     {
-        $backends = Posts_Bridge::setting('general')->backends;
+        $backends =
+            \HTTP_BRIDGE\Settings_Store::setting('general')->backends ?: [];
         $data['relations'] = self::validate_relations(
             $data['relations'],
             $backends
@@ -112,7 +111,7 @@ class WP_Addon extends Addon
      */
     private static function validate_relations($relations, $backends)
     {
-        if (!is_list($relations)) {
+        if (!wp_is_numeric_array($relations)) {
             return [];
         }
 

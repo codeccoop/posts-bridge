@@ -4,8 +4,6 @@ namespace POSTS_BRIDGE;
 
 use HTTP_BRIDGE\Http_Backend;
 
-use function WPCT_ABSTRACT\is_list;
-
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -271,7 +269,7 @@ class Remote_Relation
         foreach ($custom_fields as $foreign => $name) {
             if ($value = $finger->get($foreign)) {
                 // wordpress can't serialize list arrays...
-                if (is_list($value)) {
+                if (wp_is_numeric_array($value)) {
                     $serializable = [];
                     for ($i = 0; $i < count($value); $i++) {
                         $serializable[(string) $i] = $value[$i];
@@ -321,7 +319,7 @@ class Remote_Relation
      */
     private function get_post_categories($categories)
     {
-        if (!is_list($categories)) {
+        if (!wp_is_numeric_array($categories)) {
             $categories = $this->get_post_tags($categories);
         }
 
