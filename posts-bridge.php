@@ -140,6 +140,20 @@ class Posts_Bridge extends Base_Plugin
         add_action('admin_enqueue_scripts', static function ($admin_page) {
             self::admin_enqueue_scripts($admin_page);
         });
+
+        add_action(
+            'upgrade_process_complete',
+            static function ($upgrader, $extra) {
+                if (
+                    $extra['type'] === 'plugin' &&
+                    in_array(self::index(), $extra['plugins'])
+                ) {
+                    self::do_migrations();
+                }
+            },
+            10,
+            2
+        );
     }
 
     /**
@@ -330,6 +344,54 @@ class Posts_Bridge extends Base_Plugin
         } else {
             $posts_bridge_remote_cpt = new Remote_CPT($post);
         }
+    }
+
+    /**
+     * Apply db migrations on plugin upgrades.
+     */
+    private static function do_migrations()
+    {
+        $from = get_option('posts-bridge-version', '1.0.0');
+
+        if (!preg_match('/^\d+\.\d+\.\d+$/', $from)) {
+            return;
+        }
+
+        $to = self::version();
+
+        $migrations = [];
+        $migrations_path = self::path() . 'migrations';
+
+        $as_int = fn($version) => (int) str_replace('.', '', $version);
+
+        foreach (
+            array_diff(scandir($migrations_path), ['.', '..'])
+            as $migration
+        ) {
+            $version = pathinfo($migrations_path . '/' . $migration)[
+                'filename'
+            ];
+
+            if ($as_int($version) > $as_int($to)) {
+                break;
+            }
+
+            if (!empty($migrations)) {
+                $migrations[] = $migration;
+                continue;
+            }
+
+            if ($as_int($version) >= $as_int($from)) {
+                $migrations[] = $migration;
+            }
+        }
+
+        sort($migrations);
+        foreach ($migrations as $migration) {
+            include $migrations_path . '/' . $migration;
+        }
+
+        update_option('posts-bridge-version', $to);
     }
 }
 
