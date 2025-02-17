@@ -174,11 +174,6 @@ class Posts_Bridge extends Base_Plugin
             2
         );
 
-        add_filter('posts_bridge_is_remote', static function () {
-            global $posts_bridge_remote_cpt;
-            return !empty($posts_bridge_remote_cpt);
-        });
-
         add_filter(
             'posts_bridge_relations',
             static function ($relations) {
@@ -354,6 +349,7 @@ class Posts_Bridge extends Base_Plugin
         $from = get_option('posts-bridge-version', '1.0.0');
 
         if (!preg_match('/^\d+\.\d+\.\d+$/', $from)) {
+            Logger::log('Invalid db plugin version', Logger::ERROR);
             return;
         }
 
