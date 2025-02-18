@@ -2,6 +2,8 @@
 
 namespace POSTS_BRIDGE;
 
+use Error;
+use Exception;
 use WPCT_ABSTRACT\Singleton;
 
 if (!defined('ABSPATH')) {
@@ -40,7 +42,7 @@ class I18n extends Singleton
 
             try {
                 self::do_translations($post_id);
-            } catch (Error $e) {
+            } catch (Error | Exception $e) {
                 $errors[] = [
                     'post_id' => get_the_ID($post_id),
                     'post_title' => get_the_title($post_id),
@@ -104,7 +106,8 @@ class I18n extends Singleton
             [],
             $post_id
         );
-        foreach (array_values($translations) as $trans_id) {
+
+        foreach ($translations as $trans_id) {
             if ($trans_id === $post_id) {
                 continue;
             }
@@ -126,6 +129,11 @@ class I18n extends Singleton
             return;
         }
 
+        // Exit if the post is a translation
+        if (apply_filters('wpct_i18n_is_translation', false, $post_id)) {
+            return;
+        }
+
         // Exit if post is in translation process
         if ($post->post_status === 'translating') {
             return;
@@ -135,11 +143,6 @@ class I18n extends Singleton
         if ($post->post_status === 'trash') {
             self::drop_translations($post_id);
             wp_delete_post($post_id, true);
-            return;
-        }
-
-        // Exit if the post is a translation
-        if (apply_filters('wpct_i18n_is_translation', false, $post_id)) {
             return;
         }
 
@@ -155,6 +158,7 @@ class I18n extends Singleton
     {
         global $posts_bridge_remote_cpt;
         $global = $posts_bridge_remote_cpt;
+
         $actives = apply_filters('wpct_i18n_active_languages', []);
         $default = apply_filters('wpct_i18n_default_language', null);
         $translated = apply_filters(
@@ -173,12 +177,14 @@ class I18n extends Singleton
             } else {
                 $trans_id = null;
                 do_action_ref_array('wpct_i18n_translate_post', [
-                    &$trans_id,
                     $post_id,
+                    $lang,
+                    &$trans_id,
                 ]);
             }
 
             $posts_bridge_remote_cpt = new Remote_CPT($trans_id);
+
             do_action('posts_bridge_translation', [
                 'post_id' => $trans_id,
                 'lang' => $lang,

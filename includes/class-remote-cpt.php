@@ -58,14 +58,14 @@ class Remote_CPT
      */
     public static function post_types($api = null)
     {
-        $relations = apply_filters('posts_bridge_relations', []);
+        $bridges = apply_filters('posts_bridge_bridges', []);
         return array_values(
             array_unique(
                 array_map(
                     static function ($rel) {
                         return $rel->post_type;
                     },
-                    array_filter($relations, static function ($rel) use ($api) {
+                    array_filter($bridges, static function ($rel) use ($api) {
                         return $api !== null ? $rel->api === $api : true;
                     })
                 )

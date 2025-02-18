@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 class Menu extends Base_Menu
 {
     /**
-     * Render plugin menu page.
+     * Renders the plugin menu page.
      */
     protected static function render_page($echo = true)
     {

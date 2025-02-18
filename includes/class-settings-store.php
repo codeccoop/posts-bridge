@@ -21,8 +21,7 @@ class Settings_Store extends Base_Settings_Store
     protected static $rest_controller_class = '\POSTS_BRIDGE\REST_Settings_Controller';
 
     /**
-     * Class constructor. Inherits the parent constructor and setup settings validation
-     * callbacks.
+     * Inherits the parent constructor and setup settings validation callbacks.
      */
     protected function construct(...$args)
     {
@@ -52,16 +51,25 @@ class Settings_Store extends Base_Settings_Store
         );
 
         // Patch http bridge settings to plugin settings
-        add_filter("option_{$slug}_general", static function ($value) {
-            $http = \HTTP_BRIDGE\Settings_Store::setting('general');
+        add_filter(
+            "option_{$slug}_general",
+            static function ($value) {
+                if (!is_array($value)) {
+                    return $value;
+                }
 
-            $data = [];
-            foreach (['backends', 'whitelist'] as $key) {
-                $data[$key] = $http->$key;
-            }
+                $http = \HTTP_BRIDGE\Settings_Store::setting('general');
 
-            return array_merge($value, $data);
-        });
+                $data = [];
+                foreach (['backends', 'whitelist'] as $key) {
+                    $data[$key] = $http->$key;
+                }
+
+                return array_merge($value, $data);
+            },
+            10,
+            1
+        );
     }
 
     /**
@@ -145,7 +153,10 @@ class Settings_Store extends Base_Settings_Store
      */
     protected static function validate_setting($data, $setting)
     {
-        $name = $setting->name();
+        if ($setting->name() !== 'general') {
+            return $data;
+        }
+
         switch ($name) {
             case 'general':
                 $data = self::validate_general($data);

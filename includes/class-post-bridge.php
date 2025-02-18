@@ -9,9 +9,9 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Remote post relation data.
+ * Post bridge object.
  */
-class Remote_Relation
+class Post_Bridge
 {
     /**
      * Handles WP_Post model fields.
@@ -63,29 +63,77 @@ class Remote_Relation
      */
     protected $api;
 
-    /**
-     * Public remote relations getter.
-     *
-     * @return array Remote relation instances.
-     */
-    public static function relations()
+    protected static $template_class = '\POSTS_BRIDGE\Post_Bridge_Template';
+
+    private static $templates = [];
+
+    final public static function load_templates($templates_path, $api)
     {
-        return array_map(static function ($rel) {
-            return new Remote_Relation($rel);
-        }, Posts_Bridge::setting('rest-api')->relations);
+        if (!is_dir($templates_path)) {
+            $res = mkdir($templates_path);
+            if (!$res) {
+                return;
+            }
+        }
+
+        if (!is_readable($templates_path)) {
+            return;
+        }
+
+        $template_files = apply_filters(
+            'posts_bridge_template_files',
+            array_map(static function ($template_file) use ($templates_path) {
+                return $templates_path . '/' . $template_file;
+            }, array_diff(scandir($templates_path), ['.', '..'])),
+            $api
+        );
+
+        foreach ($template_files as $template_path) {
+            if (!is_file($templates_path) || !is_readable($templates_path)) {
+                continue;
+            }
+
+            $template_file = basename($templates_path);
+            $ext = pathinfo($template_file)['extension'];
+
+            $config = null;
+            if ($ext === 'php') {
+                $config = include $templates_path;
+            } elseif ($ext === 'json') {
+                $content = file_get_contents($templates_path);
+                $config = json_decode($content, true);
+            }
+
+            if (is_array($config)) {
+                static::$templates[] = new static::$template_class(
+                    $template_file,
+                    $config,
+                    $api
+                );
+            }
+        }
+    }
+
+    final public static function get_template($name)
+    {
+        foreach (static::$templates as $template) {
+            if ($template->name === $name) {
+                return $template;
+            }
+        }
     }
 
     /**
-     * Binds the relation data to the instance and sets its api slug.
+     * Binds the bridge data to the instance and sets its api slug.
      */
-    public function __construct($data)
+    public function __construct($data, $api)
     {
+        $this->api = $api;
         $this->data = $data;
-        $this->api = 'rest-api';
     }
 
     /**
-     * Proxies relation private getters to public attributes.
+     * Proxies bridge private getters to public attributes.
      *
      * @param string $name Attribute name.
      *
@@ -95,25 +143,20 @@ class Remote_Relation
     {
         switch ($name) {
             case 'api':
-                $value = $this->api;
-                break;
+                return $this->api;
             case 'backend':
-                $value = $this->backend();
-                break;
+                return $this->backend();
             case 'endpoint':
-                $value = $this->endpoint();
-                break;
+                return $this->endpoint();
             default:
-                $value = $this->data[$name] ?? null;
+                return $this->data[$name] ?? null;
         }
-
-        return apply_filters("posts_bridge_relation_{$name}", $value, $this);
     }
 
     /**
-     * Relation's backend getter.
+     * Retrives the bridge's backend instance.
      *
-     * @return Http_Backend Backend instance.
+     * @return Http_Backend|null
      */
     private function backend()
     {

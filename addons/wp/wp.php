@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
     exit();
 }
 
-require_once 'class-wp-remote-relation.php';
+require_once 'class-wp-bridge.php';
 
 /**
  * WP Addon class.
@@ -21,12 +21,12 @@ class WP_Addon extends Addon
     /**
      * Handles the addon slug.
      */
-    protected static $slug = 'wp-api';
+    protected static $slug = 'wp';
 
     /**
      * Handles the addon's custom relation class.
      */
-    protected static $relation_class = '\POSTS_BRIDGE\WP_Remote_Relation';
+    protected static $relation_class = '\POSTS_BRIDGE\WP_Post_Bridge';
 
     /**
      * Addon settings configuration getter.
@@ -36,9 +36,9 @@ class WP_Addon extends Addon
     protected static function setting_config()
     {
         return [
-            'wp-api',
+            'wp',
             [
-                'relations' => [
+                'bridges' => [
                     'type' => 'array',
                     'items' => [
                         'type' => 'object',
@@ -71,7 +71,7 @@ class WP_Addon extends Addon
                 ],
             ],
             [
-                'relations' => [],
+                'bridges' => [],
                 'credentials' => [
                     'username' => '',
                     'password' => '',

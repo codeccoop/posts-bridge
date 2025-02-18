@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
     exit();
 }
 
-class WP_Remote_Relation extends Remote_Relation
+class WP_Post_Bridge extends Post_Bridge
 {
     /**
      * Public remote relations getter.
@@ -16,8 +16,8 @@ class WP_Remote_Relation extends Remote_Relation
     public static function relations()
     {
         return array_map(static function ($rel) {
-            return new WP_Remote_Relation($rel);
-        }, Posts_Bridge::setting('wp-api')->relations);
+            return new WP_Post_Bridge($rel);
+        }, Posts_Bridge::setting('wp')->relations);
     }
 
     public function __construct($data)

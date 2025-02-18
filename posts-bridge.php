@@ -36,7 +36,8 @@ require_once 'includes/class-settings-store.php';
 require_once 'includes/class-posts-synchronizer.php';
 require_once 'includes/class-rest-remote-posts-controller.php';
 require_once 'includes/class-rest-settings-controller.php';
-require_once 'includes/class-remote-relation.php';
+require_once 'includes/class-post-bridge.php';
+require_once 'includes/class-post-bridge-template.php';
 require_once 'includes/class-remote-featured-media.php';
 require_once 'includes/class-json-finger.php';
 
@@ -118,7 +119,71 @@ class Posts_Bridge extends Base_Plugin
 
         self::wp_hooks();
         self::rest_hooks();
-        self::custom_hooks();
+        // self::custom_hooks();
+        self::http_hooks();
+    }
+
+    /**
+     * Aliases to the http bride filters API.
+     */
+    private static function http_hooks()
+    {
+        add_filter(
+            'posts_bridge_backends',
+            static function ($backends) {
+                return apply_filters('http_bridge_backends', $backends);
+            },
+            10,
+            1
+        );
+
+        add_filter(
+            'posts_bridge_backend',
+            static function ($backend, $name) {
+                return apply_filters('http_bridge_backend', $backend, $name);
+            },
+            10,
+            2
+        );
+
+        add_filter(
+            'http_bridge_backend_headers',
+            static function ($headers, $backend) {
+                return apply_filters(
+                    'posts_bridge_backend_headers',
+                    $headers,
+                    $backend
+                );
+            },
+            99,
+            2
+        );
+
+        add_filter(
+            'http_bridge_backend_url',
+            static function ($url, $backend) {
+                return apply_filters(
+                    'posts_bridge_backend_url',
+                    $url,
+                    $backend
+                );
+            },
+            99,
+            2
+        );
+
+        add_filter(
+            'http_bridge_response',
+            static function ($response, $request) {
+                return apply_filters(
+                    'posts_bridge_http_response',
+                    $response,
+                    $request
+                );
+            },
+            99,
+            2
+        );
     }
 
     /**
@@ -173,33 +238,6 @@ class Posts_Bridge extends Base_Plugin
             5,
             2
         );
-
-        add_filter(
-            'posts_bridge_relations',
-            static function ($relations) {
-                if (!wp_is_numeric_array($relations)) {
-                    $relations = [];
-                }
-
-                return array_merge($relations, Remote_Relation::relations());
-            },
-            5,
-            1
-        );
-
-        add_filter(
-            'posts_bridge_relation',
-            static function ($relation, $post_type) {
-                $relations = apply_filters('posts_bridge_relations', []);
-                foreach ($relations as $relation) {
-                    if ($relation->post_type === $post_type) {
-                        return $relation;
-                    }
-                }
-            },
-            10,
-            2
-        );
     }
 
     /**
@@ -216,24 +254,25 @@ class Posts_Bridge extends Base_Plugin
             }
         });
 
+        // TODO: Check if the rest_pre_dispatch from the rest controller is working
         // Filter REST Requests before dispatch
-        add_filter(
-            'rest_pre_dispatch',
-            static function ($result, $server, $request) {
-                foreach (array_values(self::$rest_controllers) as $controller) {
-                    $result = $controller->rest_pre_dispatch(
-                        $result,
-                        $server,
-                        $request
-                    );
-                    if (is_wp_error($result)) {
-                        return $result;
-                    }
-                }
-            },
-            10,
-            3
-        );
+        // add_filter(
+        //     'rest_pre_dispatch',
+        //     static function ($result, $server, $request) {
+        //         foreach (array_values(self::$rest_controllers) as $controller) {
+        //             $result = $controller->rest_pre_dispatch(
+        //                 $result,
+        //                 $server,
+        //                 $request
+        //             );
+        //             if (is_wp_error($result)) {
+        //                 return $result;
+        //             }
+        //         }
+        //     },
+        //     10,
+        //     3
+        // );
     }
 
     /**
@@ -315,8 +354,8 @@ class Posts_Bridge extends Base_Plugin
      */
     private static function register_meta()
     {
-        $relations = apply_filters('posts_bridge_relations', []);
-        foreach ($relations as $rel) {
+        $bridges = apply_filters('posts_bridge_bridges', []);
+        foreach ($bridges as $rel) {
             $rel->register_meta();
         }
     }

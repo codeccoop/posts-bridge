@@ -1,0 +1,131 @@
+// source
+import { useGeneral } from "../../../../../src/providers/Settings";
+
+const {
+  TextControl,
+  SelectControl,
+  Button,
+  __experimentalSpacer: Spacer,
+} = wp.components;
+const { useState, useMemo } = wp.element;
+const { __ } = wp.i18n;
+
+export default function NewDatabase({ add, databases }) {
+  const [{ backends }] = useGeneral();
+  const backendOptions = [{ label: "", value: "" }].concat(
+    backends.map(({ name }) => ({
+      label: name,
+      value: name,
+    }))
+  );
+
+  const dbNames = useMemo(() => {
+    return new Set(databases.map(({ name }) => name));
+  }, [databases]);
+
+  const [name, setName] = useState("");
+  const [backend, setBackend] = useState("");
+  const [nameConflict, setNameConflict] = useState(false);
+  const [user, setUser] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSetName = (name) => {
+    setNameConflict(dbNames.has(name.trim()));
+    setName(name);
+  };
+
+  const onClick = () => {
+    add({
+      name: name.trim(),
+      backend,
+      user,
+      password,
+    });
+    setName("");
+    setBackend("");
+    setUser("");
+    setPassword("");
+    setNameConflict(false);
+  };
+
+  const disabled = !(name && backend && user && password && !nameConflict);
+
+  return (
+    <div
+      style={{
+        padding: "calc(24px) calc(32px)",
+        width: "calc(100% - 64px)",
+        backgroundColor: "rgb(245, 245, 245)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          gap: "1em",
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
+          <TextControl
+            label={__("Name", "posts-bridge")}
+            help={
+              nameConflict
+                ? __("This name is already in use", "posts-bridge")
+                : ""
+            }
+            value={name}
+            onChange={handleSetName}
+            __nextHasNoMarginBottom
+            __next40pxDefaultSize
+          />
+        </div>
+        <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
+          <SelectControl
+            label={__("Backend", "posts-bridge")}
+            value={backend}
+            onChange={setBackend}
+            options={backendOptions}
+            __nextHasNoMarginBottom
+            __next40pxDefaultSize
+          />
+        </div>
+        <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
+          <TextControl
+            label={__("User", "posts-bridge")}
+            value={user}
+            onChange={setUser}
+            __nextHasNoMarginBottom
+            __next40pxDefaultSize
+          />
+        </div>
+        <div style={{ flex: 1, minWidth: "150px", maxWidth: "250px" }}>
+          <TextControl
+            type="password"
+            label={__("Password", "posts-bridge")}
+            value={password}
+            onChange={setPassword}
+            __nextHasNoMarginBottom
+            __next40pxDefaultSize
+          />
+        </div>
+      </div>
+      <Spacer paddingY="calc(8px)" />
+      <div
+        style={{
+          display: "flex",
+          gap: "0.5em",
+        }}
+      >
+        <Button
+          variant="primary"
+          onClick={() => onClick()}
+          style={{ width: "150px", justifyContent: "center" }}
+          disabled={disabled}
+          __next40pxDefaultSize
+        >
+          {__("Add", "posts-bridge")}
+        </Button>
+      </div>
+    </div>
+  );
+}

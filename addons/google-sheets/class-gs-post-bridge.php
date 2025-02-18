@@ -8,27 +8,9 @@ if (!defined('ABSPATH')) {
     exit();
 }
 
-class Google_Sheets_Remote_Relation extends Remote_Relation
+class Google_Sheets_Post_Bridge extends Post_Bridge
 {
     private $rows = [];
-
-    /**
-     * Public remote relations getter.
-     *
-     * @return array Remote relation instances.
-     */
-    public static function relations()
-    {
-        return array_map(static function ($rel) {
-            return new Google_Sheets_Remote_Relation($rel);
-        }, Posts_Bridge::setting('google-sheets-api')->relations);
-    }
-
-    public function __construct($data)
-    {
-        parent::__construct($data);
-        $this->api = 'google-sheets-api';
-    }
 
     public function __get($name)
     {
