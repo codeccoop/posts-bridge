@@ -11,11 +11,25 @@ if (!defined('ABSPATH')) {
 class Odoo_Post_Bridge extends Post_Bridge
 {
     /**
+     * Handles the Odoo JSON-RPC well known endpoint.
+     *
+     * @var string
+     */
+    private const endpoint = '/jsonrpc';
+
+    /**
      * Handle active rpc session data.
      *
-     * @var array $session Tuple with session and user id.
+     * @var array Tuple with session and user ids.
      */
     private static $session;
+
+    /**
+     * Handles the bridge's template class.
+     *
+     * @var string
+     */
+    protected static $template_class = '\POSTS_BRIDGE\Odoo_Post_Bridge_Template';
 
     /**
      * RPC payload decorator.
@@ -83,19 +97,17 @@ class Odoo_Post_Bridge extends Post_Bridge
     /**
      * JSON RPC login request.
      *
-     * @param Odoo_DB $db Current db instance.
-     * @param string $ednpoint JSON-RPC API endpoint.
+     * @param Odoo_DB $db Bridge's database instance.
      *
-     * @return array Tuple with RPC session id and user id.
+     * @return array|WP_Error Tuple with RPC session id and user id.
      */
-    private static function rpc_login($relation)
+    private static function rpc_login($db)
     {
         if (self::$session) {
             return self::$session;
         }
 
         $session_id = Posts_Bridge::slug() . '-' . time();
-        $db = $relation->database;
         $backend = $db->backend;
 
         $payload = self::rpc_payload($session_id, 'common', 'login', [
@@ -104,9 +116,9 @@ class Odoo_Post_Bridge extends Post_Bridge
             $db->password,
         ]);
 
-        $user_id = self::rpc_response(
-            $backend->post($relation->endpoint, $payload)
-        );
+        $response = $backend->post(self::endpoint, $payload);
+
+        $user_id = self::rpc_response($response);
 
         if (is_wp_error($user_id)) {
             return $user_id;
@@ -121,24 +133,33 @@ class Odoo_Post_Bridge extends Post_Bridge
         parent::__construct(
             array_merge($data, [
                 'foreign_key' => 'id',
-                'endpoint' => '/jsonrpc',
             ]),
             $api
         );
     }
 
+    /**
+     * Parent getter interceptor to short curcuit database access.
+     *
+     * @param string $name Attribute name.
+     *
+     * @return mixed Attribute value or null.
+     */
     public function __get($name)
     {
         switch ($name) {
             case 'database':
                 return $this->database();
-            case 'backend':
-                return $this->backend();
             default:
                 return parent::__get($name);
         }
     }
 
+    /**
+     * Bridge's database private getter.
+     *
+     * @return Odoo_BD|null
+     */
     private function database()
     {
         return apply_filters(
@@ -148,14 +169,28 @@ class Odoo_Post_Bridge extends Post_Bridge
         );
     }
 
+    /**
+     * Intercepts backend access and returns it from the database.
+     *
+     * @return Http_Backend|null
+     */
     protected function backend()
     {
         return $this->database()->backend;
     }
 
+    /**
+     * Fetches remote data for a given foreign id.
+     *
+     * @param int|string $foreign_id Foreig key value.
+     *
+     * @return array|WP_Error Remote data for the given id.
+     */
     public function do_fetch($foreign_id)
     {
-        $session = self::rpc_login($this);
+        $database = $this->database();
+
+        $session = self::rpc_login($database);
 
         if (is_wp_error($session)) {
             return $session;
@@ -163,7 +198,6 @@ class Odoo_Post_Bridge extends Post_Bridge
 
         [$sid, $uid] = $session;
 
-        $database = $this->database();
         $payload = self::rpc_payload($sid, 'object', 'execute', [
             $database->name,
             $uid,
@@ -173,7 +207,7 @@ class Odoo_Post_Bridge extends Post_Bridge
             [(int) $foreign_id],
         ]);
 
-        $response = $this->backend->post($this->endpoint, $payload);
+        $response = $this->backend()->post(self::endpoint, $payload);
 
         $result = self::rpc_response($response, true);
         if (is_wp_error($result)) {
@@ -185,7 +219,9 @@ class Odoo_Post_Bridge extends Post_Bridge
 
     public function foreign_ids()
     {
-        $session = self::rpc_login($this);
+        $database = $this->database();
+
+        $session = self::rpc_login($database);
 
         if (is_wp_error($session)) {
             return [];
@@ -193,7 +229,6 @@ class Odoo_Post_Bridge extends Post_Bridge
 
         [$sid, $uid] = $session;
 
-        $database = $this->database();
         $payload = self::rpc_payload($sid, 'object', 'execute', [
             $database->name,
             $uid,
