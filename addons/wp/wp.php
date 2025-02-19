@@ -98,8 +98,8 @@ class WP_Addon extends Addon
      */
     protected static function validate_setting($data, $setting)
     {
-        $data['relations'] = self::validate_bridges(
-            $data['relations'],
+        $data['bridges'] = self::validate_bridges(
+            $data['bridges'],
             \HTTP_BRIDGE\Settings_Store::setting('general')->backends ?: []
         );
 
