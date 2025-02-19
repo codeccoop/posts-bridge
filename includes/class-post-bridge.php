@@ -51,15 +51,15 @@ abstract class Post_Bridge
     ];
 
     /**
-     * Handles relation data.
+     * Handles bridge's data.
      *
-     * @var array $data Settings data of the relation.
+     * @var array $data Settings data of the bridge.
      */
     protected $data;
 
-    /** Handles relation api slug.
+    /** Handles the bridge's API slug.
      *
-     * @var string $api Api slug.
+     * @var string $api API slug.
      */
     protected $api;
 
@@ -106,7 +106,7 @@ abstract class Post_Bridge
         );
 
         foreach ($template_files as $template_path) {
-            if (!is_file($templates_path) || !is_readable($templates_path)) {
+            if (!is_file($template_path) || !is_readable($template_path)) {
                 continue;
             }
 
@@ -247,7 +247,7 @@ abstract class Post_Bridge
     abstract public function foreign_ids();
 
     /**
-     * Relation's remote fields getter.
+     * Bridge's remote fields getter.
      *
      * @return array Map of remote fields with foreign as keys and names as values.
      */
@@ -260,7 +260,7 @@ abstract class Post_Bridge
     }
 
     /**
-     * Relation's remote post fields getter.
+     * Bridge's remote post fields getter.
      *
      * @return array Map of remote fields with foreign as keys and names as values.
      */
@@ -283,7 +283,7 @@ abstract class Post_Bridge
     }
 
     /**
-     * Relation's remote custom fields getter.
+     * Bridge's remote custom fields getter.
      *
      * @return array Map of remote fields with foreign as keys and names as values.
      */

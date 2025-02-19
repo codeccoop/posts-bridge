@@ -162,7 +162,7 @@ class Remote_CPT
     /**
      * Foreign key value getter.
      *
-     * @return string|int Remote relation foreign key value.
+     * @return string|int Brige foreign key value.
      */
     private function foreign_id()
     {
