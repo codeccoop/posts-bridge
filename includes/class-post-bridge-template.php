@@ -105,7 +105,7 @@ class Post_Bridge_Template
                     'description' => ['type' => 'string'],
                     'type' => [
                         'type' => 'string',
-                        'enum' => ['string', 'number', 'options'],
+                        'enum' => ['string', 'number', 'options', 'boolean'],
                     ],
                     'required' => ['type' => 'boolean'],
                     'value' => [
@@ -225,11 +225,18 @@ class Post_Bridge_Template
                 'name' => ['type' => 'string'],
                 'label' => ['type' => 'string'],
                 'singular_label' => ['type' => 'string'],
-                'rewrite' => ['type' => 'string'],
-                'rest_base' => ['type' => 'string'],
+                'description' => ['type' => 'string'],
                 'public' => ['type' => 'boolean'],
+                'exclude_from_search' => ['type' => 'boolean'],
                 'publicly_queryable' => ['type' => 'boolean'],
+                'show_ui' => ['type' => 'boolean'],
                 'show_in_menu' => ['type' => 'boolean'],
+                'show_in_nav_menus' => ['type' => 'boolean'],
+                'show_in_admin_bar' => ['type' => 'boolean'],
+                'show_in_rest' => ['type' => 'boolean'],
+                'rest_base' => ['type' => 'string'],
+                'capability_type' => ['type' => 'string'],
+                'map_meta_cap' => ['type' => 'boolean'],
                 'supports' => [
                     'typ' => 'array',
                     'items' => [
@@ -237,19 +244,22 @@ class Post_Bridge_Template
                         'enum' => [
                             'title',
                             'editor',
-                            'featured_image',
-                            'excerpt',
-                            'custom_fields',
-                            'author',
                             'comments',
+                            'revisions',
                             'trackbacks',
+                            'author',
+                            'excerpt',
+                            'page-attributes',
+                            'thumbnail',
+                            'custom-fields',
+                            'post-formats',
                         ],
                     ],
                 ],
-                'taxonomies' => [
-                    'type' => 'array',
-                    'items' => ['type' => 'string'],
-                ],
+                'taxonomies' => ['type' => 'string'],
+                'has_archive' => ['type' => 'boolean'],
+                'rewrite' => ['type' => 'string'],
+                'query_var' => ['type' => 'string'],
             ],
             'additionalProperties' => false,
             'required' => ['name'],
@@ -298,128 +308,74 @@ class Post_Bridge_Template
      */
     private static function with_defaults($config, $schema)
     {
+        $post_type_schema = Custom_Post_Type::schema();
+        $post_type_fields = [];
+
+        foreach ($post_type_schema as $prop => $defn) {
+            $field = [
+                'ref' => '#post_type',
+                'name' => $prop,
+                'label' => $prop,
+                'description' => $defn['description'],
+                'type' => $defn['type'],
+                'required' => $defn['required'] ?? false,
+            ];
+
+            if (isset($defn['default'])) {
+                $field['default'] = $defn['default'];
+            }
+
+            if (isset($defn['items'])) {
+                if (
+                    $defn['items']['type'] === 'string' &&
+                    isset($defn['items']['enum'])
+                ) {
+                    $field['options'] = array_map(function ($value) {
+                        return [
+                            'label' => $value,
+                            'value' => $value,
+                        ];
+                    }, $defn['items']['enum']);
+
+                    $field['type'] = 'options';
+                    $field['multiple'] = true;
+                }
+            }
+
+            $post_type_fields[] = $field;
+        }
+
         // merge template defaults with common defaults
         $default = self::merge_array(
             static::$default,
             [
-                'fields' => [
+                'fields' => array_merge(
                     [
-                        'ref' => '#bridge',
-                        'name' => 'name',
-                        'label' => __('Bridge name', 'posts-bridge'),
-                        'type' => 'string',
-                        'required' => true,
-                    ],
-                    [
-                        'ref' => '#post_type',
-                        'name' => 'name',
-                        'label' => __('Name', 'posts-bridge'),
-                        'type' => 'string',
-                        'required' => true,
-                    ],
-                    [
-                        'ref' => '#post_type',
-                        'name' => 'label',
-                        'label' => __('Label', 'posts-bridge'),
-                        'type' => 'string',
-                    ],
-                    [
-                        'ref' => '#post_type',
-                        'name' => 'singular_label',
-                        'label' => __('Singular label', 'posts-bridge'),
-                        'type' => 'string',
-                    ],
-                    [
-                        'ref' => '#post_type',
-                        'name' => 'rewrite',
-                        'label' => __('URL rewrite', 'posts-bridge'),
-                        'type' => 'string',
-                    ],
-                    [
-                        'ref' => '#post_type',
-                        'name' => 'rest_base',
-                        'label' => __('REST endpoint base', 'posts-bridge'),
-                        'type' => 'string',
-                    ],
-                    [
-                        'ref' => '#post_type',
-                        'name' => 'public',
-                        'label' => __('Public', 'posts-bridge'),
-                        'type' => 'boolean',
-                        'default' => true,
-                    ],
-                    [
-                        'ref' => '#post_type',
-                        'name' => 'queryable',
-                        'label' => __('Queryable', 'posts-bridge'),
-                        'type' => 'boolean',
-                        'default' => true,
-                    ],
-                    [
-                        'ref' => '#post_type',
-                        'name' => 'show_in_menu',
-                        'label' => __('Show in menu', 'posts-bridge'),
-                        'type' => 'boolean',
-                        'default' => true,
-                    ],
-                    [
-                        'ref' => '#post_type',
-                        'name' => 'supports',
-                        'label' => __('Show in menu', 'posts-bridge'),
-                        'type' => 'options',
-                        'options' => [
-                            [
-                                'value' => 'title',
-                                'label' => __('Title', 'posts-bridge'),
-                            ],
-                            [
-                                'value' => 'editor',
-                                'label' => __('Editor', 'posts-bridge'),
-                            ],
-                            [
-                                'value' => 'featured_image',
-                                'label' => __('Featured image', 'posts-bridge'),
-                            ],
-                            [
-                                'value' => 'excerpt',
-                                'label' => __('Excerpt', 'posts-bridge'),
-                            ],
-                            [
-                                'value' => 'custom_fields',
-                                'label' => __('Custom fields', 'posts-bridge'),
-                            ],
-                            [
-                                'value' => 'author',
-                                'label' => __('Author', 'posts-bridge'),
-                            ],
-                            [
-                                'value' => 'comments',
-                                'label' => __('Comments', 'posts-bridge'),
-                            ],
-                            [
-                                'value' => 'trackbacks',
-                                'label' => __('Trackbacks', 'posts-bridge'),
-                            ],
+                        [
+                            'ref' => '#bridge',
+                            'name' => 'name',
+                            'label' => __('Bridge name', 'posts-bridge'),
+                            'type' => 'string',
+                            'required' => true,
                         ],
-                        'default' => ['title', 'featured_image', 'excerpt'],
-                        'multiple' => true,
+                        [
+                            'ref' => '#post_type',
+                            'name' => 'name',
+                            'label' => __('Name', 'posts-bridge'),
+                            'description' => __(
+                                'Custom post type key',
+                                'posts-bridge'
+                            ),
+                            'type' => 'string',
+                            'required' => true,
+                        ],
                     ],
-                    [
-                        'ref' => '#post_type',
-                        'name' => 'taxonomies',
-                        'label' => __('Taxonomies', 'posts-bridge'),
-                        'description' => __(
-                            'Comma separated list of taxonomy names',
-                            'posts-bridge'
-                        ),
-                        'type' => 'string',
-                        'default' => 'post_tag,category',
-                    ],
-                ],
+                    $post_type_fields
+                ),
                 'bridge' => [
                     'name' => '',
                     'post_type' => '',
-                    'pipes' => [],
+                    'fields' => [],
                 ],
                 'backend' => [
                     'name' => '',
@@ -435,19 +391,16 @@ class Post_Bridge_Template
                         ],
                     ],
                 ],
-                'post_type' => [
-                    'name' => '',
-                    'single_label' => '',
-                    'plural_label' => '',
-                    'rewrite' => '',
-                    'rest_base' => '',
-                    'public' => true,
-                    'queryable' => true,
-                    'has_archive' => true,
-                    'show_in_menu' => true,
-                    'supports' => ['title', 'featured_image', 'excerpt'],
-                    'taxonomies' => [],
-                ],
+                'post_type' => array_reduce(
+                    array_keys($post_type_schema['properties']),
+                    function ($props, $prop) use ($post_type_schema) {
+                        $props[$prop] =
+                            $post_type_schema['properties'][$prop]['default'] ??
+                            '';
+                        return $props;
+                    },
+                    []
+                ),
             ],
             $schema
         );

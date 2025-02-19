@@ -38,27 +38,213 @@ class Custom_Post_Type
     private const option_name = 'posts_bridge_custom_post_types';
 
     /**
-     * Handle post supports tokens.
-     *
-     * @var array
-     */
-    private const supports_tokens = [
-        'title',
-        'editor',
-        'featured_image',
-        'excerpt',
-        'custom_fields',
-        'author',
-        'comments',
-        'trackbacks',
-    ];
-
-    /**
      * Handle custom post types registry.
      *
      * @var array|null
      */
     private static $registry = null;
+
+    public static function schema()
+    {
+        return [
+            'type' => 'object',
+            'properties' => [
+                'label' => [
+                    'description' => __(
+                        'Plural name of the post type shown in the menu',
+                        'posts-bridge'
+                    ),
+                    'type' => 'string',
+                    'required' => false,
+                ],
+                'singular_label' => [
+                    'description' => __(
+                        'Singluar name of the post type shown in the menu',
+                        'posts-bridge'
+                    ),
+                    'type' => 'string',
+                    'required' => false,
+                ],
+                'description' => [
+                    'description' => __(
+                        'A short descriptive summary of what the post type is',
+                        'posts-bridge'
+                    ),
+                    'type' => 'string',
+                    'required' => false,
+                ],
+                'public' => [
+                    'description' => __(
+                        'Whether a post type is intended for use publicly either via the admin interface or by front-end users',
+                        'posts-bridge'
+                    ),
+                    'default' => true,
+                    'type' => 'string',
+                    'required' => false,
+                ],
+                'exclude_from_search' => [
+                    'description' => __(
+                        'Whether to exclude posts with this post type from front end search results. Default is the opposite value of $public',
+                        'posts-bridge'
+                    ),
+                    'default' => false,
+                    'type' => 'boolean',
+                    'required' => false,
+                ],
+                'publicly_queryable' => [
+                    'description' => __(
+                        'Whether queries can be performed on the front end for the post type as part of parse_request(). Default is inherited from $public',
+                        'posts-bridge'
+                    ),
+                    'default' => true,
+                    'type' => 'boolean',
+                    'required' => false,
+                ],
+                'show_ui' => [
+                    'description' => __(
+                        'Whether to generate and allow a UI for managing this post type in the admin',
+                        'posts-bridge'
+                    ),
+                    'default' => true,
+                    'type' => 'boolean',
+                    'required' => false,
+                ],
+                'show_in_menu' => [
+                    'description' => __(
+                        'Where to show the post type in the admin menu. To work, $show_ui must be true',
+                        'posts-bridge'
+                    ),
+                    'default' => true,
+                    'type' => 'boolean',
+                    'required' => false,
+                ],
+                'show_in_nav_menus' => [
+                    'description' => __(
+                        'Makes this post type available for selection in navigation menus',
+                        'posts-bridge'
+                    ),
+                    'default' => true,
+                    'type' => 'boolean',
+                    'required' => false,
+                ],
+                'show_in_admin_bar' => [
+                    'description' => __(
+                        'Makes this post type available via the admin bar, Default is value of $show_in_menu',
+                        'posts-bridge'
+                    ),
+                    'type' => 'boolean',
+                    'required' => false,
+                ],
+                'show_in_rest' => [
+                    'description' => __(
+                        'Whether to include the post type in the REST API. Set this to true for the post type to be available in the block editor',
+                        'posts-bridge'
+                    ),
+                    'default' => true,
+                    'type' => 'boolean',
+                    'required' => false,
+                ],
+                'rest_base' => [
+                    'description' => __(
+                        'To change the base URL of REST API route. Default is $post_type',
+                        'posts-bridge'
+                    ),
+                    'type' => 'string',
+                    'required' => false,
+                ],
+                'menu_position' => [
+                    'description' => __(
+                        'The position in the menu order the post type should appear',
+                        'posts-bridge'
+                    ),
+                    'type' => 'integer',
+                    'required' => false,
+                ],
+                'capability_type' => [
+                    'description' => __(
+                        'The string to use to build the read, edit, and delete capabilities',
+                        'posts-bridge'
+                    ),
+                    'type' => 'string',
+                    'required' => false,
+                ],
+                'map_meta_cap' => [
+                    'description' => __(
+                        'Whether to use the internal default meta capability handling',
+                        'posts-bridge'
+                    ),
+                    'default' => false,
+                    'type' => 'boolean',
+                    'required' => false,
+                ],
+                'supports' => [
+                    'description' => __(
+                        'Core feature(s) the post type supports',
+                        'posts-bridge'
+                    ),
+                    'default' => [
+                        'title',
+                        'thumbnail',
+                        'excerpt',
+                        'custom-fields',
+                    ],
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'string',
+                        'enum' => [
+                            'title',
+                            'editor',
+                            'comments',
+                            'revisions',
+                            'trackbacks',
+                            'author',
+                            'excerpt',
+                            'page-attributes',
+                            'thumbnail',
+                            'custom-fields',
+                            'post-formats',
+                        ],
+                    ],
+                    'required' => false,
+                ],
+                'taxonomies' => [
+                    'description' => __(
+                        'An array of taxonomy identifiers that will be registered for the post type',
+                        'posts-bridge'
+                    ),
+                    'type' => 'array',
+                    'items' => ['type' => 'string'],
+                    'required' => false,
+                ],
+                'has_archive' => [
+                    'description' => __(
+                        'Whether there should be post type archives, or if a string, the archive slug to use',
+                        'posts-bridge'
+                    ),
+                    'default' => false,
+                    'type' => ['boolean', 'string'],
+                    'required' => false,
+                ],
+                'rewrite' => [
+                    'description' => __(
+                        'Triggers the handling of slug rewrite for this post type. Default is $post_type key',
+                        'posts-bridge'
+                    ),
+                    'type' => 'string',
+                    'required' => false,
+                ],
+                'query_var' => [
+                    'description' => __(
+                        'Sets the query_var key for this post type. Defaults to $post_type key',
+                        'posts-bridge'
+                    ),
+                    'type' => 'string',
+                    'required' => false,
+                ],
+            ],
+            'additionalProperties' => false,
+        ];
+    }
 
     public static function load()
     {
@@ -98,13 +284,32 @@ class Custom_Post_Type
             },
             10
         );
+
+        add_filter(
+            'posts_bridge_custom_post_types',
+            static function () {
+                return self::registry();
+            },
+            10,
+            0
+        );
+
+        add_filter(
+            'posts_bridge_custom_post_type',
+            static function ($value, $key) {
+                $registry = self::registry();
+                return $registry[$key] ?? $value;
+            },
+            10,
+            2
+        );
     }
 
     public static function register($name, $args)
     {
         $registry = self::registry();
 
-        $name = sanitize_title($name);
+        $name = sanitize_key($name);
         $registry[$name] = self::sanitize_args($name, $args);
 
         update_option(self::option_name, $registry);
@@ -114,7 +319,7 @@ class Custom_Post_Type
 
     public static function unregister($name)
     {
-        $name = sanitize_title($name);
+        $name = sanitize_key($name);
 
         $registry = self::registry();
         unset($registry[$name]);
@@ -156,8 +361,6 @@ class Custom_Post_Type
 
     private static function register_post_type($name, $args)
     {
-        $name = sanitize_title($name);
-
         $args['labels'] = [
             'name' => $args['label'],
             'singular_name' => $args['singular_label'],
@@ -220,7 +423,10 @@ class Custom_Post_Type
 
     private function sanitize_args($name, $args)
     {
-        return array_merge($args, [
+        $public = boolval($args['public'] ?? true);
+        $show_ui = boolval($args['show_ui'] ?? true);
+
+        return [
             'label' =>
                 !empty($args['label']) && is_string($args['label'])
                     ? sanitize_text_field($args['label'])
@@ -230,20 +436,34 @@ class Custom_Post_Type
                 is_string($args['singular_label'])
                     ? sanitize_text_field($args['singular_label'])
                     : $name,
-            'rewrite' =>
-                !empty($args['rewrite']) && is_string($args['rewrite'])
-                    ? ['slug' => sanitize_title($args['rewrite'])]
-                    : (is_array($args['rewrite']) &&
-                    isset($args['rewrite']['slug'])
-                        ? ['slug' => sanitize_title($args['rewrite']['slug'])]
-                        : false),
+            'description' => esc_html($args['description'] ?? ''),
+            'public' => $public,
+            'exclude_from_search' => boolval(
+                $args['exclude_from_search'] ?? !$public
+            ),
+            'publicly_queryable' => boolval($args['queryable'] ?? $public),
+            'show_ui' => $show_ui,
+            'show_in_menu' =>
+                boolval($args['show_in_menu'] ?? true) && $show_ui,
+            'show_in_nav_menus' => boolval(
+                $args['show_in_nav_menus'] ?? $public
+            ),
+            'show_in_admin_bar' =>
+                boolval($args['show_in_admin_bar'] ?? true) && $show_ui,
+            'show_in_rest' => boolval($args['show_in_rest'] ?? true),
             'rest_base' =>
                 !empty($args['rest_base']) && is_string($args['rest_base'])
                     ? sanitize_title($args['rest_base'])
                     : $name,
-            'public' => $args['public'] ?? true,
-            'publicly_queryable' => $args['queryable'] ?? true,
-            'show_in_menu' => $args['show_in_menu'] ?? true,
+            'menu_position' => isset($args['menu_position'])
+                ? (int) $args['menu_position']
+                : null,
+            'capability_type' =>
+                !empty($args['capability_type']) &&
+                is_string($args['capability_type'])
+                    ? sanitize_key($args['capability_type'])
+                    : 'post',
+            'map_meta_cap' => boolval($args['map_meta_cap'] ?? false),
             'supports' =>
                 isset($args['supports']) && is_array($args['supports'])
                     ? array_map(
@@ -254,26 +474,29 @@ class Custom_Post_Type
                             $token
                         ) {
                             $token = trim($token);
-                            return in_array(
-                                $token,
-                                self::supports_tokens,
-                                true
-                            );
+                            $tokens = self::schema()['properties']['supports'][
+                                'items'
+                            ]['enum'];
+
+                            return in_array($token, $tokens, true);
                         })
                     )
-                    : ['title', 'featured_image', 'excerpt'],
-            'taxonomies' => isset($args['taxonomies'])
-                ? array_map(
-                    function ($tax) {
+                    : self::schema()['properties']['supports']['default'],
+            'taxonomies' =>
+                isset($args['taxonomies']) && is_string($args['taxonomies'])
+                    ? array_map(function ($tax) {
                         return trim($tax);
-                    },
-                    is_string($args['taxonomies'])
-                        ? explode(',', $args['taxonomies'])
-                        : (is_array($args['taxonomies'])
-                            ? $args['taxonomies']
-                            : [])
-                )
-                : [],
-        ]);
+                    }, explode(',', $args['taxonomies']))
+                    : [],
+            'has_archive' => boolval($args['has_archive'] ?? false),
+            'rewrite' =>
+                !empty($args['rewrite']) && is_string($args['rewrite'])
+                    ? ['slug' => sanitize_title($args['rewrite'])]
+                    : true,
+            'query_var' =>
+                isset($args['query_var']) && is_string($args['query_var'])
+                    ? sanitize_key($args['query_var'])
+                    : $name,
+        ];
     }
 }
