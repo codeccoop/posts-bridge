@@ -217,7 +217,7 @@ class WP_Post_Bridge extends Post_Bridge
 
     private function authorization()
     {
-        $credentials = Posts_Bridge::setting('wp-api')->credentials;
+        $credentials = Posts_Bridge::setting($this->api)->credentials;
         return 'Basic ' .
             base64_encode(
                 "{$credentials['username']}:{$credentials['password']}"
