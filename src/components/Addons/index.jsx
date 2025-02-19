@@ -22,10 +22,10 @@ export default function Addons() {
         return (
           <PanelRow key={addon}>
             <ToggleControl
-              __nextHasNoMarginBottom
               label={__(addon, "posts-bridge")}
               checked={enabled}
               onChange={() => toggle(addon)}
+              __nextHasNoMarginBottom
             />
           </PanelRow>
         );

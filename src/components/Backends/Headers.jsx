@@ -4,7 +4,7 @@ const {
   Button,
   __experimentalSpacer: Spacer,
 } = wp.components;
-const { useEffect } = wp.element;
+const { useEffect, useMemo } = wp.element;
 const { __ } = wp.i18n;
 
 const WELL_KNOWN_CONTENT_TYPES = {
@@ -38,24 +38,7 @@ function ContentTypeHeader({ setValue, value }) {
           }}
         >
           {__(
-            "Select how Forms Bridge should encode your form submissions.",
-            "posts-bridge"
-          )}
-        </span>
-        <br />
-        <span
-          style={{
-            color: "#757575",
-            fontStyle: "normal",
-            fontSize: "12px",
-            marginTop: "calc(8px)",
-            textTransform: "none",
-            fontWeight: "400",
-          }}
-        >
-          ⚠{" "}
-          {__(
-            "If your backend uses custom encoding, Forms Bridge will need a string payload. You can use the `forms_bridge_payload` hook to encode your form submission as string.",
+            "Select how Posts Bridge should encode your HTTP request's body.",
             "posts-bridge"
           )}
         </span>
@@ -117,6 +100,16 @@ export default function BackendHeaders({ headers, setHeaders }) {
       addHeader("Content-Type", "application/json");
   }, [headers]);
 
+  const sortedHeaders = useMemo(
+    () =>
+      headers.sort((h1, h2) => {
+        if (h1.name === "Content-Type") return -1;
+        if (h2.name === "Content-Type") return 1;
+        return 0;
+      }),
+    [headers]
+  );
+
   return (
     <>
       <ContentTypeHeader value={contentType} setValue={setContentType} />
@@ -141,7 +134,7 @@ export default function BackendHeaders({ headers, setHeaders }) {
           }}
         >
           <tbody>
-            {headers.map(({ name, value }, i) => (
+            {sortedHeaders.map(({ name, value }, i) => (
               <tr key={i}>
                 <td>
                   <TextControl

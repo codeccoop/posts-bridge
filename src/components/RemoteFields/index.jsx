@@ -12,6 +12,7 @@ export default function RemoteFields({ fields, setFields }) {
     fields.forEach((field) => {
       delete field.index;
     });
+
     setFields(fields);
   };
 

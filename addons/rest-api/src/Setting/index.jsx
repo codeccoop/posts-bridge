@@ -1,36 +1,22 @@
 // source
-import Relations from "../../../../src/components/Relations";
-import OdooRelation from "./Relation";
-import useOdooApi from "../hooks/useOdooApi";
-import Databases from "../components/Databases";
+import Bridges from "../../../../src/components/Bridges";
+import RestBridge from "./Bridge";
+import useRestApi from "../hooks/useRestApi";
 
-const { PanelBody, PanelRow, __experimentalSpacer: Spacer } = wp.components;
-const { __ } = wp.i18n;
+const { PanelRow } = wp.components;
 
-export default function OdooSetting() {
-  const [{ databases, relations }, save] = useOdooApi();
+export default function RestSettings() {
+  const [{ bridges }, save] = useRestApi();
 
-  const update = (field) => save({ databases, relations, ...field });
+  const update = (field) => save({ bridges, ...field });
 
   return (
-    <>
-      <PanelRow>
-        <Relations
-          relations={relations}
-          setRelations={(relations) => update({ relations })}
-          Relation={OdooRelation}
-        />
-      </PanelRow>
-      <Spacer paddingY="calc(8px)" />
-      <PanelBody
-        title={__("Databases", "posts-bridge")}
-        initialOpen={databases.length === 0}
-      >
-        <Databases
-          databases={databases}
-          setDatabases={(databases) => update({ databases })}
-        />
-      </PanelBody>
-    </>
+    <PanelRow>
+      <Bridges
+        bridges={bridges}
+        setBridges={(bridges) => update({ bridges })}
+        Bridge={RestBridge}
+      />
+    </PanelRow>
   );
 }

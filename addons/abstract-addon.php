@@ -112,6 +112,7 @@ abstract class Addon extends Singleton
         }
 
         $general_setting = Posts_Bridge::slug() . '_general';
+
         add_filter(
             'wpct_setting_default',
             static function ($default, $name) use ($general_setting) {
@@ -134,7 +135,7 @@ abstract class Addon extends Singleton
 
                 return array_merge($value, ['addons' => self::registry()]);
             },
-            10,
+            9,
             1
         );
 
@@ -181,14 +182,22 @@ abstract class Addon extends Singleton
             throw new Exception('Invalid addon registration');
         }
 
-        self::load_templates();
-        self::handle_settings();
-        self::admin_scripts();
+        static::load_templates();
+        static::handle_settings();
+        static::admin_scripts();
 
         add_filter(
             'posts_bridge_bridges',
             static function ($bridges, $api = null) {
-                return self::bridges($bridges, $api);
+                if (!empty($api) && $api !== static::$api) {
+                    return $bridges;
+                }
+
+                if (!wp_is_numeric_array($bridges)) {
+                    $bridges = [];
+                }
+
+                return array_merge($bridges, static::bridges());
             },
             10,
             2
@@ -215,6 +224,37 @@ abstract class Addon extends Singleton
             },
             10,
             2
+        );
+
+        add_filter(
+            'posts_bridge_remote_post_types',
+            static function ($post_types, $api = null) {
+                if ($api && $api !== static::$api) {
+                    return $post_types;
+                }
+
+                if (!wp_is_numeric_array($post_types)) {
+                    $post_types = [];
+                }
+
+                $bridges = static::bridges();
+                foreach ($bridges as $bridge) {
+                    $post_types[] = $bridge->post_type;
+                }
+
+                return $post_types;
+            },
+            10,
+            2
+        );
+
+        add_action(
+            'init',
+            static function () {
+                static::register_meta();
+            },
+            10,
+            0
         );
     }
 
@@ -252,33 +292,15 @@ abstract class Addon extends Singleton
 
     /**
      * Adds addons' bridges to the available bridges list.
-     *
-     * @param array $bridges List with available bridges.
-     * @param string $api API name to filter by.
-     *
-     * @return array List with available bridges.
+     * @return array List with addon's available bridges.
      */
-    private static function bridges($bridges, $api = null)
+    private static function bridges()
     {
-        if (!wp_is_numeric_array($bridges)) {
-            $bridges = [];
-        }
-
-        if (!empty($api) && $api !== static::$api) {
-            return $bridges;
-        }
-
-        return array_merge(
-            $bridges,
-            array_map(
-                static function ($bridge_data) {
-                    return new static::$bridge_class(
-                        $bridge_data,
-                        static::$api
-                    );
-                },
-                static::setting()->bridges ?: []
-            )
+        return array_map(
+            static function ($bridge_data) {
+                return new static::$bridge_class($bridge_data, static::$api);
+            },
+            static::setting()->bridges ?: []
         );
     }
 
@@ -304,7 +326,7 @@ abstract class Addon extends Singleton
         add_filter(
             'wpct_validate_setting',
             static function ($data, $setting) {
-                return self::do_validation($data, $setting);
+                return static::do_validation($data, $setting);
             },
             11,
             2
@@ -313,7 +335,7 @@ abstract class Addon extends Singleton
         add_filter(
             'wpct_setting_default',
             static function ($default, $name) {
-                if ($name !== self::setting_name()) {
+                if ($name !== static::setting_name()) {
                     return $default;
                 }
 
@@ -326,7 +348,7 @@ abstract class Addon extends Singleton
         );
 
         add_filter(
-            'option_' . self::setting_name(),
+            'option_' . static::setting_name(),
             static function ($value) {
                 if (!is_array($value)) {
                     return $value;
@@ -403,7 +425,7 @@ abstract class Addon extends Singleton
      */
     private static function do_validation($data, $setting)
     {
-        if ($setting->full_name() !== self::setting_name()) {
+        if ($setting->full_name() !== static::setting_name()) {
             return $data;
         }
 
@@ -420,5 +442,17 @@ abstract class Addon extends Singleton
         $dir = dirname($__FILE__) . '/templates';
 
         static::$bridge_class::load_templates($dir, static::$api);
+    }
+
+    /**
+     * Registers remote cpts remote fields as post meta to make it visibles
+     * on the REST API.
+     */
+    private static function register_meta()
+    {
+        $bridges = static::bridges();
+        foreach ($bridges as $bridge) {
+            $bridge->register_meta();
+        }
     }
 }

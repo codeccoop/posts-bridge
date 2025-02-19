@@ -1,6 +1,6 @@
 // source
-import Relations from "../../../../src/components/Relations";
-import OdooRelation from "./Relation";
+import Bridges from "../../../../src/components/Bridges";
+import OdooBridge from "./Bridge";
 import useOdooApi from "../hooks/useOdooApi";
 import Databases from "../components/Databases";
 
@@ -8,17 +8,17 @@ const { PanelBody, PanelRow, __experimentalSpacer: Spacer } = wp.components;
 const { __ } = wp.i18n;
 
 export default function OdooSetting() {
-  const [{ databases, relations }, save] = useOdooApi();
+  const [{ databases, bridges }, save] = useOdooApi();
 
-  const update = (field) => save({ databases, relations, ...field });
+  const update = (field) => save({ databases, bridges, ...field });
 
   return (
     <>
       <PanelRow>
-        <Relations
-          relations={relations}
-          setRelations={(relations) => update({ relations })}
-          Relation={OdooRelation}
+        <Bridges
+          bridges={bridges}
+          setBridges={(bridges) => update({ bridges })}
+          Bridge={OdooBridge}
         />
       </PanelRow>
       <Spacer paddingY="calc(8px)" />

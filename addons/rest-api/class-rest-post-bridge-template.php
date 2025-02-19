@@ -48,6 +48,7 @@ class Rest_Post_Bridge_Template extends Post_Bridge_Template
      *
      * @param string $file Source file path of the template config.
      * @param array $config Template config data.
+     * @param string $api Template's API name.
      */
     public function __construct($file, $config, $api)
     {

@@ -1,6 +1,6 @@
 // source
-import Relations from "../../../../src/components/Relations";
-import GSRelation from "./Relation";
+import Bridges from "../../../../src/components/Bridges";
+import GSBridge from "./Bridge";
 import useGSApi from "../hooks/useGSApi";
 import useAjaxGrant from "../hooks/useAjaxGrant";
 
@@ -11,37 +11,32 @@ const {
   FormFileUpload,
   __experimentalSpacer: Spacer,
 } = wp.components;
-const { useState, useEffect } = wp.element;
+const { useState } = wp.element;
 const { __ } = wp.i18n;
 
-export default function GoogleSheetsSetting() {
-  const [{ authorized, relations }, save] = useGSApi();
+export default function GoogleSheetsBridge() {
+  const [{ authorized, bridges }, save] = useGSApi();
 
-  const { grant, revoke, loading, result } = useAjaxGrant();
+  const { grant, revoke } = useAjaxGrant();
 
   const [file, setFile] = useState(null);
 
-  const update = (field) => save({ authorized, relations, ...field });
+  const update = (field) => save({ authorized, bridges, ...field });
 
   const onGrant = () => {
-    if (file) grant(file);
-    else revoke();
+    (() => {
+      if (file) return grant(file);
+      else return revoke();
+    })().then(() => wppb.emit("flushStore"));
   };
-
-  useEffect(() => {
-    if (loading || result === null) return;
-    if (result) {
-      window.location.reload();
-    }
-  }, [loading]);
 
   return (
     <>
       <PanelRow>
-        <Relations
-          relations={relations}
-          setRelations={(relations) => update({ relations })}
-          Relation={GSRelation}
+        <Bridges
+          bridges={bridges}
+          setBridges={(bridges) => update({ bridges })}
+          Bridge={GSBridge}
         />
       </PanelRow>
       <Spacer paddingY="calc(8px)" />

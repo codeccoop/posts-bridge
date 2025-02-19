@@ -223,12 +223,12 @@ class Post_Bridge_Template
             'type' => 'object',
             'properties' => [
                 'name' => ['type' => 'string'],
-                'single_label' => ['type' => 'string'],
-                'plural_label' => ['type' => 'string'],
+                'label' => ['type' => 'string'],
+                'singular_label' => ['type' => 'string'],
                 'rewrite' => ['type' => 'string'],
                 'rest_base' => ['type' => 'string'],
                 'public' => ['type' => 'boolean'],
-                'queryable' => ['type' => 'boolean'],
+                'publicly_queryable' => ['type' => 'boolean'],
                 'show_in_menu' => ['type' => 'boolean'],
                 'supports' => [
                     'typ' => 'array',
@@ -319,14 +319,14 @@ class Post_Bridge_Template
                     ],
                     [
                         'ref' => '#post_type',
-                        'name' => 'single_label',
+                        'name' => 'label',
                         'label' => __('Label', 'posts-bridge'),
                         'type' => 'string',
                     ],
                     [
                         'ref' => '#post_type',
-                        'name' => 'plural_label',
-                        'label' => __('Plural', 'posts-bridge'),
+                        'name' => 'singular_label',
+                        'label' => __('Singular label', 'posts-bridge'),
                         'type' => 'string',
                     ],
                     [
@@ -445,17 +445,8 @@ class Post_Bridge_Template
                     'queryable' => true,
                     'has_archive' => true,
                     'show_in_menu' => true,
-                    'supports' => [
-                        'title',
-                        'editor',
-                        'featured_image',
-                        'excerpt',
-                        'custom_fields',
-                        'author',
-                        'comments',
-                        'trackbacks',
-                    ],
-                    'taxonomies' => ['post_tag', 'category'],
+                    'supports' => ['title', 'featured_image', 'excerpt'],
+                    'taxonomies' => [],
                 ],
             ],
             $schema
@@ -679,7 +670,7 @@ class Post_Bridge_Template
 
     /**
      * Applies the input fields with the template's config data to
-     * create a form and bind it with a bridge.
+     * create a a new bridge.
      *
      * @param array $fields User input fields data.
      */
@@ -798,9 +789,10 @@ class Post_Bridge_Template
         $data = apply_filters('posts_bridge_template_data', $data, $this->name);
 
         try {
-            $create_post_type = $this->post_type_exists(
+            $create_post_type = !$this->post_type_exists(
                 $data['post_type']['name']
             );
+
             if ($create_post_type) {
                 $result = $this->create_post_type($data['post_type']);
                 if (!$result) {
@@ -815,9 +807,8 @@ class Post_Bridge_Template
             }
 
             $create_backend =
-                (!empty($data['backend']['name']) &&
-                    !$this->backend_exists($data['backend']['name'])) ||
-                false;
+                !empty($data['backend']['name']) &&
+                !$this->backend_exists($data['backend']['name']);
 
             if ($create_backend) {
                 $result = $this->create_backend($data['backend']);
@@ -882,30 +873,26 @@ class Post_Bridge_Template
         }
     }
 
+    /**
+     * Registers a new custom post type.
+     *
+     * @param array Post type data.
+     *
+     * @return boolean
+     */
     private function create_post_type($data)
     {
-        $setting = Posts_Bridge::setting('general');
-        $post_types = $setting->post_types;
-
-        $name = sanitize_title($data['name']);
-        $data = array_merge($data, [
-            'name' => $name,
-            'single_label' => $data['single_label'] ?: $name,
-            'plural_label' => $data['plural_label'] ?: $name,
-            'rewrite' => $data['rewrite']
-                ? ['slug' => $data['rewrite']]
-                : false,
-            'rest_base' => $data['rest_base'] ?: $name,
-        ]);
-
         do_action('posts_bridge_before_template_post_type', $data, $this->name);
 
-        $setting->post_types = array_merge($post_types, [$data]);
+        $name = $data['name'];
+        unset($data['name']);
 
-        $is_valid = $this->post_type_exists($data['name']);
+        Custom_Post_Type::register($name, $data);
+        Posts_Bridge::setting('general')->flush();
 
+        $is_valid = $this->post_type_exists($name);
         if (!$is_valid) {
-            return;
+            return false;
         }
 
         do_action('posts_bridge_template_post_type', $data, $this->name);
@@ -913,20 +900,24 @@ class Post_Bridge_Template
         return true;
     }
 
+    /**
+     * Unregisters a custom post type by name.
+     *
+     * @param string $name Custom post type name.
+     */
     private function remove_post_type($name)
     {
-        $name = sanitize_title($name);
-
-        $setting = Posts_Bridge::setting('general');
-
-        $setting->post_types = array_filter(
-            $setting->post_types,
-            static function ($post_type) use ($name) {
-                return $post_type['name'] !== $name;
-            }
-        );
+        Custom_Post_Type::unregister($name);
+        Posts_Bridge::setting('general')->flush();
     }
 
+    /**
+     * Checks if a custom post type is already registered by name.
+     *
+     * @param string $name Custom post type name.
+     *
+     * @return boolean
+     */
     private function post_type_exists($name)
     {
         $name = sanitize_title($name);
@@ -970,7 +961,7 @@ class Post_Bridge_Template
      *
      * @param array $data Backend data.
      *
-     * @return boolean Creation result.
+     * @return boolean
      */
     private function create_backend($data)
     {
@@ -985,7 +976,7 @@ class Post_Bridge_Template
         $is_valid = $this->backend_exists($data['name']);
 
         if (!$is_valid) {
-            return;
+            return false;
         }
 
         do_action('forms_bridge_template_backend', $data, $this->name);
@@ -1015,7 +1006,7 @@ class Post_Bridge_Template
      *
      * @param array $data Form bridge data.
      *
-     * @return boolean Creation result.
+     * @return boolean
      */
     private function create_bridge($data)
     {
@@ -1024,7 +1015,7 @@ class Post_Bridge_Template
 
         $name_conflict = $this->bridge_exists($data['name']);
         if ($name_conflict) {
-            return;
+            return false;
         }
 
         do_action('forms_bridge_before_template_bridge', $data, $this->name);
@@ -1034,7 +1025,7 @@ class Post_Bridge_Template
 
         $is_valid = $this->bridge_exists($data['name']);
         if (!$is_valid) {
-            return;
+            return false;
         }
 
         do_action('forms_bridge_template_bridge', $data, $this->name);
@@ -1042,6 +1033,13 @@ class Post_Bridge_Template
         return true;
     }
 
+    /**
+     * Checks if a registered bridge exists by name.
+     *
+     * @param string $name Bridge name
+     *
+     * @return boolean
+     */
     private function bridge_exists($name)
     {
         $bridges = Posts_Bridge::setting($this->api)->bridges ?: [];

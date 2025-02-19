@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 /**
  * Post bridge object.
  */
-class Post_Bridge
+abstract class Post_Bridge
 {
     /**
      * Handles WP_Post model fields.
@@ -63,10 +63,27 @@ class Post_Bridge
      */
     protected $api;
 
+    /**
+     * Handles the form bridge's template class.
+     *
+     * @var string
+     */
     protected static $template_class = '\POSTS_BRIDGE\Post_Bridge_Template';
 
+    /**
+     * Handles available template instances.
+     *
+     * @var array
+     */
     private static $templates = [];
 
+    /**
+     * Loads template configs from a given directory path.Allowed file formats
+     * are php and json.
+     *
+     * @param string $templates_path Source templates directory path.
+     * @param string $api API name.
+     */
     final public static function load_templates($templates_path, $api)
     {
         if (!is_dir($templates_path)) {
@@ -114,6 +131,13 @@ class Post_Bridge
         }
     }
 
+    /**
+     * Gets a template instance by name.
+     *
+     * @param string $name Template name.
+     *
+     * @return Post_Bridge_Template|null
+     */
     final public static function get_template($name)
     {
         foreach (static::$templates as $template) {
@@ -124,7 +148,7 @@ class Post_Bridge
     }
 
     /**
-     * Binds the bridge data to the instance and sets its api slug.
+     * Stores the post bridge's data as a private attribute.
      */
     public function __construct($data, $api)
     {
@@ -133,11 +157,11 @@ class Post_Bridge
     }
 
     /**
-     * Proxies bridge private getters to public attributes.
+     * Magic method to proxy public attributes to method getters.
      *
      * @param string $name Attribute name.
      *
-     * @return mixed Instance attribute value.
+     * @return mixed Attribute value or null.
      */
     public function __get($name)
     {
@@ -146,8 +170,8 @@ class Post_Bridge
                 return $this->api;
             case 'backend':
                 return $this->backend();
-            case 'endpoint':
-                return $this->endpoint();
+            case 'content_type':
+                return $this->content_type();
             default:
                 return $this->data[$name] ?? null;
         }
@@ -158,7 +182,7 @@ class Post_Bridge
      *
      * @return Http_Backend|null
      */
-    private function backend()
+    protected function backend()
     {
         $backend_name = $this->data['backend'] ?? null;
         if (!$backend_name) {
@@ -169,78 +193,65 @@ class Post_Bridge
     }
 
     /**
-     * Relation's endpoint getter.
+     * Gets bridge's default body encoding schema.
      *
-     * @return string Endpoint path.
+     * @return string|null
      */
-    private function endpoint($foreign_id = null)
+    protected function content_type()
     {
-        $endpoint = $this->data['endpoint'] ?? '';
-        $parsed = wp_parse_url($endpoint);
-
-        $endpoint = $parsed['path'] ?? '';
-
-        if ($foreign_id) {
-            $endpoint .= '/' . $foreign_id;
-        }
-
-        if (isset($parsed['query'])) {
-            $endpoint .= '?' . $parsed['query'];
-        }
-
-        return apply_filters(
-            'posts_bridge_endpoint',
-            $endpoint,
-            $foreign_id,
-            $this
-        );
-    }
-
-    /**
-     * Searches for relation's foreign key values.
-     *
-     * @return array List of foreign ids.
-     */
-    public function foreign_ids()
-    {
-        $endpoint = $this->endpoint();
         $backend = $this->backend();
 
-        $res = $backend->get($endpoint);
-
-        if (is_wp_error($res) || empty($res['data'])) {
-            return [];
+        if (empty($backend)) {
+            return;
         }
 
-        return array_map(function ($model) {
-            return (new JSON_Finger($model))->get($this->foreign_key);
-        }, (array) $res['data']);
+        return $backend->content_type;
     }
 
     /**
-     * Fetches remote data for a given foreign key.
+     * Fetches remote data for a given foreign id.
      *
      * @param int|string $foreign_id Foreig key value.
      *
      * @return array|WP_Error Remote data for the given id.
      */
-    public function fetch($foreign_id)
+    final public function fetch($foreign_id)
     {
-        $endpoint = $this->endpoint($foreign_id);
-        $res = $this->backend()->get($endpoint);
-        if (is_wp_error($res)) {
-            return $res;
+        do_action('posts_bridge_before_fetch', $this, $foreign_id);
+
+        $response = $this->do_fetch($foreign_id);
+
+        if (is_wp_error($response)) {
+            do_action('posts_bridge_fetch_error', $response, $this);
+        } else {
+            do_action('posts_bridge_fetch', $response, $this);
         }
 
-        return $res['data'];
+        return $response;
     }
+
+    /**
+     * Fetches remote data for a given foreign id.
+     *
+     * @param int|string $foreign_id Foreig key value.
+     *
+     * @return array|WP_Error Remote data for the given id.
+     */
+    abstract protected function do_fetch($foreign_id);
+
+    /**
+     * Retrives the bridge's remote key values.
+     *
+     * @return array List of foreign ids.
+     */
+    abstract public function foreign_ids();
 
     /**
      * Relation's remote fields getter.
      *
      * @return array Map of remote fields with foreign as keys and names as values.
      */
-    public function remote_fields()
+    final public function remote_fields()
     {
         return array_merge(
             $this->remote_post_fields(),
@@ -253,7 +264,7 @@ class Post_Bridge
      *
      * @return array Map of remote fields with foreign as keys and names as values.
      */
-    public function remote_post_fields()
+    final public function remote_post_fields()
     {
         $fields = [];
         foreach ($this->fields as $field) {
@@ -271,7 +282,7 @@ class Post_Bridge
      *
      * @return array Map of remote fields with foreign as keys and names as values.
      */
-    public function remote_custom_fields()
+    final public function remote_custom_fields()
     {
         $fields = [];
         foreach ($this->fields as $field) {
@@ -291,7 +302,7 @@ class Post_Bridge
      *
      * @return array Data with remote fields mappeds.
      */
-    public function map_remote_fields($data)
+    final public function map_remote_fields($data)
     {
         $finger = new JSON_Finger($data);
         $post_fields = $this->remote_post_fields();
@@ -419,7 +430,7 @@ class Post_Bridge
      * Register remote fields as post's meta and show on the REST API. This is
      * needed to load this fields on the editor.
      */
-    public function register_meta()
+    final public function register_meta()
     {
         $fields = $this->remote_fields();
         foreach (array_keys($fields) as $foreign) {

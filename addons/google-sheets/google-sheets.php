@@ -13,7 +13,8 @@ require_once 'class-gs-client.php';
 require_once 'class-gs-rest-controller.php';
 require_once 'class-gs-ajax-controller.php';
 require_once 'class-gs-service.php';
-require_once 'class-gs-remote-relation.php';
+require_once 'class-gs-post-bridge.php';
+require_once 'class-gs-post-bridge-template.php';
 
 class Google_Sheets_Addon extends Addon
 {
@@ -25,18 +26,18 @@ class Google_Sheets_Addon extends Addon
     protected static $name = 'Google Sheets';
 
     /**
-     * Handles the addon slug.
+     * Handles the addon's API name.
      *
      * @var string
      */
-    protected static $slug = 'google-sheets-api';
+    protected static $api = 'google-sheets';
 
     /**
-     * Handles the addom's custom form hook class.
+     * Handles the addom's custom bridge class.
      *
      * @var string
      */
-    protected static $relation_class = '\POSTS_BRIDGE\Google_Sheets_Remote_Relation';
+    protected static $bridge_class = '\POSTS_BRIDGE\Google_Sheets_Post_Bridge';
 
     /**
      * Addon constructor. Inherits from the abstract addon and sets up custom hooks.
@@ -44,17 +45,14 @@ class Google_Sheets_Addon extends Addon
     protected function construct(...$args)
     {
         parent::construct(...$args);
-
-        self::custom_hooks();
-        self::wp_hooks();
+        self::setting_hooks();
     }
 
     /**
-     * Binds plugin custom hooks.
+     * Intercepts addon setting filters and adds authorized attribute.
      */
-    private static function custom_hooks()
+    private static function setting_hooks()
     {
-        // Patch authorized state on the setting default value
         add_filter(
             'wpct_setting_default',
             static function ($data, $name) {
@@ -73,36 +71,42 @@ class Google_Sheets_Addon extends Addon
         add_filter(
             'wpct_validate_setting',
             static function ($data, $setting) {
-                if ($setting->full_name() !== self::setting_name()) {
-                    return $data;
+                if ($setting->full_name() === self::setting_name()) {
+                    unset($data['authorized']);
                 }
 
-                unset($data['authorized']);
                 return $data;
             },
             9,
             2
         );
+
+        add_filter(
+            'option_' . self::setting_name(),
+            static function ($value) {
+                if (!is_array($value)) {
+                    return $value;
+                }
+
+                $value['authorized'] = Google_Sheets_Service::is_authorized();
+                return $value;
+            },
+            9,
+            1
+        );
     }
 
     /**
-     * Binds wp standard hooks.
+     * Registers the setting and its fields.
+     *
+     * @return array Addon's setting configuration.
      */
-    private static function wp_hooks()
-    {
-        // Patch authorized state on the setting value
-        add_filter('option_' . self::setting_name(), static function ($data) {
-            $data['authorized'] = Google_Sheets_Service::is_authorized();
-            return $data;
-        });
-    }
-
     protected static function setting_config()
     {
         return [
-            self::$slug,
+            self::$api,
             [
-                'relations' => [
+                'bridges' => [
                     'type' => 'array',
                     'items' => [
                         'type' => 'object',
@@ -121,69 +125,77 @@ class Google_Sheets_Addon extends Addon
                                         'name' => ['type' => 'string'],
                                         'foreign' => ['type' => 'string'],
                                     ],
+                                    'required' => ['name', 'foreign'],
                                 ],
                             ],
+                            'template' => ['type' => 'string'],
+                        ],
+                        'required' => [
+                            'post_type',
+                            'spreadsheet',
+                            'tab',
+                            'foreign_key',
+                            'fields',
                         ],
                     ],
                 ],
             ],
             [
-                'relations' => [],
+                'bridges' => [],
             ],
         ];
     }
 
     /**
-     * Sanitizes the setting value before updates.
+     * Apply settings' data validations before db updates.
      *
      * @param array $data Setting data.
-     * @param Setting $setting Setting instance.
      *
-     * @return array Sanitized data.
+     * @return array Validated setting data.
      */
     protected static function validate_setting($data, $setting)
     {
-        $data['relations'] = self::validate_relations($data['relations']);
+        $data['bridges'] = self::validate_bridges($data['bridges']);
         return $data;
     }
 
     /**
-     * Validates setting relations data.
+     * Validate bridge settings. Filters bridges with inconsistencies with
+     * current store state.
      *
-     * @param array $relations List with relations data.
+     * @param array $bridges Array with bridge configurations.
      *
-     * @return array Validated list with relations data.
+     * @return array Array with valid bridge configurations.
      */
-    private static function validate_relations($relations)
+    private static function validate_bridges($bridges)
     {
-        if (!wp_is_numeric_array($relations)) {
+        if (!wp_is_numeric_array($bridges)) {
             return [];
         }
 
-        $post_types = get_post_types();
+        $post_types = array_keys(get_post_types());
 
-        $valid_relations = [];
-        for ($i = 0; $i < count($relations); $i++) {
-            $rel = $relations[$i];
+        $templates = array_map(function ($template) {
+            return $template['name'];
+        }, apply_filters('posts_bridge_templates', [], 'google-sheets'));
 
-            // Valid only if backend and post type exists
-            $is_valid = in_array($rel['post_type'], $post_types);
+        $valid_bridges = [];
+        for ($i = 0; $i < count($bridges); $i++) {
+            $bridge = $bridges[$i];
+
+            // Valid only if post type exists
+            $is_valid =
+                in_array($bridge['post_type'], $post_types, true) &&
+                (empty($bridge['template']) ||
+                    empty($templates) ||
+                    in_array($bridge['template'], $templates));
 
             if ($is_valid) {
-                // filter empty fields
-                $rel['fields'] = array_values(
-                    array_filter((array) $rel['fields'], static function (
-                        $field
-                    ) {
-                        return $field['foreign'] && $field['name'];
-                    })
-                );
-
-                $valid_relations[] = $rel;
+                $valid_bridges[] = $bridge;
             }
         }
 
-        return $valid_relations;
+        return $valid_bridges;
     }
 }
 

@@ -6,7 +6,8 @@ if (!defined('ABSPATH')) {
     exit();
 }
 
-require_once 'class-odoo-remote-relation.php';
+require_once 'class-odoo-post-bridge.php';
+require_once 'class-odoo-post-bridge-template.php';
 require_once 'class-odoo-db.php';
 
 /**
@@ -22,18 +23,18 @@ class Odoo_Addon extends Addon
     protected static $name = 'Odoo JSON-RPC';
 
     /**
-     * Handles the addon slug.
+     * Handles the addon's API name.
      *
      * @var string
      */
-    protected static $slug = 'odoo-api';
+    protected static $api = 'odoo';
 
     /**
      * Handles the addom's custom relation class.
      *
      * @var string
      */
-    protected static $relation_class = '\POSTS_BRIDGE\Odoo_Remote_Relation';
+    protected static $bridge_class = '\POSTS_BRIDGE\Odoo_Post_Bridge';
 
     /**
      * Addon constructor. Inherits from the abstract addon and sets up custom hooks.
@@ -89,14 +90,14 @@ class Odoo_Addon extends Addon
     }
 
     /**
-     * Addon settings config getter.
+     * Registers the setting and its fields.
      *
-     * @return array Settings config.
+     * @return array Addon's setting configuration.
      */
     protected static function setting_config()
     {
         return [
-            self::$slug,
+            self::$api,
             [
                 'databases' => [
                     'type' => 'array',
@@ -109,9 +110,10 @@ class Odoo_Addon extends Addon
                             'password' => ['type' => 'string'],
                             'backend' => ['type' => 'string'],
                         ],
+                        'required' => ['name', 'user', 'password', 'backend'],
                     ],
                 ],
-                'relations' => [
+                'bridges' => [
                     'type' => 'array',
                     'items' => [
                         'type' => 'object',
@@ -129,15 +131,23 @@ class Odoo_Addon extends Addon
                                         'name' => ['type' => 'string'],
                                         'foreign' => ['type' => 'string'],
                                     ],
+                                    'required' => ['name', 'foreign'],
                                 ],
                             ],
+                            'template' => ['type' => 'string'],
+                        ],
+                        'required' => [
+                            'post_type',
+                            'model',
+                            'database',
+                            'fields',
                         ],
                     ],
                 ],
             ],
             [
                 'databases' => [],
-                'relations' => [],
+                'bridges' => [],
             ],
         ];
     }
@@ -153,8 +163,8 @@ class Odoo_Addon extends Addon
     protected static function validate_setting($data, $setting)
     {
         $data['databases'] = self::validate_databases($data['databases']);
-        $data['relations'] = self::validate_relations(
-            $data['relations'],
+        $data['bridges'] = self::validate_bridges(
+            $data['bridges'],
             $data['databases']
         );
 
@@ -182,61 +192,55 @@ class Odoo_Addon extends Addon
         );
 
         return array_filter($dbs, static function ($db_data) use ($backends) {
-            return isset(
-                $db_data['name'],
-                $db_data['user'],
-                $db_data['password'],
-                $db_data['backend']
-            ) && in_array($db_data['backend'], $backends, true);
+            return in_array($db_data['backend'], $backends, true);
         });
     }
 
     /**
-     * Validate relations settings. Filters relations with inconsistencies with the
-     * existing databases.
+     * Validate bridge settings. Filters bridges with inconsistencies with
+     * the current store state.
      *
-     * @param array $relations Array with relation configurations.
+     * @param array $bridges Array with bridge configurations.
      * @param array $dbs Array with databases data.
      *
-     * @return array Array with valid relation configurations.
+     * @return array Array with valid bridge configurations.
      */
-    private static function validate_relations($relations, $dbs)
+    private static function validate_bridges($bridges, $dbs)
     {
-        if (!wp_is_numeric_array($relations)) {
+        if (!wp_is_numeric_array($bridges)) {
             return [];
         }
 
         $post_types = get_post_types();
 
-        $valid_relations = [];
-        for ($i = 0; $i < count($relations); $i++) {
-            $rel = $relations[$i];
+        $templates = array_map(function ($template) {
+            return $template['name'];
+        }, apply_filters('posts_bridge_templates', [], 'odoo'));
+
+        $valid_bridges = [];
+        for ($i = 0; $i < count($bridges); $i++) {
+            $bridge = $bridges[$i];
 
             // Valid only if backend and post type exists
             $is_valid =
                 array_reduce(
                     $dbs,
-                    static function ($is_valid, $db) use ($rel) {
-                        return $rel['database'] === $db['name'] || $is_valid;
+                    static function ($is_valid, $db) use ($bridge) {
+                        return $bridge['database'] === $db['name'] || $is_valid;
                     },
                     false
-                ) && in_array($rel['post_type'], $post_types);
+                ) &&
+                in_array($bridge['post_type'], $post_types) &&
+                (empty($bridge['template']) ||
+                    empty($templates) ||
+                    in_array($bridge['template'], $templates));
 
             if ($is_valid) {
-                // filter empty fields
-                $rel['fields'] = array_values(
-                    array_filter((array) $rel['fields'], static function (
-                        $field
-                    ) {
-                        return $field['foreign'] && $field['name'];
-                    })
-                );
-
-                $valid_relations[] = $rel;
+                $valid_bridges[] = $bridge;
             }
         }
 
-        return $valid_relations;
+        return $valid_bridges;
     }
 }
 

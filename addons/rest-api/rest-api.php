@@ -38,7 +38,7 @@ class Rest_Addon extends Addon
     /**
      * Registers the setting and its fields.
      *
-     * @return array Addon's settings configuration.
+     * @return array Addon's setting configuration.
      */
     protected static function setting_config()
     {
@@ -51,43 +51,30 @@ class Rest_Addon extends Addon
                         'type' => 'object',
                         'additionalProperties' => false,
                         'properties' => [
-                            'name' => ['type' => 'string'],
-                            'backend' => ['type' => 'string'],
                             'post_type' => ['type' => 'string'],
+                            'backend' => ['type' => 'string'],
                             'endpoint' => ['type' => 'string'],
-                            'pipes' => [
+                            'foreign_key' => ['type' => 'string'],
+                            'fields' => [
                                 'type' => 'array',
                                 'items' => [
                                     'type' => 'object',
                                     'additionalProperties' => false,
                                     'properties' => [
-                                        'from' => ['type' => 'string'],
-                                        'to' => ['type' => 'string'],
-                                        'cast' => [
-                                            'type' => 'string',
-                                            'enum' => [
-                                                'boolean',
-                                                'string',
-                                                'integer',
-                                                'float',
-                                                'json',
-                                                'csv',
-                                                'concat',
-                                                'null',
-                                            ],
-                                        ],
+                                        'name' => ['type' => 'string'],
+                                        'foreign' => ['type' => 'string'],
                                     ],
-                                    'required' => ['from', 'to', 'cast'],
+                                    'required' => ['name', 'foreign'],
                                 ],
                             ],
                             'template' => ['type' => 'string'],
                         ],
                         'required' => [
-                            'name',
-                            'backend',
                             'post_type',
+                            'backend',
                             'endpoint',
-                            'pipes',
+                            'foreign_key',
+                            'fields',
                         ],
                     ],
                 ],
@@ -130,7 +117,7 @@ class Rest_Addon extends Addon
             return [];
         }
 
-        $post_types = array_values(get_post_types());
+        $post_types = array_keys(get_post_types());
 
         $templates = array_map(function ($template) {
             return $template['name'];

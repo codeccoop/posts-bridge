@@ -28,18 +28,21 @@ require_once 'abstracts/class-plugin.php';
 require_once 'deps/i18n/wpct-i18n.php';
 require_once 'deps/http/http-bridge.php';
 
-require_once 'includes/class-logger.php';
+require_once 'includes/class-custom-post-type.php';
 require_once 'includes/class-i18n.php';
-require_once 'includes/class-remote-cpt.php';
+require_once 'includes/class-json-finger.php';
+require_once 'includes/class-logger.php';
 require_once 'includes/class-menu.php';
-require_once 'includes/class-settings-store.php';
+require_once 'includes/class-post-bridge-template.php';
+require_once 'includes/class-post-bridge.php';
 require_once 'includes/class-posts-synchronizer.php';
+require_once 'includes/class-remote-cpt.php';
+require_once 'includes/class-remote-featured-media.php';
 require_once 'includes/class-rest-remote-posts-controller.php';
 require_once 'includes/class-rest-settings-controller.php';
-require_once 'includes/class-post-bridge.php';
-require_once 'includes/class-post-bridge-template.php';
-require_once 'includes/class-remote-featured-media.php';
-require_once 'includes/class-json-finger.php';
+require_once 'includes/class-settings-store.php';
+
+require_once 'includes/shortcodes.php';
 
 require_once 'addons/abstract-addon.php';
 
@@ -99,27 +102,17 @@ class Posts_Bridge extends Base_Plugin
     }
 
     /**
-     * Callback to the wp init hook, register the shortcodes and remote cpt remote fields
-     * as meta.
-     */
-    public static function init()
-    {
-        self::register_shortcodes();
-        self::register_meta();
-    }
-
-    /**
      * Initialized addons and setup plugin hooks.
      */
     protected function construct(...$args)
     {
         parent::construct(...$args);
 
+        Custom_Post_Type::load();
         Addon::load();
 
         self::wp_hooks();
         self::rest_hooks();
-        // self::custom_hooks();
         self::http_hooks();
     }
 
@@ -197,7 +190,7 @@ class Posts_Bridge extends Base_Plugin
             static function ($post) {
                 self::the_post($post);
             },
-            10,
+            9,
             2
         );
 
@@ -222,32 +215,14 @@ class Posts_Bridge extends Base_Plugin
     }
 
     /**
-     * Registers plugin's custom hooks.
-     */
-    private static function custom_hooks()
-    {
-        add_filter(
-            'posts_bridge_post_types',
-            static function ($remote_cpts, $api = null) {
-                if (!wp_is_numeric_array($remote_cpts)) {
-                    $remote_cpts = [];
-                }
-
-                return array_merge($remote_cpts, Remote_CPT::post_types($api));
-            },
-            5,
-            2
-        );
-    }
-
-    /**
      * Registers callbacks to wp rest hooks.
      */
     private static function rest_hooks()
     {
         // Initalize REST controllers on API init
         add_action('rest_api_init', static function () {
-            foreach (Remote_CPT::post_types() as $post_type) {
+            $post_types = apply_filters('posts_bridge_remote_post_types', []);
+            foreach ($post_types as $post_type) {
                 self::$rest_controllers[
                     $post_type
                 ] = new REST_Remote_Posts_Controller($post_type);
@@ -325,42 +300,6 @@ class Posts_Bridge extends Base_Plugin
     }
 
     /**
-     * Register plugin's shortcodes. Skips registrations on admin requests.
-     */
-    private static function register_shortcodes()
-    {
-        if (is_admin()) {
-            return;
-        }
-
-        add_shortcode('posts_bridge_remote_fields', static function (
-            $atts,
-            $content = ''
-        ) {
-            return Remote_CPT::do_shortcode($content);
-        });
-
-        add_shortcode('posts_bridge_remote_callback', static function (
-            $atts,
-            $content = ''
-        ) {
-            return Remote_CPT::do_remote_callback($atts, $content);
-        });
-    }
-
-    /**
-     * Registers remote cpts remote fields as post meta to make it visibles
-     * on the REST API.
-     */
-    private static function register_meta()
-    {
-        $bridges = apply_filters('posts_bridge_bridges', []);
-        foreach ($bridges as $rel) {
-            $rel->register_meta();
-        }
-    }
-
-    /**
      * Callback to `the_post` hook to populate the global $posts_bridge_remote_cpt variable with
      * the current post wrapped as a Remote CPT.
      *
@@ -369,14 +308,14 @@ class Posts_Bridge extends Base_Plugin
     private static function the_post($post)
     {
         global $posts_bridge_remote_cpt;
-        if (
-            empty($post) ||
-            !$post->ID ||
-            !in_array($post->post_type, Remote_CPT::post_types())
-        ) {
-            $posts_bridge_remote_cpt = null;
+
+        if (!empty($post) && !empty($post->ID)) {
+            $post_types = apply_filters('posts_bridge_remote_post_types', []);
+            if (in_array($post->post_type, $post_types, true)) {
+                $posts_bridge_remote_cpt = new Remote_CPT($post);
+            }
         } else {
-            $posts_bridge_remote_cpt = new Remote_CPT($post);
+            $posts_bridge_remote_cpt = null;
         }
     }
 

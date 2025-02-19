@@ -8,39 +8,16 @@ if (!defined('ABSPATH')) {
 
 class WP_Post_Bridge extends Post_Bridge
 {
-    /**
-     * Public remote relations getter.
-     *
-     * @return array Remote relation instances.
-     */
-    public static function relations()
-    {
-        return array_map(static function ($rel) {
-            return new WP_Post_Bridge($rel);
-        }, Posts_Bridge::setting('wp')->relations);
-    }
-
-    public function __construct($data)
-    {
-        parent::__construct(
-            array_merge($data, [
-                'foreign_key' => 'id',
-            ])
-        );
-        $this->api = 'wp-api';
-    }
-
     public function __get($name)
     {
         switch ($name) {
+            case 'foreign_key':
+                return 'id';
             case 'endpoint':
-                $value = $this->endpoint();
-                break;
+                return $this->endpoint();
             default:
                 return parent::__get($name);
         }
-
-        return apply_filters("posts_bridge_relation_{$name}", $value, $this);
     }
 
     private function endpoint($foreign_id = null)
@@ -57,7 +34,7 @@ class WP_Post_Bridge extends Post_Bridge
         return $endpoint;
     }
 
-    public function fetch($foreign_id)
+    public function do_fetch($foreign_id)
     {
         $endpoint = $this->endpoint($foreign_id);
         $res = $this->backend->get(

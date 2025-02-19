@@ -34,7 +34,7 @@ class Remote_Featured_Media
      */
     public static function default_thumbnail_id()
     {
-        return (int) get_option(self::_default_thumbnail_handle);
+        return (int) get_option(self::_default_thumbnail_handle, 0);
     }
 
     /**
@@ -310,6 +310,7 @@ class Remote_Featured_Media
             file_get_contents($static_path),
             false
         );
+
         add_option(
             Remote_Featured_Media::_default_thumbnail_handle,
             $attachment_id

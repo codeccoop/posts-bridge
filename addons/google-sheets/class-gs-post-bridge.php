@@ -10,25 +10,31 @@ if (!defined('ABSPATH')) {
 
 class Google_Sheets_Post_Bridge extends Post_Bridge
 {
+    /**
+     * Handles spreadhseet rows data in memory.
+     *
+     * @var array
+     */
     private $rows = [];
 
-    public function __get($name)
-    {
-        switch ($name) {
-            case 'backend':
-                return null;
-            case 'endpoint':
-                return null;
-            default:
-                return parent::__get($name);
-        }
-    }
+    /**
+     * Handles the post bridge's template class.
+     *
+     * @var string
+     */
+    protected static $template_class = '\POSTS_BRIDGE\Rest_Post_Bridge_Template';
 
-    public function fetch($foreign_id)
+    /**
+     * Fetches remote data for a given foreign id.
+     *
+     * @param int|string $foreign_id Foreig key value.
+     *
+     * @return array|WP_Error Remote data for the given id.
+     */
+    public function do_fetch($foreign_id)
     {
         $foreign_ids = $this->foreign_ids();
         if (!in_array($foreign_id, $foreign_ids)) {
-            // return null;
             return new WP_Error(
                 'gs_row_not_found',
                 __('Foreign ID not found on the spreadsheet', 'posts-bridge'),
@@ -47,6 +53,11 @@ class Google_Sheets_Post_Bridge extends Post_Bridge
         }
     }
 
+    /**
+     * Retrives the bridge's remote key values.
+     *
+     * @return array List of foreign ids.
+     */
     public function foreign_ids()
     {
         if (empty($this->rows)) {

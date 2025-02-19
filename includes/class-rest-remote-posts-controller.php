@@ -110,7 +110,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
     }
 
     /**
-     * Filters the rest insert prepared post with relation fields.
+     * Filters the rest insert prepared post with the bridge fields.
      *
      * @param object $prepared_post Prepared post data before inserts.
      * @param WP_REST_Request $request Current request.
@@ -123,11 +123,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             return $prepared_post;
         }
 
-        $relation = apply_filters(
-            'posts_bridge_relation',
-            null,
-            $this->post_type
-        );
+        $bridge = apply_filters('posts_bridge_bridge', null, $this->post_type);
         $payload = $request->get_json_params();
         foreach ($payload as $field => $value) {
             if ($this->is_alias($field)) {
@@ -136,14 +132,14 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             }
         }
 
-        $prepared_data = wp_slash($relation->map_remote_fields($payload));
+        $prepared_data = wp_slash($bridge->map_remote_fields($payload));
         $prepared_post = array_merge((array) $prepared_post, $prepared_data);
 
         return (object) $prepared_post;
     }
 
     /**
-     * Updates post custom fields after REST API inserts based on relation custom fields and
+     * Updates post custom fields after REST API inserts based on bridge custom fields and
      * maps featured_media custom fields to the request params.
      *
      * @param WP_Post $post Writed post.
@@ -156,14 +152,10 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             return;
         }
 
-        $relation = apply_filters(
-            'posts_bridge_relation',
-            null,
-            $this->post_type
-        );
+        $bridge = apply_filters('posts_bridge_bridge', null, $this->post_type);
 
         // Map custom featured media to the request before media handler execution
-        foreach ($relation->remote_post_fields() as $foreign => $name) {
+        foreach ($bridge->remote_post_fields() as $foreign => $name) {
             if ($name === 'featured_media') {
                 try {
                     $keys = JSON_Finger::parse($foreign);
@@ -204,7 +196,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             ] = Remote_Featured_Media::default_thumbnail_id();
         }
 
-        $foreign_key = $relation->foreign_key;
+        $foreign_key = $bridge->foreign_key;
 
         // Unalias foreign key on the request
         $schema_properties = $this->get_item_schema()['properties'];
@@ -261,14 +253,10 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             return $result;
         }
 
-        $relation = apply_filters(
-            'posts_bridge_relation',
-            null,
-            $this->post_type
-        );
+        $bridge = apply_filters('posts_bridge_bridge', null, $this->post_type);
 
         // Use json fingers to get foreign key value from the request
-        $foreign_key = $relation->foreign_key;
+        $foreign_key = $bridge->foreign_key;
         $foreign_id = (new JSON_Finger($request->get_params()))->get(
             $foreign_key
         );
