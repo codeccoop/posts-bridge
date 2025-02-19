@@ -15,7 +15,7 @@ class Google_Sheets_Post_Bridge extends Post_Bridge
      *
      * @var array
      */
-    private $rows = [];
+    private static $rows = [];
 
     /**
      * Handles the post bridge's template class.
@@ -46,7 +46,7 @@ class Google_Sheets_Post_Bridge extends Post_Bridge
             );
         }
 
-        foreach ($this->rows as $row) {
+        foreach (self::$rows as $row) {
             if ($row[$this->foreign_key] === $foreign_id) {
                 return $row;
             }
@@ -60,22 +60,22 @@ class Google_Sheets_Post_Bridge extends Post_Bridge
      */
     public function foreign_ids()
     {
-        if (empty($this->rows)) {
-            $this->rows = Google_Sheets_Service::read_rows(
+        if (empty(self::$rows)) {
+            self::$rows = Google_Sheets_Service::read_rows(
                 $this->spreadsheet,
                 $this->tab,
                 array_values($this->remote_fields())
             );
         }
 
-        if (is_wp_error($this->rows)) {
+        if (is_wp_error(self::$rows)) {
             return [];
         }
 
         return array_filter(
             array_map(function ($row) {
                 return $row[$this->foreign_key] ?? null;
-            }, $this->rows)
+            }, self::$rows)
         );
     }
 }
