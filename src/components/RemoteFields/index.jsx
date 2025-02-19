@@ -9,9 +9,11 @@ export default function RemoteFields({ fields, setFields }) {
   const [open, setOpen] = useState(false);
 
   const handleSetFields = (fields) => {
-    fields.forEach((field) => {
-      delete field.index;
-    });
+    fields
+      .forEach((field) => {
+        delete field.index;
+      })
+      .filter((field) => field.name && field.foreign);
 
     setFields(fields);
   };

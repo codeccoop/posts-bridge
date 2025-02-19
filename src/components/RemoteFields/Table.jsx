@@ -4,15 +4,15 @@ const { __ } = wp.i18n;
 
 const postModel = {
   ID: "ID",
-  post_title: "Title",
-  post_name: "Slug",
-  post_excerpt: "Excerpt",
-  post_content: "Content",
-  post_status: "Status",
-  featured_media: "Featured media",
-  post_date: "Date",
-  post_category: "Categories",
-  tags_input: "Tags",
+  post_title: __("Title", "posts-bridge"),
+  post_name: __("Slug", "posts-bridge"),
+  post_excerpt: __("Excerpt", "posts-bridge"),
+  post_content: __("Content", "posts-bridge"),
+  post_status: __("Status", "posts-bridge"),
+  featured_media: __("Featured media", "posts-bridge"),
+  post_date: __("Date", "posts-bridge"),
+  post_category: __("Categories", "posts-bridge"),
+  tags_input: __("Tags", "posts-bridge"),
 };
 
 export default function CustomFieldsTable({ fields, setFields, done }) {
