@@ -228,26 +228,6 @@ class Posts_Bridge extends Base_Plugin
                 ] = new REST_Remote_Posts_Controller($post_type);
             }
         });
-
-        // TODO: Check if the rest_pre_dispatch from the rest controller is working
-        // Filter REST Requests before dispatch
-        // add_filter(
-        //     'rest_pre_dispatch',
-        //     static function ($result, $server, $request) {
-        //         foreach (array_values(self::$rest_controllers) as $controller) {
-        //             $result = $controller->rest_pre_dispatch(
-        //                 $result,
-        //                 $server,
-        //                 $request
-        //             );
-        //             if (is_wp_error($result)) {
-        //                 return $result;
-        //             }
-        //         }
-        //     },
-        //     10,
-        //     3
-        // );
     }
 
     /**
