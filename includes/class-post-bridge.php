@@ -269,6 +269,11 @@ abstract class Post_Bridge
         $fields = [];
         foreach ($this->fields as $field) {
             extract($field);
+
+            if (empty($name) || empty($foreign)) {
+                continue;
+            }
+
             if (in_array($name, self::post_model)) {
                 $fields[$foreign] = $name;
             }
@@ -287,6 +292,11 @@ abstract class Post_Bridge
         $fields = [];
         foreach ($this->fields as $field) {
             extract($field);
+
+            if (empty($foreign) || empty($name)) {
+                continue;
+            }
+
             if (!in_array($name, self::post_model)) {
                 $fields[$foreign] = $name;
             }
