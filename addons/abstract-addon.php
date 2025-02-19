@@ -205,14 +205,14 @@ abstract class Addon extends Singleton
 
         add_filter(
             'posts_bridge_bridge',
-            static function ($bridge, $name) {
+            static function ($bridge, $post_type) {
                 if ($bridge instanceof Post_Bridge) {
                     return $bridge;
                 }
 
                 $bridges = static::setting()->bridges;
                 foreach ($bridges as $bridge_data) {
-                    if ($bridge_data['name'] === $name) {
+                    if ($bridge_data['post_type'] === $post_type) {
                         return new static::$bridge_class(
                             $bridge_data,
                             static::$api
