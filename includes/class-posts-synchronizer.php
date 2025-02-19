@@ -249,6 +249,7 @@ class Posts_Synchronizer extends Singleton
     private static function ajax_callback()
     {
         check_ajax_referer(self::ajax_nonce);
+
         try {
             if (!current_user_can('manage_options')) {
                 throw new Exception('ajax_unauthorized', 401);

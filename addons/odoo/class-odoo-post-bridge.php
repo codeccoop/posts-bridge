@@ -2,6 +2,7 @@
 
 namespace POSTS_BRIDGE;
 
+use HTTP_BRIDGE\Http_Client;
 use WP_Error;
 
 if (!defined('ABSPATH')) {
@@ -67,6 +68,21 @@ class Odoo_Post_Bridge extends Post_Bridge
     {
         if (is_wp_error($res)) {
             return $res;
+        }
+
+        if (empty($res['data'])) {
+            $content_type =
+                Http_Client::get_content_type($res['headers']) ?? 'undefined';
+
+            return new WP_Error(
+                'unkown_content_type',
+                /* translators: %s: Content-Type header value */
+                sprintf(
+                    __('Unkown HTTP response content type %s', 'posts-bridge'),
+                    sanitize_text_field($content_type)
+                ),
+                $res
+            );
         }
 
         if (isset($res['data']['error'])) {
@@ -214,7 +230,7 @@ class Odoo_Post_Bridge extends Post_Bridge
             return $result;
         }
 
-        return $response;
+        return $result;
     }
 
     public function foreign_ids()
@@ -238,7 +254,7 @@ class Odoo_Post_Bridge extends Post_Bridge
             [],
         ]);
 
-        $response = $this->backend->post($this->endpoint, $payload);
+        $response = $this->backend->post(self::endpoint, $payload);
 
         $result = self::rpc_response($response);
         if (is_wp_error($result)) {

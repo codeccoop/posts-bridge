@@ -2,6 +2,9 @@
 
 namespace POSTS_BRIDGE;
 
+use HTTP_BRIDGE\Http_Client;
+use WP_Error;
+
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -37,7 +40,8 @@ class WP_Post_Bridge extends Post_Bridge
     public function do_fetch($foreign_id)
     {
         $endpoint = $this->endpoint($foreign_id);
-        $res = $this->backend->get(
+
+        $response = $this->backend->get(
             $endpoint,
             [
                 'context' => 'edit',
@@ -48,11 +52,27 @@ class WP_Post_Bridge extends Post_Bridge
             ]
         );
 
-        if (is_wp_error($res)) {
-            return $res;
+        if (is_wp_error($response)) {
+            return $response;
         }
 
-        return $this->remote_data($res['data']);
+        if (empty($response['data'])) {
+            $content_type =
+                Http_Client::get_content_type($response['headers']) ??
+                'undefined';
+
+            return new WP_Error(
+                'unkown_content_type',
+                /* translators: %s: Content-Type header value */
+                sprintf(
+                    __('Unkown HTTP response content type %s', 'posts-bridge'),
+                    sanitize_text_field($content_type)
+                ),
+                $response
+            );
+        }
+
+        return $this->remote_data($response['data']);
     }
 
     public function foreign_ids()

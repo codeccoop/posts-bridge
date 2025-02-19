@@ -93,14 +93,16 @@ class Rest_Post_Bridge extends Post_Bridge
                 sprintf(
                     __('Unkown HTTP response content type %s', 'posts-bridge'),
                     sanitize_text_field($content_type)
-                )
+                ),
+                $response
             );
         }
 
         if (!is_array($response['data'])) {
             return new WP_Error(
                 'not_iterable_response',
-                __('HTTP response data is not iterable', 'posts-bridge')
+                __('HTTP response data is not iterable', 'posts-bridge'),
+                $response['data']
             );
         }
 
@@ -129,7 +131,8 @@ class Rest_Post_Bridge extends Post_Bridge
                 sprintf(
                     __('Unkown HTTP response content type %s', 'posts-bridge'),
                     sanitize_text_field($content_type)
-                )
+                ),
+                $response
             );
         }
 
