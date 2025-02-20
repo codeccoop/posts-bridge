@@ -282,7 +282,7 @@ class Custom_Post_Type
             static function () {
                 self::init();
             },
-            10
+            50
         );
 
         add_filter(
@@ -305,16 +305,21 @@ class Custom_Post_Type
         );
     }
 
-    public static function register($name, $args)
+    public static function register($data)
     {
         $registry = self::registry();
 
-        $name = sanitize_key($name);
-        $registry[$name] = self::sanitize_args($name, $args);
+        $name = sanitize_key($data['name']);
+        $registry[$name] = self::sanitize_args($name, $data);
 
         update_option(self::option_name, $registry);
 
-        self::register_post_type($name, $args);
+        $success = self::register_post_type($name, $registry[$name]);
+        if (is_wp_error($success)) {
+            return false;
+        }
+
+        return true;
     }
 
     public static function unregister($name)
@@ -326,7 +331,12 @@ class Custom_Post_Type
 
         update_option(self::option_name, $registry);
 
-        unregister_post_type($name);
+        $success = unregister_post_type($name);
+        if (is_wp_error($success)) {
+            return false;
+        }
+
+        return true;
     }
 
     private static function registry()
@@ -342,8 +352,13 @@ class Custom_Post_Type
     private static function init()
     {
         $cpts = self::registry();
+        $post_types = get_post_types();
 
         foreach ($cpts as $name => $args) {
+            if (isset($post_types[$name])) {
+                continue;
+            }
+
             self::register_post_type($name, $args);
         }
     }
@@ -369,7 +384,15 @@ class Custom_Post_Type
         unset($args['label']);
         unset($args['singular_label']);
 
-        register_post_type($name, $args);
+        if (is_string($args['rewrite'])) {
+            $args['rewrite'] = ['slug' => $args['rewrite']];
+        }
+
+        if (is_string($args['taxonomies'])) {
+            $args['taxonomies'] = explode(',', $args['taxonomies']);
+        }
+
+        return register_post_type($name, $args);
     }
 
     private static function handle_setting()
@@ -421,7 +444,7 @@ class Custom_Post_Type
         );
     }
 
-    private function sanitize_args($name, $args)
+    private static function sanitize_args($name, $args)
     {
         $public = boolval($args['public'] ?? true);
         $show_ui = boolval($args['show_ui'] ?? true);
@@ -463,7 +486,7 @@ class Custom_Post_Type
                 is_string($args['capability_type'])
                     ? sanitize_key($args['capability_type'])
                     : 'post',
-            'map_meta_cap' => boolval($args['map_meta_cap'] ?? false),
+            'map_meta_cap' => boolval($args['map_meta_cap'] ?? true),
             'supports' =>
                 isset($args['supports']) && is_array($args['supports'])
                     ? array_map(
@@ -484,15 +507,18 @@ class Custom_Post_Type
                     : self::schema()['properties']['supports']['default'],
             'taxonomies' =>
                 isset($args['taxonomies']) && is_string($args['taxonomies'])
-                    ? array_map(function ($tax) {
-                        return trim($tax);
-                    }, explode(',', $args['taxonomies']))
+                    ? implode(
+                        ',',
+                        array_map(function ($tax) {
+                            return sanitize_text_field(trim($tax));
+                        }, explode(',', $args['taxonomies']))
+                    )
                     : [],
             'has_archive' => boolval($args['has_archive'] ?? false),
             'rewrite' =>
                 !empty($args['rewrite']) && is_string($args['rewrite'])
-                    ? ['slug' => sanitize_title($args['rewrite'])]
-                    : true,
+                    ? sanitize_title($args['rest_base'])
+                    : $name,
             'query_var' =>
                 isset($args['query_var']) && is_string($args['query_var'])
                     ? sanitize_key($args['query_var'])

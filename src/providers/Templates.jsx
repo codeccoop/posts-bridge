@@ -7,8 +7,11 @@ const { createContext, useContext, useEffect, useState, useMemo, useRef } =
 const { __ } = wp.i18n;
 
 const TemplatesContext = createContext({
+  templates: [],
   template: null,
-  api: null,
+  setTemplate: () => {},
+  config: {},
+  submit: () => {},
 });
 
 export default function TemplatesProvider({ children }) {
@@ -42,13 +45,16 @@ export default function TemplatesProvider({ children }) {
   }, [template]);
 
   const fetchConfig = (template) => {
+    wppb.emit("loading", true);
+
     return apiFetch({
       path: "posts-bridge/v1/templates/" + template,
     })
       .then(setConfig)
-      .catch(() => {
-        wppb.emit("error", __("Loading config error", "posts-bridge"));
-      });
+      .catch(() =>
+        wppb.emit("error", __("Loading config error", "posts-bridge"))
+      )
+      .finally(() => wppb.emit("loading", false));
   };
 
   const submit = ({ fields, integration }) => {

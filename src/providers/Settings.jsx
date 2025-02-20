@@ -1,7 +1,6 @@
 import useDiff from "../hooks/useDiff";
 
 const { createContext, useContext, useState, useEffect, useRef } = wp.element;
-const { __ } = wp.i18n;
 
 const defaults = {
   general: {
@@ -154,7 +153,7 @@ export function useBridges() {
   }, []);
 }
 
-export function usePostTypes({ filter = false }) {
+export function usePostTypes({ filter } = { filter: false }) {
   const [{ general }] = useContext(SettingsContext);
   const bridges = useBridges();
 

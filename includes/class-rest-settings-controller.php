@@ -39,6 +39,16 @@ class REST_Settings_Controller extends Base_Controller
         $namespace = self::namespace();
         $version = self::version();
 
+        register_rest_route("{$namespace}/v{$version}", '/post_types', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => static function () {
+                return self::get_post_types();
+            },
+            'permission_callback' => static function () {
+                return self::permission_callback();
+            },
+        ]);
+
         register_rest_route(
             "{$namespace}/v{$version}",
             '/post_types/(?P<name>[a-zA-Z0-9-_]+)',
@@ -61,6 +71,15 @@ class REST_Settings_Controller extends Base_Controller
                             'required' => true,
                         ],
                     ],
+                ],
+                [
+                    'methods' => WP_REST_Server::DELETABLE,
+                    'callback' => static function ($request) {
+                        return self::delete_post_type($request);
+                    },
+                    'permission_callback' => static function () {
+                        return self::permission_callback();
+                    },
                 ],
                 [
                     'methods' => WP_REST_Server::CREATABLE,
@@ -247,22 +266,37 @@ class REST_Settings_Controller extends Base_Controller
      *
      * @return array|WP_Error Post type data.
      */
+    private static function get_post_types()
+    {
+        $custom_post_types = apply_filters(
+            'posts_bridge_custom_post_types',
+            []
+        );
+        return array_keys($custom_post_types);
+    }
+
+    /**
+     * Callback for GET requests to the post_types endpoint.
+     *
+     * @param REST_Request Request instance.
+     *
+     * @return array|WP_Error Post type data.
+     */
     private static function get_post_type($request)
     {
-        $key = sanitize_key($request['post_type']);
-        $args = apply_filters('posts_bridge_custom_post_type', null, $key);
+        $key = sanitize_key($request['name']);
+        $data = apply_filters('posts_bridge_custom_post_type', null, $key);
 
-        if (!$args) {
+        if (!$data) {
             return new WP_Error(
                 'not_found',
-                __('Custom post type is unkown', 'posts-bridge')
+                __('Custom post type is unkown', 'posts-bridge'),
+                ['post_type' => $key]
             );
         }
 
-        return [
-            'name' => $key,
-            'args' => $args,
-        ];
+        $data['name'] = $key;
+        return $data;
     }
 
     /**
@@ -274,17 +308,45 @@ class REST_Settings_Controller extends Base_Controller
      */
     private static function post_post_type($request)
     {
-        $key = isset($request['post_type'])
-            ? sanitize_key($request['post_type'])
-            : null;
+        $key = sanitize_key($request['name']);
 
-        $registry = apply_filters('posts_bridge_custom_post_types', []);
+        $data = $request->get_json_params();
+        $data['name'] = $key;
 
-        if (isset($registry[$key])) {
-            Custom_Post_Type::unregister($key);
+        $success = Custom_Post_Type::register($data);
+
+        if (!$success) {
+            return new WP_Error(
+                'register_error',
+                __(
+                    'Posts Bridge can\'t register the post type',
+                    'posts-bridge'
+                ),
+                ['args' => $data]
+            );
         }
 
-        Custom_Post_Type::register($key, $request->get_json_params());
+        $data = apply_filters('posts_bridge_custom_post_type', [], $key);
+        $data['name'] = $key;
+
+        return $data;
+    }
+
+    private static function delete_post_type($request)
+    {
+        $key = sanitize_key($request['name']);
+        $success = Custom_Post_Type::unregister($key);
+
+        if (!$success) {
+            return new WP_Error(
+                'internal_server_errro',
+                __(
+                    'Posts Bridge can\'t unregister the post type',
+                    'posts-bridge'
+                ),
+                ['post_type' => $key]
+            );
+        }
 
         return ['success' => true];
     }

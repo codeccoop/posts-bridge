@@ -1,5 +1,6 @@
 // source
 import { useGeneral } from "../../providers/Settings";
+import CustomPostTypes from "../../components/CustomPostTypes";
 import Backends from "../../components/Backends";
 import Backend from "../../components/Backends/Backend";
 import Addons from "../../components/Addons";
@@ -71,6 +72,12 @@ export default function GeneralSettings() {
             Backend={Backend}
           />
         </PanelRow>
+      </PanelBody>
+      <PanelBody
+        title={__("Custom post types", "posts-bridge")}
+        initialOpen={false}
+      >
+        <CustomPostTypes />
       </PanelBody>
       <Addons />
       <PanelBody title={__("Debug", "posts-bridge")} initialOpen={!!debug}>

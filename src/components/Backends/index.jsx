@@ -41,7 +41,7 @@ export default function Backends({ backends, setBackends, Backend }) {
     .concat([
       {
         name: "-1",
-        title: __("Add Backend", "posts-bridge"),
+        title: __("Add a backend", "posts-bridge"),
       },
     ]);
 
@@ -90,10 +90,9 @@ export default function Backends({ backends, setBackends, Backend }) {
     const copy = { ...backend };
 
     let isUnique = false;
-    if (!isUnique) {
+    while (!isUnique) {
       copy.name += "-copy";
-      isUnique =
-        backends.find((backend) => backend.name === copy.name) === undefined;
+      isUnique = backends.find((b) => b.name === copy.name) === undefined;
     }
 
     setBackends(backends.concat(copy));
