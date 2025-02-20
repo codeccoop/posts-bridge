@@ -210,7 +210,8 @@ abstract class Addon extends Singleton
                     return $bridge;
                 }
 
-                $bridges = static::setting()->bridges;
+                $bridges = static::setting()->bridges ?: [];
+
                 foreach ($bridges as $bridge_data) {
                     if ($bridge_data['post_type'] === $post_type) {
                         return new static::$bridge_class(
@@ -296,12 +297,11 @@ abstract class Addon extends Singleton
      */
     private static function bridges()
     {
-        return array_map(
-            static function ($bridge_data) {
-                return new static::$bridge_class($bridge_data, static::$api);
-            },
-            static::setting()->bridges ?: []
-        );
+        $bridges = static::setting()->bridges ?: [];
+
+        return array_map(static function ($bridge_data) {
+            return new static::$bridge_class($bridge_data, static::$api);
+        }, $bridges);
     }
 
     /**
