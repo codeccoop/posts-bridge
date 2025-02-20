@@ -5,7 +5,7 @@ const { createRoot } = wp.element;
 const { __ } = wp.i18n;
 
 wppb.join("addons", ({ data: registry }) => {
-  registry["google-sheets-api"] = __("Google Sheets", "posts-bridge");
+  registry["google-sheets"] = __("google-sheets", "posts-bridge");
 
   const root = document.createElement("div");
   root.style.visibility = "hidden";

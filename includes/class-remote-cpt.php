@@ -2,12 +2,11 @@
 
 namespace POSTS_BRIDGE;
 
-use ValueError;
-use WP_Post;
-
 if (!defined('ABSPATH')) {
     exit();
 }
+
+use WP_Post;
 
 /**
  * Remote_CPT post wrapper.
@@ -50,138 +49,6 @@ class Remote_CPT
     private $post;
 
     /**
-     * Plugin handled post types getter.
-     *
-     * @param string|null $api Filter post types by API slug.
-     *
-     * @return array<string> Handled post type slugs.
-     */
-    public static function post_types($api = null)
-    {
-        $relations = apply_filters('posts_bridge_relations', []);
-        return array_values(
-            array_unique(
-                array_map(
-                    static function ($rel) {
-                        return $rel->post_type;
-                    },
-                    array_filter($relations, static function ($rel) use ($api) {
-                        return $api !== null ? $rel->api === $api : true;
-                    })
-                )
-            )
-        );
-    }
-
-    /**
-     * Do the `posts_bridge_remote_fields` shortcode fetching remote data of the current Remote CPT
-     *
-     * @param string $content Shortcode content.
-     *
-     * @return string $html Rendered output.
-     */
-    public static function do_shortcode($content)
-    {
-        global $posts_bridge_remote_cpt;
-
-        // Exit if global post is not Remote CPT
-        if (empty($posts_bridge_remote_cpt)) {
-            return $content;
-        }
-
-        // Gets replacement marks and exit if not found
-        preg_match_all('/{{([^}]+)}}/', $content, $matches);
-        if (empty($matches)) {
-            return $content;
-        }
-
-        // Filters empty replace marks and trim its content
-        $fields = array_values(
-            array_filter(
-                array_map(static function ($match) {
-                    return trim($match);
-                }, $matches[1]),
-                static function ($field) {
-                    return $field;
-                }
-            )
-        );
-
-        // Exit if no fields is defined
-        if (empty($fields)) {
-            return $content;
-        }
-
-        // Checks if there are values for the fields and exits if it isn't
-        $is_empty = array_reduce(
-            $fields,
-            static function ($handle, $field) {
-                global $posts_bridge_remote_cpt;
-                return $handle &&
-                    $posts_bridge_remote_cpt->get($field) === null;
-            },
-            false
-        );
-        if ($is_empty) {
-            return $content;
-        }
-
-        // Get remote field values
-        $values = array_map(static function ($field) {
-            global $posts_bridge_remote_cpt;
-            return $posts_bridge_remote_cpt->get($field, '');
-        }, $fields);
-
-        try {
-            // Replace anchors on the shortcode content with values
-            for ($i = 0; $i < count($fields); $i++) {
-                $field = $fields[$i];
-                $value = (string) $values[$i];
-                $content = preg_replace(
-                    '/{{' . preg_quote($field, '/') . '}}/',
-                    $value,
-                    $content
-                );
-            }
-
-            return wp_kses_post($content);
-        } catch (ValueError $e) {
-            return $e->getMessage();
-        }
-    }
-
-    /**
-     * Do the `posts_bridge_remote_callback` shortcode ussing the current remote cpt as the first param.
-     * This shortcode pass control of the fetch process to the user's function.
-     *
-     * @param array $atts Shortcode's attributes.
-     * @param string $content Shortcode's content.
-     *
-     * @return string $html Rendered output.
-     */
-    public static function do_remote_callback($atts, $content)
-    {
-        global $posts_bridge_remote_cpt;
-        if (empty($posts_bridge_remote_cpt)) {
-            return $content;
-        }
-
-        $callback = isset($atts['fn']) ? $atts['fn'] : null;
-
-        if (empty($callback)) {
-            return $content;
-        } else {
-            unset($atts['fn']);
-        }
-
-        if (!function_exists($callback)) {
-            return $content;
-        }
-
-        return $callback($posts_bridge_remote_cpt, $atts, $content);
-    }
-
-    /**
      * Bounds the post and returns the instance.
      *
      * @param WP_Post|int $post Instance of the post.
@@ -222,9 +89,7 @@ class Remote_CPT
             99
         );
 
-        do_action('posts_bridge_before_fetch', $this->rcpt);
-        $data = $this->relation()->fetch($this->foreign_id());
-        do_action('posts_bridge_after_fetch', $data, $this->rcpt);
+        $data = $this->bridge()->fetch($this->foreign_id());
 
         if (is_wp_error($data)) {
             $this->remote_data = $data;
@@ -251,14 +116,12 @@ class Remote_CPT
     public function __get($name)
     {
         switch ($name) {
-            case 'relation':
-                return $this->relation();
-                break;
+            case 'bridge':
+                return $this->bridge();
             case 'foreign_id':
                 return $this->foreign_id();
-                break;
             default:
-                $post_data = wp_slash((array) $this->post);
+                $post_data = (array) $this->post;
                 return $post_data[$name] ?? null;
         }
     }
@@ -287,19 +150,19 @@ class Remote_CPT
     }
 
     /**
-     * Gets remote relation instance.
+     * Gets the remote cpt's bridge instance.
      *
-     * @return Remote_Relation Remote relation instance.
+     * @return Post_Bridge|null Post_Bridge instance.
      */
-    private function relation()
+    private function bridge()
     {
-        return apply_filters('posts_bridge_relation', null, $this->post_type);
+        return apply_filters('posts_bridge_bridge', null, $this->post_type);
     }
 
     /**
      * Foreign key value getter.
      *
-     * @return string|int Remote relation foreign key value.
+     * @return string|int Brige foreign key value.
      */
     private function foreign_id()
     {
@@ -317,13 +180,13 @@ class Remote_CPT
     /**
      * Wrapped post taxonomy terms getter.
      *
-     * @param string $tax Taxonomy name.
+     * @param string $tax_name Taxonomy name.
      *
      * @return array|WP_Error Terms of the taxonomy attacheds to the post.
      */
-    public function terms($tax)
+    public function terms($tax_name)
     {
-        return get_the_terms($this->ID, $tax);
+        return get_the_terms($this->ID, $tax_name);
     }
 
     /**

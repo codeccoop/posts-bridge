@@ -37,7 +37,7 @@ has three main sections:
    - **Backends**: List of configured backend connections. Each backend needs a unique
      name, a base URL, and, optional, a map of HTTP headers.
 2. REST API
-   - **Relations**: A list of handled post types and it's relation with your backend
+   - **Bridges**: A list of handled post types and it's bridges with your backend
      endpoints. Each realtion needs a post type, a backend, an endpoint and the remote
      field to be used as foreign key.
 3. Odoo JSON-RPC
@@ -46,8 +46,8 @@ has three main sections:
      requests.
    - **User password**: Password or APIKEY of the user.
    - **Database name**: Database name to be used.
-   - **Relations**: A list of handled post types and it's relation with your backend
-     models. Each relation needs a post type, a backend and a model.
+   - **Bridges**: A list of handled post types and it's bridges with your backend
+     models. Each bridge needs a post type, a backend and a model.
 
 Once configured, run your first content synchronization with the **synchronize** button
 from the general settings page. You can perform this synchronization in two modes:
@@ -80,7 +80,7 @@ backends as a foundational part of its system. With this feature, Posts Bridge c
 with many backend connexions configured to establish HTTP requests against.
 
 Each backend needs a unique name that identifies it and a base URL. The base URL will be
-prepended to your relation's endpoints to build the URLs from the backend HTTP API.
+prepended to your bridge's endpoints to build the URLs from the backend HTTP API.
 
 To each backend you can set a collection of HTTP headers to be sent on each request. In addition,
 Http Bridge will add some default headers to the request.
@@ -100,7 +100,7 @@ To handle not standard remote data you can follow two approches:
   fetch the remote data on render time**.
 - **Ahead of time**: On synchronizations, Posts Bridge map custom remote fields to post's
   fields. Posts on the WordPress instance works as a copy of your backend models and your
-  backend data is fetched once, on the synchronization. **Use remote relation's field mappers
+  backend data is fetched once, on the synchronization. **Use remote bridge's field mappers
   to map your remote fields to the post schema**.
 
 > You can mix both approches, and store some remote fields as post attributes, like the title,
@@ -110,9 +110,9 @@ To handle not standard remote data you can follow two approches:
 
 ### Field mappers
 
-Each remote relation can be configured with field mappers to map your backend endpoint payload
+Each bridge can be configured with field mappers to map your backend endpoint payload
 schema to the post schema. Mappers can map your remote fields to post standard attributes or
-to post's custom fields. On synchronization time, Posts Bridge will use this mappers to 
+to post's custom fields. On synchronization time, Posts Bridge will use this mappers to
 prepare the database inserts. **You can use JSON Fingers to traverse your backend payloads**
 
 ### JSON Fingers
@@ -161,10 +161,10 @@ with some variations:
 
 1. Remote featured media: Posts Bridge can handle URL sources for your remote
    cpts featured media. It supports base64 images too.
-2. Foreign key: The requests are discarded if the relation's foreig key is not
+2. Foreign key: The requests are discarded if the bridge's foreig key is not
    present on the payload.
 3. Field mappers: Fields on your payload will be mapped to post's attributes /
-   custom fields based on the relation's field mappers configuration.
+   custom fields based on the bridge's field mappers configuration.
 
 Write operations are protected with authentication. To authenticate
 againts the API use the [Http Bridge](https://git.coopdevs.org/codeccoop/wp/plugins/bridges/http-bridge/)

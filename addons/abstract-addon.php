@@ -6,8 +6,6 @@ use Exception;
 use ReflectionClass;
 use WPCT_ABSTRACT\Singleton;
 
-use function WPCT_ABSTRACT\is_list;
-
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -32,18 +30,18 @@ abstract class Addon extends Singleton
     protected static $name;
 
     /**
-     * Handles addon unique slug.
+     * Handles addon's API name.
      *
-     * @var string $slug
+     * @var string
      */
-    protected static $slug;
+    protected static $api;
 
     /**
-     * Handles addon custom hook class name.
+     * Handles addon's custom bridge class name.
      *
-     * @var string Class name.
+     * @var string
      */
-    protected static $relation_class;
+    protected static $bridge_class = '\POSTS_BRIDGE\Post_Bridge';
 
     /**
      * Public singleton initializer.
@@ -60,12 +58,17 @@ abstract class Addon extends Singleton
      */
     final public static function registry()
     {
-        $state = (array) get_option(self::registry, []);
+        $state = (array) get_option(self::registry, ['rest-api' => true]);
         $addons_dir = dirname(__FILE__);
         $addons = array_diff(scandir($addons_dir), ['.', '..']);
+
         $registry = [];
         foreach ($addons as $addon) {
             $addon_dir = "{$addons_dir}/{$addon}";
+            if (!is_dir($addon_dir)) {
+                continue;
+            }
+
             $index = "{$addon_dir}/{$addon}.php";
             if (is_file($index)) {
                 $registry[$addon] = isset($state[$addon])
@@ -109,6 +112,7 @@ abstract class Addon extends Singleton
         }
 
         $general_setting = Posts_Bridge::slug() . '_general';
+
         add_filter(
             'wpct_setting_default',
             static function ($default, $name) use ($general_setting) {
@@ -122,9 +126,18 @@ abstract class Addon extends Singleton
             2
         );
 
-        add_filter("option_{$general_setting}", static function ($value) {
-            return array_merge($value, ['addons' => self::registry()]);
-        });
+        add_filter(
+            "option_{$general_setting}",
+            static function ($value) {
+                if (!is_array($value)) {
+                    return $value;
+                }
+
+                return array_merge($value, ['addons' => self::registry()]);
+            },
+            9,
+            1
+        );
 
         add_filter(
             'wpct_validate_setting',
@@ -165,20 +178,84 @@ abstract class Addon extends Singleton
      */
     protected function construct(...$args)
     {
-        if (!(static::$name && static::$slug)) {
+        if (!(static::$name && static::$api)) {
             throw new Exception('Invalid addon registration');
         }
 
-        self::load_templates();
-        self::handle_settings();
-        self::admin_scripts();
+        static::load_templates();
+        static::handle_settings();
+        static::admin_scripts();
 
         add_filter(
-            'posts_bridge_relations',
-            static function ($relations = []) {
-                return self::relations($relations);
+            'posts_bridge_bridges',
+            static function ($bridges, $api = null) {
+                if (!empty($api) && $api !== static::$api) {
+                    return $bridges;
+                }
+
+                if (!wp_is_numeric_array($bridges)) {
+                    $bridges = [];
+                }
+
+                return array_merge($bridges, static::bridges());
             },
-            9
+            10,
+            2
+        );
+
+        add_filter(
+            'posts_bridge_bridge',
+            static function ($bridge, $post_type) {
+                if ($bridge instanceof Post_Bridge) {
+                    return $bridge;
+                }
+
+                $bridges = static::setting()->bridges ?: [];
+
+                foreach ($bridges as $bridge_data) {
+                    if ($bridge_data['post_type'] === $post_type) {
+                        return new static::$bridge_class(
+                            $bridge_data,
+                            static::$api
+                        );
+                    }
+                }
+
+                return $bridge;
+            },
+            10,
+            2
+        );
+
+        add_filter(
+            'posts_bridge_remote_post_types',
+            static function ($post_types, $api = null) {
+                if ($api && $api !== static::$api) {
+                    return $post_types;
+                }
+
+                if (!wp_is_numeric_array($post_types)) {
+                    $post_types = [];
+                }
+
+                $bridges = static::bridges();
+                foreach ($bridges as $bridge) {
+                    $post_types[] = $bridge->post_type;
+                }
+
+                return $post_types;
+            },
+            10,
+            2
+        );
+
+        add_action(
+            'init',
+            static function () {
+                static::register_meta();
+            },
+            10,
+            0
         );
     }
 
@@ -191,46 +268,40 @@ abstract class Addon extends Singleton
      */
     final protected static function templates()
     {
-        return apply_filters('posts_bridge_addon_templates', [], static::$slug);
+        return apply_filters('posts_bridge_templates', [], static::$api);
     }
 
     /**
      * Addon's setting name getter.
      *
-     * @return string Setting name.
+     * @return string
      */
     final protected static function setting_name()
     {
-        return Posts_Bridge::slug() . '_' . static::$slug;
+        return Posts_Bridge::slug() . '_' . static::$api;
     }
 
     /**
      * Addon setting getter.
+     *
+     * @return Setting|null Setting instance.
      */
     final protected static function setting()
     {
-        return Posts_Bridge::setting(static::$slug);
+        return Posts_Bridge::setting(static::$api);
     }
 
     /**
-     * Adds addons' remote relations to the available relations.
-     *
-     * @param array $relations Inherit relations list value.
-     *
-     * @return array List with available remote relations.
+     * Adds addons' bridges to the available bridges list.
+     * @return array List with addon's available bridges.
      */
-    private static function relations($relations = [])
+    private static function bridges()
     {
-        if (!is_list($relations)) {
-            $relations = [];
-        }
+        $bridges = static::setting()->bridges ?: [];
 
-        return array_merge(
-            $relations,
-            array_map(static function ($relation_data) {
-                return new static::$relation_class($relation_data);
-            }, static::setting()->relations)
-        );
+        return array_map(static function ($bridge_data) {
+            return new static::$bridge_class($bridge_data, static::$api);
+        }, $bridges);
     }
 
     /**
@@ -255,7 +326,7 @@ abstract class Addon extends Singleton
         add_filter(
             'wpct_validate_setting',
             static function ($data, $setting) {
-                return self::do_validation($data, $setting);
+                return static::do_validation($data, $setting);
             },
             11,
             2
@@ -264,7 +335,7 @@ abstract class Addon extends Singleton
         add_filter(
             'wpct_setting_default',
             static function ($default, $name) {
-                if ($name !== self::setting_name()) {
+                if ($name !== static::setting_name()) {
                     return $default;
                 }
 
@@ -277,13 +348,18 @@ abstract class Addon extends Singleton
         );
 
         add_filter(
-            'option_' . self::setting_name(),
+            'option_' . static::setting_name(),
             static function ($value) {
+                if (!is_array($value)) {
+                    return $value;
+                }
+
                 return array_merge($value, [
                     'templates' => static::templates(),
                 ]);
             },
-            10
+            10,
+            1
         );
     }
 
@@ -303,7 +379,7 @@ abstract class Addon extends Singleton
                 $reflector = new ReflectionClass(static::class);
                 $__FILE__ = $reflector->getFileName();
 
-                $script_name = Posts_Bridge::slug() . '-' . static::$slug;
+                $script_name = Posts_Bridge::slug() . '-' . static::$api;
                 wp_enqueue_script(
                     $script_name,
                     plugins_url('assets/addon.bundle.js', $__FILE__),
@@ -321,13 +397,20 @@ abstract class Addon extends Singleton
                     ['in_footer' => true]
                 );
 
+                wp_set_script_translations(
+                    $script_name,
+                    Posts_Bridge::slug(),
+                    Posts_Bridge::path() . 'languages'
+                );
+
                 add_filter('posts_bridge_admin_script_deps', static function (
                     $deps
                 ) use ($script_name) {
                     return array_merge($deps, [$script_name]);
                 });
             },
-            9
+            9,
+            1
         );
     }
 
@@ -342,7 +425,7 @@ abstract class Addon extends Singleton
      */
     private static function do_validation($data, $setting)
     {
-        if ($setting->full_name() !== self::setting_name()) {
+        if ($setting->full_name() !== static::setting_name()) {
             return $data;
         }
 
@@ -351,25 +434,25 @@ abstract class Addon extends Singleton
     }
 
     /**
-     * Loads addon templates.
+     * Loads addon's bridge templates.
      */
     private static function load_templates()
     {
         $__FILE__ = (new ReflectionClass(static::class))->getFileName();
         $dir = dirname($__FILE__) . '/templates';
-        if (!is_dir($dir)) {
-            $result = mkdir($dir);
-            if (!$result) {
-                return;
-            }
-        }
 
-        if (!is_readable($dir)) {
-            return;
-        }
+        static::$bridge_class::load_templates($dir, static::$api);
+    }
 
-        foreach (array_diff(scandir($dir), ['.', '..']) as $file) {
-            include_once $file;
+    /**
+     * Registers remote cpts remote fields as post meta to make it visibles
+     * on the REST API.
+     */
+    private static function register_meta()
+    {
+        $bridges = static::bridges();
+        foreach ($bridges as $bridge) {
+            $bridge->register_meta();
         }
     }
 }

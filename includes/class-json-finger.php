@@ -213,6 +213,7 @@ class JSON_Finger
                 if (is_array($partial)) {
                     unset($partial[$key]);
                 }
+
                 for ($i = count($breadcrumb) - 1; $i >= 0; $i--) {
                     $step = $breadcrumb[$i];
                     $partial = &$step['partial'];

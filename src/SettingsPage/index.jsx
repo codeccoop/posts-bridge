@@ -1,9 +1,9 @@
 // source
 import StoreProvider, { useStoreSubmit } from "../providers/Store";
 import SettingsProvider from "../providers/Settings";
-import PostTypesProvider from "../providers/PostTypes";
-import GeneralSettings from "./tabs/General";
-import RestApiSettings from "./tabs/RestApi";
+import CustomPostTypesProvider from "../providers/CustomPostTypes";
+import TemplatesProvider from "../providers/Templates";
+import GeneralSettings from "./General";
 import Spinner from "../components/Spinner";
 
 const {
@@ -11,37 +11,23 @@ const {
   CardHeader,
   CardBody,
   TabPanel,
-  __experimentalHeading: Heading,
+  Notice,
   Button,
+  __experimentalHeading: Heading,
   __experimentalSpacer: Spacer,
 } = wp.components;
-const { useState } = wp.element;
+const { useState, useEffect, useRef } = wp.element;
 const { __ } = wp.i18n;
-
-const defaultTabs = [
-  {
-    name: "general",
-    title: "General",
-  },
-  {
-    name: "rest-api",
-    title: "REST API",
-  },
-];
 
 function Content({ tab, children }) {
   const content = (() => {
     switch (tab.name) {
       case "general":
+        wppb.emit("api", null);
         return <GeneralSettings />;
-      case "rest-api":
-        return <RestApiSettings />;
       default:
-        const root = (
-          <div className="root" style={{ minHeight: "300px" }}></div>
-        );
-        setTimeout(() => wppb.emit("tab", tab.name));
-        return root;
+        setTimeout(() => wppb.emit("api", tab.name));
+        return <div className="root" style={{ minHeight: "300px" }}></div>;
     }
   })();
 
@@ -62,30 +48,32 @@ function Content({ tab, children }) {
   );
 }
 
-function SaveButton({ loading }) {
+function SaveButton({ error, loading }) {
   const submit = useStoreSubmit();
-
-  const [error, setError] = useState(false);
-
-  const onClick = () => submit().catch(() => setError(true));
 
   return (
     <Button
-      variant={error ? "secondary" : "primary"}
-      onClick={onClick}
+      variant="primary"
+      onClick={() => submit()}
       style={{ minWidth: "150px", justifyContent: "center" }}
-      disabled={loading}
+      disabled={loading || error}
       __next40pxDefaultSize
     >
-      {(error && __("Error", "posts-bridge")) || __("Save", "posts-bridge")}
+      {__("Save", "posts-bridge")}
     </Button>
   );
 }
 
 export default function SettingsPage({ addons }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const tabs = defaultTabs.concat(
+  const tabs = [
+    {
+      name: "general",
+      title: __("General", "posts-bridge"),
+    },
+  ].concat(
     Object.keys(addons).map((addon) => ({
       name: addon,
       title: addons[addon],
@@ -106,29 +94,45 @@ export default function SettingsPage({ addons }) {
     );
   };
 
+  const onError = useRef((error) => setError(error)).current;
+  const onLoading = useRef((loading) => setLoading(loading)).current;
+
+  useEffect(() => {
+    wppb.on("error", onError);
+    wppb.on("loading", onLoading);
+
+    return () => {
+      wppb.off("error", onError);
+      wppb.off("loading", onLoading);
+    };
+  }, []);
+
   return (
     <StoreProvider setLoading={setLoading}>
       <Heading level={1}>Posts Bridge</Heading>
-      <TabPanel
-        initialTabName={initialTab}
-        onSelect={setTab}
-        tabs={tabs.map(({ name, title }) => ({
-          name,
-          title: __(title, "posts-bridge"),
-        }))}
-      >
+      {error && (
+        <Notice
+          status="error"
+          onRemove={() => setError(null)}
+          politeness="assertive"
+        >
+          {error}
+        </Notice>
+      )}
+      <TabPanel initialTabName={initialTab} onSelect={setTab} tabs={tabs}>
         {(tab) => (
-          <PostTypesProvider>
-            <SettingsProvider handle={["general", "rest-api"]}>
-              <Spacer />
-              <Content tab={tab}>
-                <SaveButton loading={loading} />
-              </Content>
+          <CustomPostTypesProvider>
+            <SettingsProvider handle={["general"]}>
+              <TemplatesProvider>
+                <Content tab={tab}>
+                  <SaveButton error={error} loading={loading} />
+                </Content>
+              </TemplatesProvider>
             </SettingsProvider>
-          </PostTypesProvider>
+          </CustomPostTypesProvider>
         )}
       </TabPanel>
-      <Spacer />
+      <Spacer paddingY="calc(16px)" />
       <Spinner show={loading} />
     </StoreProvider>
   );

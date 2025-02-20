@@ -2,13 +2,12 @@
 
 namespace POSTS_BRIDGE;
 
-use function WPCT_ABSTRACT\is_list;
-
 if (!defined('ABSPATH')) {
     exit();
 }
 
-require_once 'class-wp-remote-relation.php';
+require_once 'class-wp-post-bridge.php';
+require_once 'class-wp-post-bridge-template.php';
 
 /**
  * WP Addon class.
@@ -21,14 +20,14 @@ class WP_Addon extends Addon
     protected static $name = 'WP REST API';
 
     /**
-     * Handles the addon slug.
+     * Handles the addon's API name.
      */
-    protected static $slug = 'wp-api';
+    protected static $api = 'wp-rest';
 
     /**
-     * Handles the addon's custom relation class.
+     * Handles the addon's custom bridge class.
      */
-    protected static $relation_class = '\POSTS_BRIDGE\WP_Remote_Relation';
+    protected static $bridge_class = '\POSTS_BRIDGE\WP_Post_Bridge';
 
     /**
      * Addon settings configuration getter.
@@ -38,9 +37,9 @@ class WP_Addon extends Addon
     protected static function setting_config()
     {
         return [
-            'wp-api',
+            self::$api,
             [
-                'relations' => [
+                'bridges' => [
                     'type' => 'array',
                     'items' => [
                         'type' => 'object',
@@ -60,6 +59,13 @@ class WP_Addon extends Addon
                                     ],
                                 ],
                             ],
+                            'template' => ['type' => 'string'],
+                        ],
+                        'required' => [
+                            'post_type',
+                            'backend',
+                            'remote_type',
+                            'fields',
                         ],
                     ],
                 ],
@@ -70,10 +76,11 @@ class WP_Addon extends Addon
                         'username' => ['type' => 'string'],
                         'password' => ['type' => 'string'],
                     ],
+                    'required' => ['username', 'password'],
                 ],
             ],
             [
-                'relations' => [],
+                'bridges' => [],
                 'credentials' => [
                     'username' => '',
                     'password' => '',
@@ -83,71 +90,68 @@ class WP_Addon extends Addon
     }
 
     /**
-     * Validate setting data callback.
+     * Apply settings' data validations before db updates.
      *
      * @param array $data Setting data.
-     * @param Setting $setting Setting instance.
      *
      * @return array Validated setting data.
      */
     protected static function validate_setting($data, $setting)
     {
-        $backends = Posts_Bridge::setting('general')->backends;
-        $data['relations'] = self::validate_relations(
-            $data['relations'],
-            $backends
+        $data['bridges'] = self::validate_bridges(
+            $data['bridges'],
+            \HTTP_BRIDGE\Settings_Store::setting('general')->backends ?: []
         );
 
         return $data;
     }
 
     /**
-     * Validate relations settings. Filters relations with inconsistencies with the
-     * existing post types.
+     * Validate bridge settings. Filters bridges with inconsistencies with
+     * current store state.
      *
-     * @param array $relations Array with relation configurations.
+     * @param array $bridges Array with bridge configurations.
      * @param array $backends Array with backends data.
      *
-     * @return array Array with valid relation configurations.
+     * @return array Array with valid bridge configurations.
      */
-    private static function validate_relations($relations, $backends)
+    private static function validate_bridges($bridges, $backends)
     {
-        if (!is_list($relations)) {
+        if (!wp_is_numeric_array($bridges)) {
             return [];
         }
 
-        $post_types = get_post_types();
+        $post_types = array_keys(get_post_types());
 
-        $valid_relations = [];
-        for ($i = 0; $i < count($relations); $i++) {
-            $rel = $relations[$i];
+        $templates = array_map(function ($template) {
+            return $template['name'];
+        }, apply_filters('posts_bridge_templates', [], 'rest-api'));
+
+        $valid_bridges = [];
+        for ($i = 0; $i < count($bridges); $i++) {
+            $bridge = $bridges[$i];
 
             // Valid only if backend and post type exists
             $is_valid =
                 array_reduce(
                     $backends,
-                    static function ($is_valid, $backend) use ($rel) {
-                        return $rel['backend'] === $backend['name'] ||
+                    static function ($is_valid, $backend) use ($bridge) {
+                        return $bridge['backend'] === $backend['name'] ||
                             $is_valid;
                     },
                     false
-                ) && in_array($rel['post_type'], $post_types);
+                ) &&
+                in_array($bridge['post_type'], $post_types) &&
+                (empty($bridge['template']) ||
+                    empty($templates) ||
+                    in_array($bridge['template'], $templates));
 
             if ($is_valid) {
-                // filter empty fields
-                $rel['fields'] = array_values(
-                    array_filter((array) $rel['fields'], static function (
-                        $field
-                    ) {
-                        return $field['foreign'] && $field['name'];
-                    })
-                );
-
-                $valid_relations[] = $rel;
+                $valid_bridges[] = $bridge;
             }
         }
 
-        return $valid_relations;
+        return $valid_bridges;
     }
 }
 

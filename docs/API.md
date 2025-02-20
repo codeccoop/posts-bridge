@@ -129,27 +129,6 @@ foreach ($rcpts as $rcpt) {
 }
 ```
 
-### `posts_bridge_is_remote`
-
-Checks if the current global post is a remote cpt handled by Posts Bridge.
-
-#### Arguments
-
-1. `boolean $default`: Fallback value.
-
-#### Returns
-
-1. `boolean $is_remote`: True if the global post is a remote cpt.
-
-#### Example
-
-```php
-$is_remote = apply_filters('posts_bridge_is_remote', false);
-if ($is_remote) {
-	// do something
-}
-```
-
 ## Filters
 
 ### `posts_bridge_remote_data`

@@ -11,12 +11,9 @@ const defaults = {
       recurrence: "hourly",
     },
     addons: {},
+    post_types: [],
   },
-  apis: {
-    "rest-api": {
-      relations: [],
-    },
-  },
+  apis: {},
 };
 
 const SettingsContext = createContext([defaults, () => {}]);
@@ -26,6 +23,7 @@ export default function SettingsProvider({ children, handle = ["general"] }) {
   const currentState = useRef(defaults);
   const [state, setState] = useState(defaults);
   const [reload, setReload] = useState(false);
+  // const [flush, setFlush] = useState(false);
   currentState.current = state;
 
   const onPatch = useRef((state) => setState(state)).current;
@@ -57,7 +55,20 @@ export default function SettingsProvider({ children, handle = ["general"] }) {
       },
       false
     );
+
     setReload(reload);
+
+    // const flush =
+    //   !reload &&
+    //   Object.keys(newState.general.integrations).reduce(
+    //     (changed, integration) =>
+    //       changed ||
+    //       newState.general.integrations[integration] !==
+    //         previousState.general.integrations[integration],
+    //     false
+    //   );
+
+    // setFlush(flush);
   }).current;
 
   const onSubmit = useRef((bus) => {
@@ -101,6 +112,20 @@ export default function SettingsProvider({ children, handle = ["general"] }) {
     }
   }, [reload]);
 
+  // useEffect(() => {
+  //   if (flush && !window.__wpfbFlushing) {
+  //     window.__wpfbFlushing = true;
+  //     wpfb.emit("flushStore");
+  //     setFlush(false);
+  //   }
+
+  //   return () => {
+  //     if (flush) {
+  //       window.__wpfbFlushing = false;
+  //     }
+  //   };
+  // }, [flush]);
+
   const patchState = (partial) => wppb.emit("patch", { ...state, ...partial });
 
   return (
@@ -120,10 +145,24 @@ export function useApis() {
   return [apis, (api) => patch({ apis: { ...apis, ...api } })];
 }
 
-export function useRelations() {
+export function useBridges() {
   const [apis] = useApis();
 
-  return Object.keys(apis).reduce((relations, api) => {
-    return relations.concat(apis[api].relations);
+  return Object.keys(apis).reduce((bridges, api) => {
+    return bridges.concat(apis[api].bridges);
   }, []);
+}
+
+export function usePostTypes({ filter } = { filter: false }) {
+  const [{ general }] = useContext(SettingsContext);
+  const bridges = useBridges();
+
+  let postTypes = general.post_types || [];
+
+  if (filter) {
+    const bridgedPostTypes = new Set(bridges.map(({ post_type }) => post_type));
+    postTypes = postTypes.filter((postType) => !bridgedPostTypes.has(postType));
+  }
+
+  return postTypes;
 }

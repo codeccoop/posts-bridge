@@ -79,13 +79,11 @@ function NewBackend({ add }) {
   );
 }
 
-let focus = false;
 export default function Backend({ update, remove, ...data }) {
   if (data.name === "add") return <NewBackend add={update} />;
 
   const [name, setName] = useState(data.name);
   const initialName = useRef(data.name);
-  const nameInput = useRef();
 
   const backendNames = useBackendNames();
   const [nameConflict, setNameConflict] = useState(false);
@@ -97,12 +95,6 @@ export default function Backend({ update, remove, ...data }) {
   };
 
   const setHeaders = (headers) => update({ ...data, headers });
-
-  useEffect(() => {
-    if (focus) {
-      nameInput.current.focus();
-    }
-  }, []);
 
   const timeout = useRef(false);
   useEffect(() => {
@@ -131,7 +123,6 @@ export default function Backend({ update, remove, ...data }) {
         }}
       >
         <TextControl
-          ref={nameInput}
           label={__("Backend name", "posts-bridge")}
           help={
             nameConflict
@@ -140,8 +131,6 @@ export default function Backend({ update, remove, ...data }) {
           }
           value={name}
           onChange={handleSetName}
-          onFocus={() => (focus = true)}
-          onBlur={() => (focus = false)}
           __nextHasNoMarginBottom
           __next40pxDefaultSize
         />

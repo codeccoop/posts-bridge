@@ -19,8 +19,6 @@ namespace POSTS_BRIDGE;
 
 use WPCT_ABSTRACT\Plugin as Base_Plugin;
 
-use function WPCT_ABSTRACT\is_list;
-
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -30,17 +28,21 @@ require_once 'abstracts/class-plugin.php';
 require_once 'deps/i18n/wpct-i18n.php';
 require_once 'deps/http/http-bridge.php';
 
-require_once 'includes/class-logger.php';
+require_once 'includes/class-custom-post-type.php';
 require_once 'includes/class-i18n.php';
-require_once 'includes/class-remote-cpt.php';
+require_once 'includes/class-json-finger.php';
+require_once 'includes/class-logger.php';
 require_once 'includes/class-menu.php';
-require_once 'includes/class-settings-store.php';
+require_once 'includes/class-post-bridge-template.php';
+require_once 'includes/class-post-bridge.php';
 require_once 'includes/class-posts-synchronizer.php';
+require_once 'includes/class-remote-cpt.php';
+require_once 'includes/class-remote-featured-media.php';
 require_once 'includes/class-rest-remote-posts-controller.php';
 require_once 'includes/class-rest-settings-controller.php';
-require_once 'includes/class-remote-relation.php';
-require_once 'includes/class-remote-featured-media.php';
-require_once 'includes/class-json-finger.php';
+require_once 'includes/class-settings-store.php';
+
+require_once 'includes/shortcodes.php';
 
 require_once 'addons/abstract-addon.php';
 
@@ -100,27 +102,81 @@ class Posts_Bridge extends Base_Plugin
     }
 
     /**
-     * Callback to the wp init hook, register the shortcodes and remote cpt remote fields
-     * as meta.
-     */
-    public static function init()
-    {
-        self::register_shortcodes();
-        self::register_meta();
-    }
-
-    /**
      * Initialized addons and setup plugin hooks.
      */
     protected function construct(...$args)
     {
         parent::construct(...$args);
 
+        Custom_Post_Type::load();
         Addon::load();
 
         self::wp_hooks();
         self::rest_hooks();
-        self::custom_hooks();
+        self::http_hooks();
+    }
+
+    /**
+     * Aliases to the http bride filters API.
+     */
+    private static function http_hooks()
+    {
+        add_filter(
+            'posts_bridge_backends',
+            static function ($backends) {
+                return apply_filters('http_bridge_backends', $backends);
+            },
+            10,
+            1
+        );
+
+        add_filter(
+            'posts_bridge_backend',
+            static function ($backend, $name) {
+                return apply_filters('http_bridge_backend', $backend, $name);
+            },
+            10,
+            2
+        );
+
+        add_filter(
+            'http_bridge_backend_headers',
+            static function ($headers, $backend) {
+                return apply_filters(
+                    'posts_bridge_backend_headers',
+                    $headers,
+                    $backend
+                );
+            },
+            99,
+            2
+        );
+
+        add_filter(
+            'http_bridge_backend_url',
+            static function ($url, $backend) {
+                return apply_filters(
+                    'posts_bridge_backend_url',
+                    $url,
+                    $backend
+                );
+            },
+            99,
+            2
+        );
+
+        add_filter(
+            'http_bridge_response',
+            static function ($response, $request) {
+                return apply_filters(
+                    'posts_bridge_http_response',
+                    $response,
+                    $request
+                );
+            },
+            99,
+            2
+        );
     }
 
     /**
@@ -134,7 +190,7 @@ class Posts_Bridge extends Base_Plugin
             static function ($post) {
                 self::the_post($post);
             },
-            10,
+            9,
             2
         );
 
@@ -142,52 +198,15 @@ class Posts_Bridge extends Base_Plugin
         add_action('admin_enqueue_scripts', static function ($admin_page) {
             self::admin_enqueue_scripts($admin_page);
         });
-    }
 
-    /**
-     * Registers plugin's custom hooks.
-     */
-    private static function custom_hooks()
-    {
-        add_filter(
-            'posts_bridge_post_types',
-            static function ($remote_cpts, $api = null) {
-                if (!is_list($remote_cpts)) {
-                    $remote_cpts = [];
-                }
-
-                return array_merge($remote_cpts, Remote_CPT::post_types($api));
-            },
-            5,
-            2
-        );
-
-        add_filter('posts_bridge_is_remote', static function () {
-            global $posts_bridge_remote_cpt;
-            return !empty($posts_bridge_remote_cpt);
-        });
-
-        add_filter(
-            'posts_bridge_relations',
-            static function ($relations) {
-                if (!is_list($relations)) {
-                    $relations = [];
-                }
-
-                return array_merge($relations, Remote_Relation::relations());
-            },
-            5,
-            1
-        );
-
-        add_filter(
-            'posts_bridge_relation',
-            static function ($relation, $post_type) {
-                $relations = apply_filters('posts_bridge_relations', []);
-                foreach ($relations as $relation) {
-                    if ($relation->post_type === $post_type) {
-                        return $relation;
-                    }
+        add_action(
+            'upgrade_process_complete',
+            static function ($upgrader, $extra) {
+                if (
+                    $extra['type'] === 'plugin' &&
+                    in_array(self::index(), $extra['plugins'])
+                ) {
+                    self::do_migrations();
                 }
             },
             10,
@@ -202,31 +221,13 @@ class Posts_Bridge extends Base_Plugin
     {
         // Initalize REST controllers on API init
         add_action('rest_api_init', static function () {
-            foreach (Remote_CPT::post_types() as $post_type) {
+            $post_types = apply_filters('posts_bridge_remote_post_types', []);
+            foreach ($post_types as $post_type) {
                 self::$rest_controllers[
                     $post_type
                 ] = new REST_Remote_Posts_Controller($post_type);
             }
         });
-
-        // Filter REST Requests before dispatch
-        add_filter(
-            'rest_pre_dispatch',
-            static function ($result, $server, $request) {
-                foreach (array_values(self::$rest_controllers) as $controller) {
-                    $result = $controller->rest_pre_dispatch(
-                        $result,
-                        $server,
-                        $request
-                    );
-                    if (is_wp_error($result)) {
-                        return $result;
-                    }
-                }
-            },
-            10,
-            3
-        );
     }
 
     /**
@@ -279,42 +280,6 @@ class Posts_Bridge extends Base_Plugin
     }
 
     /**
-     * Register plugin's shortcodes. Skips registrations on admin requests.
-     */
-    private static function register_shortcodes()
-    {
-        if (is_admin()) {
-            return;
-        }
-
-        add_shortcode('posts_bridge_remote_fields', static function (
-            $atts,
-            $content = ''
-        ) {
-            return Remote_CPT::do_shortcode($content);
-        });
-
-        add_shortcode('posts_bridge_remote_callback', static function (
-            $atts,
-            $content = ''
-        ) {
-            return Remote_CPT::do_remote_callback($atts, $content);
-        });
-    }
-
-    /**
-     * Registers remote cpts remote fields as post meta to make it visibles
-     * on the REST API.
-     */
-    private static function register_meta()
-    {
-        $relations = apply_filters('posts_bridge_relations', []);
-        foreach ($relations as $rel) {
-            $rel->register_meta();
-        }
-    }
-
-    /**
      * Callback to `the_post` hook to populate the global $posts_bridge_remote_cpt variable with
      * the current post wrapped as a Remote CPT.
      *
@@ -323,15 +288,64 @@ class Posts_Bridge extends Base_Plugin
     private static function the_post($post)
     {
         global $posts_bridge_remote_cpt;
-        if (
-            empty($post) ||
-            !$post->ID ||
-            !in_array($post->post_type, Remote_CPT::post_types())
-        ) {
-            $posts_bridge_remote_cpt = null;
+
+        if (!empty($post) && !empty($post->ID)) {
+            $post_types = apply_filters('posts_bridge_remote_post_types', []);
+            if (in_array($post->post_type, $post_types, true)) {
+                $posts_bridge_remote_cpt = new Remote_CPT($post);
+            }
         } else {
-            $posts_bridge_remote_cpt = new Remote_CPT($post);
+            $posts_bridge_remote_cpt = null;
         }
+    }
+
+    /**
+     * Apply db migrations on plugin upgrades.
+     */
+    private static function do_migrations()
+    {
+        $from = get_option('posts-bridge-version', '1.0.0');
+
+        if (!preg_match('/^\d+\.\d+\.\d+$/', $from)) {
+            Logger::log('Invalid db plugin version', Logger::ERROR);
+            return;
+        }
+
+        $to = self::version();
+
+        $migrations = [];
+        $migrations_path = self::path() . 'migrations';
+
+        $as_int = fn($version) => (int) str_replace('.', '', $version);
+
+        foreach (
+            array_diff(scandir($migrations_path), ['.', '..'])
+            as $migration
+        ) {
+            $version = pathinfo($migrations_path . '/' . $migration)[
+                'filename'
+            ];
+
+            if ($as_int($version) > $as_int($to)) {
+                break;
+            }
+
+            if (!empty($migrations)) {
+                $migrations[] = $migration;
+                continue;
+            }
+
+            if ($as_int($version) >= $as_int($from)) {
+                $migrations[] = $migration;
+            }
+        }
+
+        sort($migrations);
+        foreach ($migrations as $migration) {
+            include $migrations_path . '/' . $migration;
+        }
+
+        update_option('posts-bridge-version', $to);
     }
 }
 

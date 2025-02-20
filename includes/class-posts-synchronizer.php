@@ -232,10 +232,10 @@ class Posts_Synchronizer extends Singleton
         });
 
         add_action(self::schedule_hook, static function () {
-            $relations = apply_filters('posts_bridge_relations', []);
-            foreach ($relations as $relation) {
+            $bridges = apply_filters('posts_bridge_bridges', []);
+            foreach ($bridges as $bridge) {
                 try {
-                    self::sync($relation);
+                    self::sync($bridge);
                 } catch (Exception) {
                     // Skip relation
                 }
@@ -249,6 +249,7 @@ class Posts_Synchronizer extends Singleton
     private static function ajax_callback()
     {
         check_ajax_referer(self::ajax_nonce);
+
         try {
             if (!current_user_can('manage_options')) {
                 throw new Exception('ajax_unauthorized', 401);
@@ -257,6 +258,7 @@ class Posts_Synchronizer extends Singleton
             $mode = isset($_POST['mode'])
                 ? sanitize_text_field(wp_unslash($_POST['mode']))
                 : null;
+
             $post_type = isset($_POST['post_type'])
                 ? sanitize_text_field(wp_unslash($_POST['post_type']))
                 : null;
@@ -267,20 +269,19 @@ class Posts_Synchronizer extends Singleton
 
             self::$sync_mode = $mode;
             if ($post_type) {
-                $relations = array_filter([
-                    apply_filters('posts_bridge_relation', null, $post_type),
+                $bridges = array_filter([
+                    apply_filters('posts_bridge_bridge', null, $post_type),
                 ]);
             } else {
-                $relations = apply_filters('posts_bridge_relations', []);
+                $bridges = apply_filters('posts_bridge_bridges', []);
             }
 
-            foreach ($relations as $relation) {
-                self::sync($relation);
+            foreach ($bridges as $bridge) {
+                self::sync($bridge);
             }
 
             wp_send_json(['success' => true], 200);
         } catch (Exception $e) {
-            error_log(print_r($e, true));
             wp_send_json(
                 ['success' => false, 'error' => $e->getMessage()],
                 $e->getCode()
@@ -293,18 +294,18 @@ class Posts_Synchronizer extends Singleton
     /**
      * Synchronize post types collections.
      *
-     * @param Remote_Relation $relation Remote relation instance.
+     * @param Post_Bridge $bridge Remote relation instance.
      *
      * @return boolean True if success, false otherwise.
      */
-    private static function sync($relation)
+    private static function sync($bridge)
     {
         global $posts_bridge_remote_cpt;
 
         $foreign_ids = apply_filters(
             'posts_bridge_foreign_ids',
-            $relation->foreign_ids(),
-            $relation
+            $bridge->foreign_ids(),
+            $bridge
         );
 
         $remote_pairs = array_reduce(
@@ -317,7 +318,7 @@ class Posts_Synchronizer extends Singleton
         );
 
         $query = new WP_Query([
-            'post_type' => $relation->post_type,
+            'post_type' => $bridge->post_type,
             'posts_per_page' => -1,
             'post_status' => 'any',
         ]);
@@ -347,7 +348,7 @@ class Posts_Synchronizer extends Singleton
                 $post = new WP_Post(
                     (object) [
                         'ID' => $post,
-                        'post_type' => $relation->post_type,
+                        'post_type' => $bridge->post_type,
                     ]
                 );
             }
@@ -358,9 +359,9 @@ class Posts_Synchronizer extends Singleton
                 throw new Exception('sync_error', 500);
             }
 
-            $data = $relation->map_remote_fields($data);
+            $data = $bridge->map_remote_fields($data);
 
-            $data['post_type'] = $relation->post_type;
+            $data['post_type'] = $bridge->post_type;
             if ($post->ID !== 0) {
                 $data['ID'] = $post->ID;
             }

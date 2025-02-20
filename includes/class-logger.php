@@ -21,6 +21,27 @@ class Logger extends Singleton
     private const log_file = '.posts-bridge.log';
 
     /**
+     * Error level constant.
+     *
+     * @var string
+     */
+    public const ERROR = 'ERROR';
+
+    /**
+     * Info level constant.
+     *
+     * @var string
+     */
+    public const INFO = 'INFO';
+
+    /**
+     * Debug level constant.
+     *
+     * @var string
+     */
+    public const DEBUG = 'DEBUG';
+
+    /**
      * Log file path getter.
      */
     private static function log_path()
@@ -33,7 +54,7 @@ class Logger extends Singleton
      *
      * @return string Logs.
      */
-    private static function logs()
+    private static function logs($lines = 500)
     {
         if (
             defined('WP_DEBUG') &&
@@ -50,7 +71,69 @@ class Logger extends Singleton
             return '';
         }
 
-        return file_get_contents($log_path);
+        $socket = fopen($log_path, 'r');
+        $cursor = -1;
+        fseek($socket, $cursor, SEEK_END);
+
+        $char = fgetc($socket);
+        while ($char === "\n" || $char === "\r") {
+            fseek($socket, $cursor--, SEEK_END);
+            $char = fgetc($socket);
+        }
+
+        $line = 0;
+        $content = '';
+
+        while ($line < $lines) {
+            if ($char === false) {
+                break;
+            }
+
+            while ($char !== "\n" && $char !== "\r") {
+                if ($char === false) {
+                    break;
+                }
+
+                fseek($socket, $cursor--, SEEK_END);
+                $char = fgetc($socket);
+                $content = $char . $content;
+            }
+
+            while ($char === "\n" || $char === "\r") {
+                fseek($socket, $cursor--, SEEK_END);
+                $char = fgetc($socket);
+            }
+
+            $content = $char . $content;
+            $line++;
+        }
+
+        fclose($socket);
+
+        return preg_split('/(\n|\r)+/', $content);
+    }
+
+    /**
+     * Write log lines to the log file if debug mode is active.
+     *
+     * @param mixed $data Log line data.
+     * @param string $level Log level, DEBUG as default.
+     */
+    public static function log($data, $level = 'DEBUG')
+    {
+        if (!self::is_active()) {
+            return;
+        }
+
+        if (!in_array($level, ['DEBUG', 'ERROR', 'INFO'], true)) {
+            $level = 'DEBUG';
+        }
+
+        $msg = sprintf("[%s] %s\n", $level, print_r($data, true));
+
+        $socket = fopen(self::log_path(), 'a+');
+        fwrite($socket, $msg, strlen($msg));
+        fclose($socket);
     }
 
     /**
@@ -110,29 +193,6 @@ class Logger extends Singleton
     }
 
     /**
-     * Log lines getter by offsets.
-     *
-     * @param int $offset Lines offset. If negative, returns the n last lines.
-     * @param int $len Number of lines to be returned. Is used if offset is positive.
-     *
-     * @return array Array of log lines.
-     */
-    public static function lines($offset = 0, $len = null)
-    {
-        $logs = self::logs();
-        $lines = preg_split('/\n+/', $logs);
-
-        $offset = (int) $offset;
-        if ($offset < 0) {
-            $len = abs($offset);
-            $offset = count($lines) - $len;
-        } else {
-            $len = is_int($len) ? $len : count($lines) - $offset;
-        }
-        return array_values(array_filter(array_slice($lines, $offset, $len)));
-    }
-
-    /**
      * Logger singleton constructor. Binds the logger to wp and custom hooks
      */
     protected function construct(...$args)
@@ -159,6 +219,10 @@ class Logger extends Singleton
             add_filter("option_{$plugin_slug}_general", static function (
                 $value
             ) {
+                if (!is_array($value)) {
+                    return $value;
+                }
+
                 $value['debug'] = self::is_active();
                 return $value;
             });
@@ -196,7 +260,8 @@ class Logger extends Singleton
         register_rest_route('posts-bridge/v1', '/logs/', [
             'methods' => WP_REST_Server::READABLE,
             'callback' => static function () {
-                return self::lines(-500);
+                $lines = isset($_GET['lines']) ? (int) $_GET['lines'] : 500;
+                return self::logs($lines);
             },
             'permission_callback' => static function () {
                 return self::permission_callback();

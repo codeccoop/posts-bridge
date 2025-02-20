@@ -1,44 +1,44 @@
 // source
-import Relations from "../../../../src/components/Relations";
-import WPRelation from "./Relation";
+import Bridges from "../../../../src/components/Bridges";
+import WPBridge from "./Bridge";
 import useWPApi from "../hooks/useWPApi";
 
 const {
   PanelBody,
   PanelRow,
-  __experimentalSpacer: Spacer,
   TextControl,
+  __experimentalSpacer: Spacer,
 } = wp.components;
-const { useState, useEffect, useRef } = wp.element;
+const { useRef } = wp.element;
 const { __ } = wp.i18n;
 
 export default function WPSetting() {
-  const [{ credentials, relations }, save] = useWPApi();
+  const [{ credentials, bridges }, save] = useWPApi();
 
-  const update = (field) => save({ credentials, relations, ...field });
+  const update = (field) => save({ credentials, bridges, ...field });
 
-  const [credentialsState, setCredentialsState] = useState(credentials);
-  const timeout = useRef(0);
-  useEffect(() => {
-    clearTimeout(timeout.current);
-    timeout.current = setTimeout(() => {
-      update({ credentials: credentialsState });
-    }, 1000);
-  }, [credentialsState]);
+  const onCredentials = useRef(false);
+  const updateCredentials = (field) => {
+    onCredentials.current = true;
+    update({ credentials: { ...credentials, ...field } });
+  };
 
   return (
     <>
       <PanelRow>
-        <Relations
-          relations={relations}
-          setRelations={(relations) => update({ relations })}
-          Relation={WPRelation}
+        <Bridges
+          bridges={bridges}
+          setBridges={(bridges) => update({ bridges })}
+          Bridge={WPBridge}
         />
       </PanelRow>
       <Spacer paddingY="calc(8px)" />
       <PanelBody
         title={__("Credentials", "posts-bridge")}
-        initialOpen={!(credentials.password && credentials.username)}
+        initialOpen={
+          onCredentials.current ||
+          !(credentials.username || credentials.password)
+        }
       >
         <p
           dangerouslySetInnerHTML={{
@@ -54,10 +54,8 @@ with the process of creating new application passwords.`,
         <div style={{ width: "300px" }}>
           <TextControl
             label={__("Username", "posts-bridge")}
-            value={credentialsState.username || ""}
-            onChange={(username) =>
-              setCredentialsState({ ...credentialsState, username })
-            }
+            value={credentials.username || ""}
+            onChange={(username) => updateCredentials({ username })}
             __nextHasNoMarginBottom
             __next40pxDefaultSize
           />
@@ -67,10 +65,8 @@ with the process of creating new application passwords.`,
           <TextControl
             type="password"
             label={__("Application password", "posts-bridge")}
-            value={credentialsState.password || ""}
-            onChange={(password) =>
-              setCredentialsState({ ...credentialsState, password })
-            }
+            value={credentials.password || ""}
+            onChange={(password) => updateCredentials({ password })}
             __nextHasNoMarginBottom
             __next40pxDefaultSize
           />

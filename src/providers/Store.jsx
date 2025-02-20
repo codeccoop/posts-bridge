@@ -1,46 +1,45 @@
 const apiFetch = wp.apiFetch;
-const { createContext, useContext, useEffect } = wp.element;
+const { createContext, useContext, useEffect, useRef } = wp.element;
+const { __ } = wp.i18n;
 
 const StoreContext = createContext(() => {});
 
-export default function StoreProvider({ children, setLoading }) {
+export default function StoreProvider({ children }) {
   const fetchSettings = () => {
-    setLoading(true);
+    wppb.emit("loading", true);
+
     return apiFetch({
       path: "posts-bridge/v1/settings",
     })
-      .then((settings) => {
-        wppb.emit("fetch", settings);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      .then((settings) => wppb.emit("fetch", settings))
+      .finally(() => wppb.emit("loading", false));
   };
 
-  const fetchPostTypes = () => {
-    setLoading(true);
-    return apiFetch({
-      path: "posts-bridge/v1/types",
-    })
-      .then((postTypes) => {
-        wppb.emit("postTypes", postTypes);
-      })
-      .finally(() => setLoading(false));
-  };
+  const onFlush = useRef(() => fetchSettings()).current;
 
   useEffect(() => {
-    fetchPostTypes().then(fetchSettings);
+    fetchSettings();
+    wppb.on("flushStore", onFlush);
+
+    return () => {
+      wppb.off("flushStore", onFlush);
+    };
   }, []);
 
   const submit = () => {
-    setLoading(true);
+    wppb.emit("loading", true);
 
     const settings = wppb.bus("submit", {});
     return apiFetch({
       path: "posts-bridge/v1/settings",
       method: "POST",
       data: settings,
-    }).then(fetchSettings);
+    })
+      .then(fetchSettings)
+      .catch(() =>
+        wppb.emit("error", __("Save settings error", "posts-bridge"))
+      )
+      .finally(() => wppb.emit("loading", false));
   };
 
   return (
