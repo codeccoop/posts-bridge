@@ -244,8 +244,9 @@ class Odoo_Addon extends Addon
             if ($is_valid) {
                 $bridge['fields'] = array_values(
                     array_filter($bridge['fields'], function ($field) {
-                        return !empty($field['name']) &&
-                            !empty($field['foreign']);
+                        return !(
+                            empty($field['name']) || empty($field['foreign'])
+                        );
                     })
                 );
 
