@@ -3,7 +3,7 @@
 $setting_names = ['rest-api', 'odoo', 'wp', 'google-sheets'];
 
 foreach ($setting_names as $setting_name) {
-    $option = 'forms-bridge_' . $setting_name;
+    $option = 'posts-bridge_' . $setting_name;
     $deprecated_option = $option . '-api';
 
     $data = get_option($deprecated_option);
