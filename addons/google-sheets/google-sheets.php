@@ -122,8 +122,14 @@ class Google_Sheets_Addon extends Addon
                                     'type' => 'object',
                                     'additionalProperties' => false,
                                     'properties' => [
-                                        'name' => ['type' => 'string'],
-                                        'foreign' => ['type' => 'string'],
+                                        'name' => [
+                                            'type' => 'string',
+                                            'minLength' => 1,
+                                        ],
+                                        'foreign' => [
+                                            'type' => 'string',
+                                            'minLength' => 1,
+                                        ],
                                     ],
                                     'required' => ['name', 'foreign'],
                                 ],
@@ -191,6 +197,13 @@ class Google_Sheets_Addon extends Addon
                     in_array($bridge['template'], $templates));
 
             if ($is_valid) {
+                $bridge['fields'] = array_values(
+                    array_filter($bridge['fields'], function ($field) {
+                        return !empty($field['name']) &&
+                            !empty($field['foreign']);
+                    })
+                );
+
                 $valid_bridges[] = $bridge;
             }
         }
