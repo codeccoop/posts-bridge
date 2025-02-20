@@ -20,3 +20,10 @@ foreach ($setting_names as $setting_name) {
         update_option($option, $data);
     }
 }
+
+// wp rest setting rename
+$wp = get_option('posts-bridge_wp');
+if (is_array($wp)) {
+    add_option('posts-bridge_wp-rest', $wp);
+    delete_option('posts-bridge_wp');
+}
