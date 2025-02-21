@@ -228,7 +228,7 @@ abstract class Addon extends Singleton
         );
 
         add_filter(
-            'posts_bridge_remote_post_types',
+            'posts_bridge_remote_cpts',
             static function ($post_types, $api = null) {
                 if ($api && $api !== static::$api) {
                     return $post_types;

@@ -221,7 +221,7 @@ class Posts_Bridge extends Base_Plugin
     {
         // Initalize REST controllers on API init
         add_action('rest_api_init', static function () {
-            $post_types = apply_filters('posts_bridge_remote_post_types', []);
+            $post_types = apply_filters('posts_bridge_remote_cpts', []);
             foreach ($post_types as $post_type) {
                 self::$rest_controllers[
                     $post_type
@@ -290,7 +290,7 @@ class Posts_Bridge extends Base_Plugin
         global $posts_bridge_remote_cpt;
 
         if (!empty($post) && !empty($post->ID)) {
-            $post_types = apply_filters('posts_bridge_remote_post_types', []);
+            $post_types = apply_filters('posts_bridge_remote_cpts', []);
             if (in_array($post->post_type, $post_types, true)) {
                 $posts_bridge_remote_cpt = new Remote_CPT($post);
             }

@@ -125,7 +125,7 @@ class I18n extends Singleton
     public static function translate_post($post_id, $post)
     {
         // Exit if is not a remote cpt
-        $post_types = apply_filters('posts_bridge_remote_post_types', []);
+        $post_types = apply_filters('posts_bridge_remote_cpts', []);
         if (!in_array($post->post_type, $post_types, true)) {
             return;
         }
