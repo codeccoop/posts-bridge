@@ -2,6 +2,7 @@
 
 namespace POSTS_BRIDGE;
 
+use Error;
 use Exception;
 use WPCT_ABSTRACT\Singleton;
 use WP_Query;
@@ -236,8 +237,11 @@ class Posts_Synchronizer extends Singleton
             foreach ($bridges as $bridge) {
                 try {
                     self::sync($bridge);
-                } catch (Exception) {
-                    // Skip relation
+                } catch (Error | Exception $e) {
+                    Logger::log(
+                        'Scheduled syncrhonization error: ' . $e->getMessage(),
+                        Logger::ERROR
+                    );
                 }
             }
         });
@@ -282,6 +286,11 @@ class Posts_Synchronizer extends Singleton
 
             wp_send_json(['success' => true], 200);
         } catch (Exception $e) {
+            Logger::log(
+                'Ajax syncrhonization error: ' . $e->getMessage(),
+                Logger::ERROR
+            );
+
             wp_send_json(
                 ['success' => false, 'error' => $e->getMessage()],
                 $e->getCode()
@@ -323,12 +332,21 @@ class Posts_Synchronizer extends Singleton
             'post_status' => 'any',
         ]);
 
+        Logger::log('Starts syncrhonization clean up', Logger::DEBUG);
+
         while ($query->have_posts()) {
             $query->the_post();
             $foreign_id = $posts_bridge_remote_cpt->foreign_id;
+
             if (!isset($remote_pairs[$foreign_id])) {
                 // if post does not exists on the remote backend, then remove it.
-                wp_delete_post(get_the_ID());
+                $post_id = get_the_ID();
+                Logger::log(
+                    "Remove post {$post_id} as syncrhonization clean up",
+                    Logger::DEBUG
+                );
+
+                wp_delete_post($post_id);
             } else {
                 if (self::$sync_mode === 'light') {
                     // if light mode, skip syncrhonization for existing ones
@@ -339,9 +357,12 @@ class Posts_Synchronizer extends Singleton
             }
         }
 
+        Logger::log('Ends syncrhonization clean up', Logger::DEBUG);
+
         wp_reset_postdata();
 
-        // $locale = apply_filters('wpct_i18n_current_language', null, 'locale');
+        Logger::log('Starts remote posts syncrhonization', Logger::DEBUG);
+
         foreach ($remote_pairs as $foreign_id => $post) {
             // if is a new remote model, mock a post as its local counterpart
             if (empty($post)) {
@@ -356,6 +377,12 @@ class Posts_Synchronizer extends Singleton
             $data = (new Remote_CPT($post, $foreign_id))->fetch();
 
             if (is_wp_error($data) || empty($data)) {
+                Logger::log(
+                    'Fetching remote data error on syncrhonization',
+                    Logger::ERROR
+                );
+                Logger::log(['foreign_id' => $foreign_id]);
+
                 throw new Exception('sync_error', 500);
             }
 
@@ -366,8 +393,40 @@ class Posts_Synchronizer extends Singleton
                 $data['ID'] = $post->ID;
             }
 
+            $skip = apply_filters(
+                'posts_bridge_skip_syncrhonization',
+                false,
+                $bridge,
+                $data,
+                $post->ID
+            );
+
+            if ($skip) {
+                Logger::log(
+                    'Skip syncrionization for remote id %s',
+                    Logger::DEBUG
+                );
+                Logger::log($data, Logger::DEBUG);
+
+                continue;
+            }
+
+            do_action(
+                'posts_bridge_before_synchronization',
+                $bridge,
+                $data,
+                $post->ID
+            );
+
             $post_id = wp_insert_post($data);
+
             if (is_wp_error($post_id) || !$post_id) {
+                Logger::log(
+                    'Post creation error on syncrhonization',
+                    Logger::ERROR
+                );
+                Logger::log($data, Logger::ERROR);
+
                 throw new Exception('insert_error', 500);
             }
 
@@ -386,7 +445,11 @@ class Posts_Synchronizer extends Singleton
             }
 
             set_post_thumbnail($post_id, $featured_media);
+
+            do_action('posts_bridge_synchronization', $bridge, $data, $post_id);
         }
+
+        Logger::log('Ends remote posts syncrhonization', Logger::DEBUG);
     }
 }
 
