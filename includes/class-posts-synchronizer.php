@@ -309,8 +309,6 @@ class Posts_Synchronizer extends Singleton
      */
     private static function sync($bridge)
     {
-        global $posts_bridge_remote_cpt;
-
         $foreign_ids = apply_filters(
             'posts_bridge_foreign_ids',
             $bridge->foreign_ids(),
@@ -334,6 +332,7 @@ class Posts_Synchronizer extends Singleton
 
         Logger::log('Starts syncrhonization clean up', Logger::DEBUG);
 
+        global $posts_bridge_remote_cpt;
         while ($query->have_posts()) {
             $query->the_post();
             $foreign_id = $posts_bridge_remote_cpt->foreign_id;
@@ -374,7 +373,9 @@ class Posts_Synchronizer extends Singleton
                 );
             }
 
-            $data = (new Remote_CPT($post, $foreign_id))->fetch();
+            $rcpt = new Remote_CPT($post, $foreign_id);
+
+            $data = $rcpt->fetch();
 
             if (is_wp_error($data) || empty($data)) {
                 Logger::log(
@@ -388,22 +389,22 @@ class Posts_Synchronizer extends Singleton
 
             $data = $bridge->map_remote_fields($data);
 
-            $data['post_type'] = $bridge->post_type;
-            if ($post->ID !== 0) {
-                $data['ID'] = $post->ID;
+            $data['post_type'] = $rcpt->post_type;
+
+            if ($rcpt->ID !== 0) {
+                $data['ID'] = $rcpt->ID;
             }
 
             $skip = apply_filters(
                 'posts_bridge_skip_syncrhonization',
                 false,
-                $bridge,
-                $data,
-                $post->ID
+                $rcpt,
+                $data
             );
 
             if ($skip) {
                 Logger::log(
-                    'Skip syncrionization for remote id %s',
+                    "Skip syncrionization for rcpt with foreign id {$foreign_id}",
                     Logger::DEBUG
                 );
                 Logger::log($data, Logger::DEBUG);
@@ -411,12 +412,7 @@ class Posts_Synchronizer extends Singleton
                 continue;
             }
 
-            do_action(
-                'posts_bridge_before_synchronization',
-                $bridge,
-                $data,
-                $post->ID
-            );
+            do_action('posts_bridge_before_synchronization', $rcpt, $data);
 
             $post_id = wp_insert_post($data);
 
@@ -446,7 +442,9 @@ class Posts_Synchronizer extends Singleton
 
             set_post_thumbnail($post_id, $featured_media);
 
-            do_action('posts_bridge_synchronization', $bridge, $data, $post_id);
+            $rcpt = new Remote_CPT($post_id, $foreign_id, $data);
+
+            do_action('posts_bridge_synchronization', $rcpt, $data);
         }
 
         Logger::log('Ends remote posts syncrhonization', Logger::DEBUG);

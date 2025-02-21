@@ -1,5 +1,7 @@
 <?php
 
+use Posts_Bridge\Logger;
+
 add_action(
     'init',
     function () {
@@ -34,12 +36,20 @@ function posts_bridge_remote_fields($atts, $content = '')
 
     // Exit if global post is not Remote CPT
     if (empty($posts_bridge_remote_cpt)) {
+        Logger::log(
+            'Skip remote fields render for non remote post types',
+            Logger::DEBUG
+        );
         return $content;
     }
 
     // Gets replacement marks and exit if not found
     preg_match_all('/{{([^}]+)}}/', $content, $matches);
     if (empty($matches)) {
+        Logger::log(
+            'No replace marks found on remote fields shortcode content',
+            Logger::DEBUG
+        );
         return $content;
     }
 
@@ -57,6 +67,10 @@ function posts_bridge_remote_fields($atts, $content = '')
 
     // Exit if no fields is defined
     if (empty($fields)) {
+        Logger::log(
+            'Replace marks not matches any remote field',
+            Logger::DEBUG
+        );
         return $content;
     }
 
@@ -93,6 +107,10 @@ function posts_bridge_remote_fields($atts, $content = '')
 
         return wp_kses_post($content);
     } catch (ValueError $e) {
+        Logger::log(
+            'Remote fields render error: ' . $e->getMessage(),
+            Logger::ERROR
+        );
         return $e->getMessage();
     }
 }
@@ -112,10 +130,16 @@ function posts_bridge_remote_callback($atts, $content = '')
 
     // Exit if global post is not Remote CPT
     if (empty($posts_bridge_remote_cpt)) {
+        Logger::log(
+            'Skip remote callback for non remote post types',
+            Logger::DEBUG
+        );
         return $content;
+    } else {
+        $rcpt = $posts_bridge_remote_cpt;
     }
 
-    $callback = isset($atts['fn']) ? $atts['fn'] : null;
+    $callback = $atts['fn'] ?? null;
 
     if (empty($callback)) {
         return $content;
@@ -124,8 +148,22 @@ function posts_bridge_remote_callback($atts, $content = '')
     }
 
     if (!function_exists($callback)) {
+        Logger::log(
+            "Remote callback {$callback} does not exists",
+            Logger::DEBUG
+        );
         return $content;
     }
 
-    return $callback($posts_bridge_remote_cpt, $atts, $content);
+    $render = $callback($rcpt, $atts, $content);
+
+    if (empty($render)) {
+        Logger::log(
+            'Remote callback returns an empty rendered content',
+            Logger::DEBUG
+        );
+        return $content;
+    }
+
+    return wp_kses_post($render);
 }

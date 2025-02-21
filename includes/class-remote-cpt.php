@@ -52,8 +52,10 @@ class Remote_CPT
      * Bounds the post and returns the instance.
      *
      * @param WP_Post|int $post Instance of the post.
+     * @param int|string|null $foreign_id Foreign key value.
+     * @param array|null $remote_data Foreign data.
      */
-    public function __construct($post, $foreign_id = null)
+    public function __construct($post, $foreign_id = null, $remote_data = null)
     {
         if (is_int($post)) {
             $post = get_post($post);
@@ -61,6 +63,7 @@ class Remote_CPT
 
         $this->post = $post;
         $this->foreign_id = $foreign_id;
+        $this->remote_data = $remote_data;
 
         $this->locale = apply_filters(
             'wpct_i18n_post_language',
@@ -92,6 +95,11 @@ class Remote_CPT
         $data = $this->bridge()->fetch($this->foreign_id());
 
         if (is_wp_error($data)) {
+            Logger::log(
+                'Remote CPT remote data fetch error: ' .
+                    $data->get_error_message(),
+                Logger::ERROR
+            );
             $this->remote_data = $data;
             return [];
         }
@@ -99,8 +107,7 @@ class Remote_CPT
         $this->remote_data = (array) apply_filters(
             'posts_bridge_remote_data',
             $data,
-            $this,
-            $this->locale
+            $this
         );
 
         return $this->remote_data;
@@ -139,7 +146,7 @@ class Remote_CPT
         $data = $this->fetch();
 
         if (is_wp_error($data)) {
-            return null;
+            return;
         }
 
         if ($value = (new JSON_Finger($data))->get($attr)) {
@@ -167,11 +174,13 @@ class Remote_CPT
     private function foreign_id()
     {
         if (empty($this->foreign_id)) {
-            $this->foreign_id = get_post_meta(
-                $this->post->ID,
-                self::_foreign_key_handle,
-                true
-            );
+            $this->foreign_id =
+                get_post_meta(
+                    $this->post->ID,
+                    self::_foreign_key_handle,
+                    true
+                ) ?:
+                null;
         }
 
         return $this->foreign_id;
