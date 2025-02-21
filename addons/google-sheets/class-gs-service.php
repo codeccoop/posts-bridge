@@ -135,9 +135,14 @@ class Google_Sheets_Service extends Singleton
             for ($i = 1; $i < count($rows); $i++) {
                 $row = [];
                 for ($j = 0; $j < count($headers); $j++) {
+                    if (!isset($rows[$i][$j])) {
+                        continue;
+                    }
+
                     $field = $headers[$j];
                     $row[$field] = $rows[$i][$j];
                 }
+
                 $data[] = $row;
             }
         } catch (Exception $e) {
