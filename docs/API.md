@@ -26,7 +26,7 @@ fields values. A replace mark is the field name surrounded by double brackets.
 
 ```php
 $content = '<p>{{lastname}}, {{firstname}}</p>';
-do_shortcode("[remote_fields]<?= $content ?>[remote_fields]'");
+echo do_shortcode("[posts_bridge_remote_fields]{$content}[remote_fields]'");
 ```
 
 ### `posts_bridge_remote_callback`
@@ -60,65 +60,67 @@ function my_remote_callback($rcpt, $atts, $content = '') {
 	return $content . '<div class="tags">' . $output . '</div>';
 }
 
-do_shortcode('[remote_callback fn="my_remote_callback"]');
+do_shortcode('[posts_bridge_remote_callback fn="my_remote_callback"]');
 ```
 
 ## Getters
 
-### `posts_bridge_relation`
+### `posts_bridge_bridge`
 
-Returns an instance of the remote relation object by post type.
+Returns an instance of the bridge  object by post type.
 
 #### Arguments
 
-1. `mixed $default`: Fallback value.
+1. `mixed $value`: Fallback value.
 2. `string $post_type`: Post type slug.
 
 #### Returns
 
-1. `Remote_Relation|null`: Instance of the relation.
+1. `Post_Bridge|null`: Instance of the relation.
 
 #### Example
 
 ```php
-$relation = apply_filters('posts_bridge_relation', null, 'product');
+$relation = apply_filters('posts_bridge_bridge', null, 'product');
 if ($relation) {
 	// do something
 }
 ```
 
-### `posts_bridge_relations`
+### `posts_bridge_bridges`
 
-Returns the collection of configured remote relations as Remote_Relation instances.
+Returns a collection of post bridges instances, optionaly filtered by API.
 
 #### Arguments
 
 1. `array $default`: Fallback value.
+2. `string $api`: API name.
 
 #### Returns
 
-1. `array $relations`: Array of Remote_Relation instances.
+1. `array $bridges`: Array of Post_Bridge instances.
 
 #### Example
 
 ```php
-$relations = apply_filters('posts_bridge_relations', []);
-foreach ($relations as $relation) {
+$bridges = apply_filters('posts_bridge_bridges', [], 'odoo');
+foreach ($bridges as $bridge) {
 	// do something
 }
 ```
 
 ### `posts_bridge_remote_cpts`
 
-Returns the list of post type linked to remote backends.
+Returns the list of post type bridgeds to remote backends.
 
 #### Arguments
 
 1. `array $default`: Fallback value.
+2. `string $api`: API name.
 
 #### Returns
 
-1. `array $post_types`: Array of post type slug strings.
+1. `array $post_types`: Array of post type key strings.
 
 #### Example
 
@@ -131,47 +133,65 @@ foreach ($rcpts as $rcpt) {
 
 ## Filters
 
+### `posts_bridge_foreign_ids`
+
+Filters the list of foreign ids for a given bridge.
+
+#### Arguments
+
+1. `array $foreign_ids`: Array with the bridge foreign ids.
+2. `Post_Bridge $bridge`: Instance of the current bridge.
+
+#### Example
+
+```php
+add_filter(`posts_bridge_foreign_ids`, function ($foreign_ids, $bridge) {
+	if ($bridge->post_type === 'faqs') {
+		// do something
+	}
+}, 10, 2);
+```
+
 ### `posts_bridge_remote_data`
 
-Filters the post's remote data before render. With this filter you can format your data
-before it was stored on the Remote_CPT instance.
+Filters the post's remote data. With this filter you can format your data
+before it was stored on the Remote_CPT instance. Fired on render and synchronization
+time.
 
 #### Arguments
 
 1. `array $data`: Array containing the backend response data.
 2. `object $remote_cpt`: Instance of the current Remote_CPT.
-3. `string $locale`: Language code of the current post.
 
 #### Example
 
 ```php
-add_filter('posts_bridge_remote_data', function ($data, $rcpt, $locale) {
+add_filter('posts_bridge_remote_data', function ($data, $remote_cpt) {
     return $data;
-}, 10, 3);
+}, 10, 2);
 ```
 
-### `posts_bridge_endpoint`
+### `posts_bridge_skip_syncrhonization`
 
-When using the REST protocol to synchronization, use this hook to format endpoints
-if your API endpoints are not REST-compliant.
+Allow to filter syncrhonization for a given remote custom post type.
 
 #### Arguments
 
-1. `string $endpoint`: Default endpoint to send GET requests to crawl post's remote data.
-2. `string $foreign_id`: Remote CPT foreig key value.
-3. `object $rcpt`: Instance of the current Remote_CPT.
+1 `boolean $skip`: Boolean to control if Posts Bridge should skip syncrhonization for the given remote cpt.
+2. `Remote_CPT $rcpt`: Instance of the current remote custom post type.
+3. `array $data`: Remote data of the Remote_CPT.
 
 #### Example
 
 ```php
-add_filter('posts_bridge_endpoint', function ($endpoint, $foreign_id, $rcpt) {
-    return $endpoint;
-}, 10, 2);
+add_filter('posts_bridge_skip_synchronization', function ($skip, $remote_cpt, $data) {
+	return false;
+}, 10, 3);
 ```
 
 ### `posts_bridge_default_thumbnail`
 
-Posts Bridge sets use a placeholder image as the default remote cpts thumbnail. Use this filter to change the path
+Posts Bridge use a placeholder image as the default remote cpts' thumbnail. Use this filter to change the path
 to the plugin's default thumbnail image. Use it to define a custom fallback thumbnail. This filter is
 triggered on plugin's activation and deactivation time.
 
@@ -189,39 +209,40 @@ add_filter('posts_bridge_default_thumbnail', function ($filepath) {
 
 ## Actions
 
-### `posts_bridge_before_search`
+### `posts_bridge_before_syncrhonization`
 
-Fired before Posts Bridge ask a backend for its models' foreig keys index.
+Fired before a new remote cpt creation on a syncrhonization loop.
 
 #### Arguments
 
-1. `Remote_Relation $relation`: Instance of the remote relation object.
+1. `Remote_CPT $remote_cpt`: Instance of the new remote cpt.
+2. `array $data`: Remote data of the current remote cpt.
 
 #### Example
 
 ```php
-add_action('posts_bridge_before_search', function ($relation) {
-	if ($relation->endpoint() === '/products') {
+add_action('posts_bridge_before_synchronization', function ($remote_cpt, $data) {
+	if ($remote_cpt->post_type === 'page' && $data['title'] === 'Hello, Posts Bridge!') {
 		// do something
 	}
-});
+}, 10, 2);
 ```
 
-### `posts_after_after_search`
+### `posts_bridge_syncrhonization`
 
-Fired with the response to the Posts Bridge ask for foreig keys.
+Fired after a new remote cpt creation on a syncrhonization loop.
 
 #### Arguments
 
-1. `array $response`: HTTP request response data, or error.
-2. `Remote_Relation $relation`: Instance of the remote relation object.
+1. `Remote_CPT $remote_cpt`: Instance of the new remote cpt.
+2. `array $data`: Remote data of the current remote cpt.
 
 #### Example
 
 ```php
-add_action('posts_bridge_after_search', function ($response, $relation) {
-	if ($response['response']['code'] === 200) {
-		// do something;
+add_action('posts_bridge_synchronization', function ($remote_cpt, $data) {
+	if ($remote_cpt->foreign_id === 101) {
+		// do something
 	}
 }, 10, 2);
 ```
@@ -232,73 +253,52 @@ Fired before Posts Bridge fetches data for a remote cpt.
 
 #### Arguments
 
-1. `string $endpoint`: Target endpoint of the request.
-2. `Remote_CPT $rcpt`: Instance of the Remote_CPT who is triggering the request.
+1. `Post_Bridge $bridge`: Instance of the current bridge.
+2. `int|string $foreign_id`: Bridge's foreign key value.
 
 #### Example
 
 ```php
-add_action('posts_bridge_before_fetch', function ($endpoint, $rcpt) {
-	if ($rcpt->post_type === 'post') {
+add_action('posts_bridge_before_fetch', function ($bridge, $foreign_id) {
+	if ($bridge->post_type === 'post') {
 		// do something
 	}
 }, 10, 2);
 ```
 
-### `posts_bridge_after_fetch`
+### `posts_bridge_fetch`
 
 Fired with the response to the Posts Bridge remote data request.
 
 #### Arguments
 
 1. `array|WP_Error $response`: HTTP request response data, or error.
-2. `string $endpoint`: Source endpoint of the response.
-3. `Remote_CPT $rcpt`: Instance of the Remote_CPT who has requested remote data.
+2. `Post_Bridge $bridge`: Instance of the current bridge.
 
 #### Example
 
 ```php
-add_action('posts_bridge_after_fetch', function ($response, $endpoint, $rcpt) {
+add_action('posts_bridge_fetch', function ($response, $bridge) {
 	if ($response['headers']['Content-Type'] !== 'application/json') {
 		// do something
 	}
 }, 10, 3);
 ```
 
-### `posts_bridge_before_rpc_login`
+### `posts_bridge_fetch_error`
 
-Fired before Posts Bridge stablishes a new RPC session.
+Fired with the response error when Posts Bridge fails to fetch remote data for a given remote cpt.
 
 #### Arguments
 
-1. `string $url`: Destination URL.
-2. `array $payload`: JSON-RPC login payload.
+1. `WP_Erro $error`: HTTP request response error.
+2. `Post_Bridge $bridge`: Instance of the current bridge.
 
 #### Example
 
 ```php
-add_action('posts_bridge_before_rpc_login', function ($url, $payload) {
-	if ($payload['params']['args'][1] === 'ERP') {
-		// do something
-	}
-}, 10, 3);
-```
-
-### `posts_bridge_after_rpc_login`
-
-Fired with the response to the Posts Bridge login call.
-
-#### Arguments
-
-1. `array|WP_Error $response`: Result from the login request.
-2. `string $url`: Source URL of the result.
-3. `array $payload`: Submitted payload.
-
-#### Example
-
-```php
-add_action('posts_bridge_after_rpc_login', function ($response, $url, $payload) {
-	if (is_wp_error($response)) {
+add_action('posts_bridge_fetch', function ($error, $bridge) {
+	if ($bridge->name === 'Products') {
 		// do something
 	}
 }, 10, 3);
