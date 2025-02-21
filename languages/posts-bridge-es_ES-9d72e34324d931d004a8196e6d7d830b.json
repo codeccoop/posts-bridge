@@ -1,0 +1,53 @@
+{
+  "translation-revision-date": "YEAR-MO-DA HO:MI+ZONE",
+  "generator": "WP-CLI\/2.11.0",
+  "source": "addons\/wp-rest\/assets\/addon.bundle.js",
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "lang": "es_ES",
+        "plural-forms": "nplurals=2; plural=(n != 1);"
+      },
+      "Remote fields": ["Campos remotos"],
+      "Post fields": ["Campos del post"],
+      "Foreign field name": ["Nombre de la clave for\u00e1nea"],
+      "Custom fields": ["Campos personalizados"],
+      "Add": ["A\u00f1adir"],
+      "Custom field name": ["Nombre del campo personalizado"],
+      "Drop": ["Descartar"],
+      "Done": ["Hecho"],
+      "Post type": ["Tipo de post"],
+      "Backend": [""],
+      "Foreign key": ["Clave for\u00e1nea"],
+      "Remove": ["Borrar"],
+      "Loading config error": [""],
+      "Template submit error": [""],
+      "Add bridge": [""],
+      "Bridges": [""],
+      "Use tempalte": [""],
+      "Templates": [""],
+      "Congratulations, you've created a new post bridge!": [""],
+      "Close": [""],
+      "Select a template": [""],
+      "AJAX synchronization error": [""],
+      "Syncrhonize": [""],
+      "Full synchronization mode": [""],
+      "Configure the post type to bridge": [""],
+      "Reuse a post type": [""],
+      "This post type already exists": [""],
+      "Previous": [""],
+      "Next": [""],
+      "Submit": [""],
+      "Remote post type": [""],
+      "Credentials": [""],
+      "WordPress use application password to grant access over the REST API.\nPosts Bridge will need this kind of credentials to get authorized to access the WordPress content.\nSee this <a href='https:\/\/make.wordpress.org\/core\/2020\/11\/05\/application-passwords-integration-guide\/'>guide to get help<\/a>\nwith the process of creating new application passwords.": [
+        ""
+      ],
+      "Username": [""],
+      "Application password": [""],
+      "wp-rest": ["WordPress REST API"]
+    }
+  }
+}

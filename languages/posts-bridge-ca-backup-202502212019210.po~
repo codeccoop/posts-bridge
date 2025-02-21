@@ -3,13 +3,13 @@ msgstr ""
 "Project-Id-Version: Posts Bridge 1.1.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/posts-bridge\n"
 "Last-Translator: Lucas García <lucas@codeccoop.org>\n"
-"Language-Team: Español\n"
+"Language-Team: Català\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2024-12-01T14:54:24+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Language: es_ES\n"
+"Language: ca\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: posts-bridge\n"
 
@@ -26,7 +26,7 @@ msgstr ""
 #. Description of the plugin
 #: posts-bridge.php
 msgid "Bridge backend data to WP posts collections"
-msgstr "Conecta datos de backends a colecciones de posts de WP"
+msgstr "Connecta dades de backends a col·leccions de posts de WP"
 
 #. Author URI of the plugin
 #: posts-bridge.php
@@ -35,26 +35,26 @@ msgstr ""
 
 #: includes/class-menu.php:23
 msgid "Loading"
-msgstr "Cargando"
+msgstr "Carregant"
 
 #: includes/class-rest-remote-posts-controller.php:268
 msgid "Remote CPT foreign key is unkown"
-msgstr "La clave foránea del Remote CPT es desconocida"
+msgstr "La clau forana del Remote CPT remot es desconeguda"
 
 #: includes/class-posts-synchronizer.php:70
 #: assets/plugin.bundle.js:1740
 msgid "Minutly"
-msgstr "Minutalmente"
+msgstr "Minutalment"
 
 #: includes/class-posts-synchronizer.php:75
 #: assets/plugin.bundle.js:1744
 msgid "Quarterly"
-msgstr "Quinceminutalmente"
+msgstr "Quinzeminutalment"
 
 #: includes/class-posts-synchronizer.php:80
 #: assets/plugin.bundle.js:1748
 msgid "Twice Hourly"
-msgstr "Dos veces la hora"
+msgstr "Dos cops l'hora"
 
 #: assets/plugin.bundle.js:2187
 msgid "Backends"
@@ -66,35 +66,35 @@ msgstr ""
 
 #: assets/plugin.bundle.js:2193
 msgid "Block connections from unkown origins"
-msgstr "Bloquear conexiones de origenes desconocidos"
+msgstr "Bloquejar connexions d'origens desconeguts"
 
 #: assets/plugin.bundle.js:2197
 msgid "Should Posts Bridge block requests from origins not listed as backends? If active, incomming connections should include HTTP Origin header"
-msgstr "Posts Bridge ha de bloquear peticiones de origenes no listados como backends? Si es así, las peticiones entrantes deberán incluir la cabecera HTTP Origin"
+msgstr "Posts Bridge ha de bloquejar peticions d'origens no llistas com a backends? Si és així, les peticions entrants hauran d'incloure la capçalera HTTP Origin"
 
 #: assets/plugin.bundle.js:1798
 msgid "Synchronize"
-msgstr "Sincronizar"
+msgstr "Sincronitzar"
 
 #: assets/plugin.bundle.js:1804
 msgid "Run a full synchronization"
-msgstr "Correr una sincronización completa"
+msgstr "Correr una sincronització completa"
 
 #: assets/plugin.bundle.js:1805
 msgid "Normal, or light, synchronizations only fetches new remote models data. If do you want to update all your content, you should trigger a full synchronization. This may take a while."
-msgstr "La sincronización ligera solo consulta los datos de los nuevos modelos del backend. Si quieres actualizar todo tu contenido, deberás disparar una sincronización completa. Esto puede llevar un tiempo"
+msgstr "La sincronització lleugera només consulta les dades dels nous models del backend. Si vols actualitzar tot el teu contingut, hauràs de disparar una sincronització completa. Això pot trigar una estona"
 
 #: assets/plugin.bundle.js:1819
 msgid "Automatic syncrhonization"
-msgstr "Sincronización automática"
+msgstr "Sincronització automàtica"
 
 #: assets/plugin.bundle.js:1820
 msgid "Allow scheduled pull strategy syncrhonization. WordPress will check the remote sources for updates and update its indices. This strategy can cause performance issues if you have large backend models collections"
-msgstr "Permite la estrategia de sincronización por consulta. WordPress comprobará las actualizaciones de contenido remote y actualizará sus índices. Esta estrategia puede probocar problemas de rendimiento si tus colecciones de datos del backend son muy grandes"
+msgstr "Permet la estrategia de sincronització per consulta. WordPress comprobarà les actualitzaciones de contingut remote i actualitzarà els seus index. Aquesta estratègia pot provocar problemes de rendiment si les colleccions de dades del teu backend són molt grans"
 
 #: assets/plugin.bundle.js:1832
 msgid "Recurrence"
-msgstr "Recurréncia"
+msgstr "Recurrència"
 
 #: addons/google-sheets/assets/addon.bundle.js:816
 #: addons/google-sheets/assets/addon.bundle.js:820
@@ -105,14 +105,14 @@ msgstr "Recurréncia"
 #: addons/wp-rest/assets/addon.bundle.js:783
 #: addons/wp-rest/assets/addon.bundle.js:787
 msgid "Remote fields"
-msgstr "Campos remotos"
+msgstr "Camps remots"
 
 #: addons/google-sheets/assets/addon.bundle.js:686
 #: addons/odoo/assets/addon.bundle.js:658
 #: addons/rest-api/assets/addon.bundle.js:658
 #: addons/wp-rest/assets/addon.bundle.js:653
 msgid "Post fields"
-msgstr "Campos del post"
+msgstr "Camps del post"
 
 #: addons/google-sheets/assets/addon.bundle.js:704
 #: addons/google-sheets/assets/addon.bundle.js:751
@@ -123,7 +123,7 @@ msgstr "Campos del post"
 #: addons/wp-rest/assets/addon.bundle.js:671
 #: addons/wp-rest/assets/addon.bundle.js:718
 msgid "Foreign field name"
-msgstr "Nombre de la clave foránea"
+msgstr "Nom del camp forà"
 
 #: addons/google-sheets/assets/addon.bundle.js:726
 #: addons/odoo/assets/addon.bundle.js:698
@@ -131,7 +131,7 @@ msgstr "Nombre de la clave foránea"
 #: addons/wp-rest/assets/addon.bundle.js:693
 #: assets/plugin.bundle.js:664
 msgid "Custom fields"
-msgstr "Campos personalizados"
+msgstr "Camps personalitzats"
 
 #: addons/google-sheets/assets/addon.bundle.js:780
 #: addons/google-sheets/assets/addon.bundle.js:1077
@@ -146,14 +146,14 @@ msgstr "Campos personalizados"
 #: assets/plugin.bundle.js:1487
 #: assets/plugin.bundle.js:1568
 msgid "Add"
-msgstr "Añadir"
+msgstr "Afegir"
 
 #: addons/google-sheets/assets/addon.bundle.js:742
 #: addons/odoo/assets/addon.bundle.js:714
 #: addons/rest-api/assets/addon.bundle.js:714
 #: addons/wp-rest/assets/addon.bundle.js:709
 msgid "Custom field name"
-msgstr "Nombre del campo personalizado"
+msgstr "Nom del camp personalitzat"
 
 #: addons/google-sheets/assets/addon.bundle.js:766
 #: addons/odoo/assets/addon.bundle.js:738
@@ -168,7 +168,7 @@ msgstr "Descartar"
 #: addons/rest-api/assets/addon.bundle.js:755
 #: addons/wp-rest/assets/addon.bundle.js:750
 msgid "Done"
-msgstr "Hecho"
+msgstr "Fet"
 
 #: addons/google-sheets/assets/addon.bundle.js:1026
 #: addons/google-sheets/assets/addon.bundle.js:1184
@@ -182,7 +182,7 @@ msgstr "Hecho"
 #: addons/wp-rest/assets/addon.bundle.js:1151
 #: addons/wp-rest/assets/addon.bundle.js:1640
 msgid "Post type"
-msgstr "Tipo de post"
+msgstr "Tipus de post"
 
 #: addons/google-sheets/assets/addon.bundle.js:1037
 #: addons/google-sheets/assets/addon.bundle.js:1195
@@ -211,7 +211,7 @@ msgstr ""
 #: addons/wp-rest/assets/addon.bundle.js:1016
 #: addons/wp-rest/assets/addon.bundle.js:1174
 msgid "Foreign key"
-msgstr "Clave foránea"
+msgstr "Clau forana"
 
 #: addons/google-sheets/assets/addon.bundle.js:1236
 #: addons/odoo/assets/addon.bundle.js:1208
@@ -221,28 +221,28 @@ msgstr "Clave foránea"
 #: assets/plugin.bundle.js:1050
 #: assets/plugin.bundle.js:1649
 msgid "Remove"
-msgstr "Borrar"
+msgstr "Esborrar"
 
 #: addons/odoo/assets/addon.bundle.js:2024
 #: addons/odoo/assets/addon.bundle.js:2150
 #: addons/odoo/assets/addon.bundle.js:2211
 msgid "Database"
-msgstr "Base de datos"
+msgstr "Base de dades"
 
 #: addons/odoo/assets/addon.bundle.js:2327
 #: addons/odoo/assets/addon.bundle.js:2454
 msgid "User"
-msgstr "Usuario"
+msgstr "Usuari"
 
 #: addons/odoo/assets/addon.bundle.js:2337
 #: addons/odoo/assets/addon.bundle.js:2464
 msgid "Password"
-msgstr "Contraseña"
+msgstr "Contrasenya"
 
 #: addons/odoo/assets/addon.bundle.js:2167
 #: addons/odoo/assets/addon.bundle.js:2221
 msgid "Model"
-msgstr "Modelo"
+msgstr ""
 
 #: assets/plugin.bundle.js:1037
 #: assets/plugin.bundle.js:2322

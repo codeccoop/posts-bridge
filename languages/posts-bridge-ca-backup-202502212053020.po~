@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2024-12-01T14:54:24+00:00\n"
-"PO-Revision-Date: 2025-02-21 20:53+0000\n"
+"PO-Revision-Date: 2025-02-21 20:52+0000\n"
 "Language: ca\n"
 "X-Generator: Loco https://localise.biz/\n"
 "X-Domain: posts-bridge\n"
@@ -551,7 +551,7 @@ msgstr "Error de càrrega de tipus de posts"
 
 #: assets/plugin.bundle.js:1932
 msgid "Logging"
-msgstr "Registrant"
+msgstr "Carregant"
 
 #: includes/class-custom-post-type.php:122
 msgid "Makes this post type available for selection in navigation menus"

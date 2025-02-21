@@ -1,0 +1,57 @@
+{
+  "translation-revision-date": "2025-02-21 20:53+0000",
+  "generator": "WP-CLI\/2.11.0",
+  "source": "addons\/wp-rest\/assets\/addon.bundle.js",
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "lang": "ca",
+        "plural-forms": "nplurals=2; plural=n != 1;"
+      },
+      "Add": ["Afegir"],
+      "Add bridge": ["Afegir bridge"],
+      "AJAX synchronization error": ["Error de sincronitzaci\u00f3 AJAX"],
+      "Application password": ["Contrasenya d'aplicaci\u00f3"],
+      "Backend": ["Backend"],
+      "Bridges": ["Bridges"],
+      "Close": ["Tancar"],
+      "Configure the post type to bridge": [
+        "Configura el tipus de post a enlla\u00e7ar"
+      ],
+      "Congratulations, you've created a new post bridge!": [
+        "Felicitats, has creat un nou bridge de post"
+      ],
+      "Credentials": ["Credencials"],
+      "Custom field name": ["Nom del camp personalitzat"],
+      "Custom fields": ["Camps personalitzats"],
+      "Done": ["Fet"],
+      "Drop": ["Descartar"],
+      "Foreign field name": ["Nom del camp for\u00e0"],
+      "Foreign key": ["Clau forana"],
+      "Full synchronization mode": ["Mode de sincronitzaci\u00f3 completa"],
+      "Loading config error": ["Error de c\u00e0rrega de configuraci\u00f3"],
+      "Next": ["Seg\u00fcent"],
+      "Post fields": ["Camps del post"],
+      "Post type": ["Tipus de post"],
+      "Previous": ["Previ"],
+      "Remote fields": ["Camps remots"],
+      "Remote post type": ["Tipus de post remot"],
+      "Remove": ["Esborrar"],
+      "Reuse a post type": ["Reutilitza un tipus de post"],
+      "Select a template": ["Sel\u00b7lecciona una plantilla"],
+      "Submit": ["Enviar"],
+      "Syncrhonize": ["Sincronitzar"],
+      "Template submit error": ["Error d'enviament de plantilla"],
+      "Templates": ["Plantilles"],
+      "This post type already exists": ["Aquest tipus de post ja existeix"],
+      "Use tempalte": ["Usar la plantilla"],
+      "Username": ["Nom d'usuari"],
+      "WordPress use application password to grant access over the REST API.\nPosts Bridge will need this kind of credentials to get authorized to access the WordPress content.\nSee this <a href='https:\/\/make.wordpress.org\/core\/2020\/11\/05\/application-passwords-integration-guide\/'>guide to get help<\/a>\nwith the process of creating new application passwords.": [
+        "WordPress fa \u00fas de contrasenyes d'aplicaci\u00f3 per garantir l'acc\u00e9s a trav\u00e9s de la REST API.\nPors Bridge necessitar\u00e0 aquest tipus de credencials per ser autoritzar durant l'acc\u00e9s al contingut de WordPress.\nConsulta aquesta <a href='https:\/\/make.wordpress.org\/core\/2020\/11\/05\/application-passwords-integration-guide\/'>guia per obtenir ajuda<\/a>\namb el proc\u00e9s de creaci\u00f3 de noves contrasenyes d'aplicaci\u00f3."
+      ],
+      "wp-rest": ["WordPress REST API"]
+    }
+  }
+}

@@ -25,7 +25,7 @@ export default function NewGSBridge({ add, schema }) {
               help={
                 spreadsheets.length === 0
                   ? __(
-                      "Before you can use spreadsheet hooks, you have to grant access to Posts Bridge as OAuth client",
+                      "Before you can use spreadsheet bridges, you have to grant access to Posts Bridge as OAuth client",
                       "posts-bridge"
                     )
                   : ""

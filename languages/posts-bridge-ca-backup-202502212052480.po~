@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2024-12-01T14:54:24+00:00\n"
-"PO-Revision-Date: 2025-02-21 20:53+0000\n"
+"PO-Revision-Date: 2025-02-21 20:46+0000\n"
 "Language: ca\n"
 "X-Generator: Loco https://localise.biz/\n"
 "X-Domain: posts-bridge\n"
@@ -551,7 +551,7 @@ msgstr "Error de càrrega de tipus de posts"
 
 #: assets/plugin.bundle.js:1932
 msgid "Logging"
-msgstr "Registrant"
+msgstr "Carregant"
 
 #: includes/class-custom-post-type.php:122
 msgid "Makes this post type available for selection in navigation menus"
@@ -935,13 +935,10 @@ msgstr "Plantilles"
 #: includes/class-custom-post-type.php:156
 msgid "The position in the menu order the post type should appear"
 msgstr ""
-"La posició a l'order del menú en la que ha d'apareixer el tipus de post"
 
 #: includes/class-custom-post-type.php:164
 msgid "The string to use to build the read, edit, and delete capabilities"
 msgstr ""
-"La cadena de text a utilitzar a l'hora de crear les capacitats de lectura, "
-"edició i eliminació"
 
 #: addons/odoo/assets/addon.bundle.js:2038
 #: addons/odoo/assets/addon.bundle.js:2306
@@ -970,7 +967,6 @@ msgstr "Títol"
 #: includes/class-custom-post-type.php:148
 msgid "To change the base URL of REST API route. Default is $post_type"
 msgstr ""
-"Canviar la URL base de la routa de la REST API. Per defecte és $post_type"
 
 #: assets/plugin.bundle.js:644
 msgid "Trackbacks"
@@ -995,7 +991,7 @@ msgstr "Dos cops l'hora"
 #: addons/rest-api/class-rest-post-bridge.php:132
 #: addons/wp-rest/class-wp-post-bridge.php:68
 msgid "Unkown HTTP response content type %s"
-msgstr "Tipus de contingut de la respota HTTP desconegut %s"
+msgstr ""
 
 #: addons/google-sheets/assets/addon.bundle.js:1494
 msgid "Upload credentials"
@@ -1040,18 +1036,11 @@ msgid ""
 "the web with confidencial data. Make sure to deactivate debugging once "
 "you've done."
 msgstr ""
-"Quan la depuració setigui activa, els registres seran escrits a `wp-"
-"content/debug.log` i llegits des d'allà. Si el teu servidor no està ben "
-"protegit, aquest fitxer pot ser d'accés públic a través de la web amb "
-"informació confidencial. Assegurat de desactivar la depuració un cop hagis "
-"acabat."
 
 #: includes/class-custom-post-type.php:113
 msgid ""
 "Where to show the post type in the admin menu. To work, $show_ui must be true"
 msgstr ""
-"Si mostrar el tipus de post al menú de l'admin. Per funcionar, $show_ui ha "
-"de ser positiu."
 
 #: includes/class-custom-post-type.php:77
 msgid ""

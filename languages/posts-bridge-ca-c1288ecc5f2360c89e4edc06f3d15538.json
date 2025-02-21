@@ -1,0 +1,69 @@
+{
+  "translation-revision-date": "2025-02-21 20:53+0000",
+  "generator": "WP-CLI\/2.11.0",
+  "source": "addons\/google-sheets\/assets\/addon.bundle.js",
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "lang": "ca",
+        "plural-forms": "nplurals=2; plural=n != 1;"
+      },
+      "Add": ["Afegir"],
+      "Add bridge": ["Afegir bridge"],
+      "AJAX synchronization error": ["Error de sincronitzaci\u00f3 AJAX"],
+      "Backend": ["Backend"],
+      "Before you can use spreadsheet bridges, you have to grant access to Posts Bridge as OAuth client": [
+        "Abans de poder usar bridges de spreadsheet, has de garantir acces a Posts Bridge com un client OAuth."
+      ],
+      "Bridges": ["Bridges"],
+      "Categories": ["Categories"],
+      "Close": ["Tancar"],
+      "Congratulations, you've created a new post bridge!": [
+        "Felicitats, has creat un nou bridge de post"
+      ],
+      "Content": ["Contingut"],
+      "Custom field name": ["Nom del camp personalitzat"],
+      "Custom fields": ["Camps personalitzats"],
+      "Date": ["Data"],
+      "Done": ["Fet"],
+      "Drop": ["Descartar"],
+      "Error on revoke credentials": ["Error de revocaci\u00f3 de credencials"],
+      "Error on upload credentials": ["Error de pujada de credencials"],
+      "Excerpt": ["Resum"],
+      "Featured media": ["Media destacat"],
+      "Follow <a href='https:\/\/github.com\/juampynr\/google-spreadsheet-reader?tab=readme-ov-file' target='_blank'>example<\/a> if do you need help with the process.": [
+        "Segueix <a href='https:\/\/github.com\/juampynr\/google-spreadsheet-reader?tab=readme-ov-file' target='_blank'>l'example<\/a> si necessites ajuda amb el proc\u00e9s."
+      ],
+      "Foreign field name": ["Nom del camp for\u00e0"],
+      "Foreign key": ["Clau forana"],
+      "Full synchronization mode": ["Mode de sincronitzaci\u00f3 completa"],
+      "Google Service Credentials": ["Credencials de Servei de Google"],
+      "google-sheets": ["Google Sheets"],
+      "Grant access": ["Garantir acc\u00e9s"],
+      "Invalid credentials": ["Credencials inv\u00e0lides"],
+      "Loading config error": ["Error de c\u00e0rrega de configuraci\u00f3"],
+      "Post fields": ["Camps del post"],
+      "Post type": ["Tipus de post"],
+      "Remote fields": ["Camps remots"],
+      "Remove": ["Esborrar"],
+      "Revoke access": ["Revoca l'acc\u00e9s"],
+      "Select a template": ["Sel\u00b7lecciona una plantilla"],
+      "Slug": ["Slug"],
+      "Spreadsheet": ["Spreadsheet"],
+      "Status": ["Estat"],
+      "Syncrhonize": ["Sincronitzar"],
+      "Tab Name": ["Nom de la pestanya"],
+      "Tags": ["Etiquetes"],
+      "Template submit error": ["Error d'enviament de plantilla"],
+      "Templates": ["Plantilles"],
+      "Title": ["T\u00edtol"],
+      "Upload credentials": ["Pujar credencials"],
+      "Use tempalte": ["Usar la plantilla"],
+      "You have to create a service account credentials to grant Posts Bridge access to your spreadhseets": [
+        "Has de crear unes credencials de tipus servei per garantir a Posts Bridge l'acc\u00e9s als teus spreadsheets"
+      ]
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "translation-revision-date": "YEAR-MO-DA HO:MI+ZONE",
+  "generator": "WP-CLI\/2.11.0",
+  "source": "addons\/google-sheets\/assets\/addon.bundle.js",
+  "domain": "messages",
+  "locale_data": {
+    "messages": {
+      "": {
+        "domain": "messages",
+        "lang": "es_ES",
+        "plural-forms": "nplurals=2; plural=(n != 1);"
+      },
+      "Remote fields": ["Campos remotos"],
+      "Post fields": ["Campos del post"],
+      "Foreign field name": ["Nombre de la clave for\u00e1nea"],
+      "Custom fields": ["Campos personalizados"],
+      "Add": ["A\u00f1adir"],
+      "Custom field name": ["Nombre del campo personalizado"],
+      "Drop": ["Descartar"],
+      "Done": ["Hecho"],
+      "Post type": ["Tipo de post"],
+      "Backend": [""],
+      "Foreign key": ["Clave for\u00e1nea"],
+      "Remove": ["Borrar"],
+      "Invalid credentials": [""],
+      "Error on upload credentials": [""],
+      "Error on revoke credentials": [""],
+      "Loading config error": [""],
+      "Template submit error": [""],
+      "Add bridge": [""],
+      "Bridges": [""],
+      "Title": [""],
+      "Slug": [""],
+      "Excerpt": [""],
+      "Content": [""],
+      "Status": [""],
+      "Featured media": [""],
+      "Date": [""],
+      "Categories": [""],
+      "Tags": [""],
+      "Use tempalte": [""],
+      "Templates": [""],
+      "Congratulations, you've created a new post bridge!": [""],
+      "Close": [""],
+      "Select a template": [""],
+      "AJAX synchronization error": [""],
+      "Syncrhonize": [""],
+      "Full synchronization mode": [""],
+      "Spreadsheet": [""],
+      "Before you can use spreadsheet bridges, you have to grant access to Posts Bridge as OAuth client": [
+        ""
+      ],
+      "Tab Name": [""],
+      "Google Service Credentials": [""],
+      "Revoke access": [""],
+      "Grant access": [""],
+      "You have to create a service account credentials to grant Posts Bridge access to your spreadhseets": [
+        ""
+      ],
+      "Upload credentials": [""],
+      "Follow <a href='https:\/\/github.com\/juampynr\/google-spreadsheet-reader?tab=readme-ov-file' target='_blank'>example<\/a> if do you need help with the process.": [
+        ""
+      ],
+      "google-sheets": ["Google Sheets"]
+    }
+  }
+}
