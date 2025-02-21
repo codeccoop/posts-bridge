@@ -65,6 +65,8 @@ class Google_Sheets_Service extends Singleton
             $service = self::service()->client()->get_sheets_service();
             $sheets = $service->spreadsheets->get($spreadsheet_id);
         } catch (Exception $e) {
+            Logger::log('Get spreadsheet error: ' . $e->getMessage());
+
             return new WP_Error(
                 'spreadsheets_not_found_error',
                 __('Can\'t find the spreadsheets by id', 'posts-bridge'),
@@ -120,10 +122,6 @@ class Google_Sheets_Service extends Singleton
             $headers = array_map(static function ($value) {
                 return $value;
             }, array_values($row->values[0]));
-
-            // $values = array_map(function ($header) use ($data) {
-            //     return isset($data[$header]) ? $data[$header] : '';
-            // }, $headers);
 
             $response = $service->spreadsheets_values->get(
                 $spreadsheet_id,
@@ -187,6 +185,10 @@ class Google_Sheets_Service extends Singleton
                 })
             );
         } catch (Exception $e) {
+            Logger::log(
+                'Get spreadsheets error: ' . $e->getMessage(),
+                Logger::ERROR
+            );
             return [];
         } finally {
             self::service()->client()->flush_credentials();
@@ -211,7 +213,11 @@ class Google_Sheets_Service extends Singleton
                     'title' => $props->getTitle(),
                 ];
             }, $sheets);
-        } catch (Exception) {
+        } catch (Exception $e) {
+            Logger::log(
+                'Get spreadsheet tab error: ' . $e->getMessage(),
+                Logger::ERROR
+            );
             return [];
         } finally {
             self::service()->client()->flush_credentials();
