@@ -1023,7 +1023,7 @@ msgstr ""
 
 #: assets/plugin.bundle.js:2223
 msgid "Import / Export"
-msgstr ""
+msgstr "Importar / Exportar"
 
 #: custom-blocks/remote-fields/build/block.json
 msgctxt "block title"

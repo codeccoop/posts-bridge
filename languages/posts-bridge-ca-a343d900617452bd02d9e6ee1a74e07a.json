@@ -46,7 +46,7 @@
       "Custom post types": ["Tipus de posts personalitzats"],
       "Daily": ["Diari"],
       "Debug": ["Depurar"],
-      "Download config": ["Descarregar configuraci\u00f3"],
+      "Download config": ["Exportar config"],
       "Drop": ["Descartar"],
       "Editor": ["Editor"],
       "Excerpt": ["Resum"],
@@ -63,7 +63,7 @@
       "Import a new configuration is a destructive action. Your current configuration will be replaced with the new one. If there are some errors on the new config, Posts Bridge will filter it to avoid bugs.": [
         "La importaci\u00f3 de nova configuraci\u00f3 \u00e9s una acci\u00f3 destructiva. La configuraci\u00f3 actual ser\u00e0 reempla\u00e7ada per la nova. Si hi ha algun error a la nova configuraci\u00f3, Posts Bridge la filtrar\u00e0 per evitar errors."
       ],
-      "Import config": ["Importar configuraci\u00f3"],
+      "Import config": ["Importar config"],
       "Import Posts Bridge JSON config": [
         "Importar configuraci\u00f3 JSON de Posts Bridge"
       ],

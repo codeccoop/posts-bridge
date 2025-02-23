@@ -335,7 +335,7 @@ msgstr "Fet"
 
 #: assets/plugin.bundle.js:2084
 msgid "Download config"
-msgstr "Descarregar configuració"
+msgstr "Exportar config"
 
 #: addons/google-sheets/assets/addon.bundle.js:766
 #: addons/odoo/assets/addon.bundle.js:738
@@ -498,7 +498,7 @@ msgstr ""
 
 #: assets/plugin.bundle.js:2093
 msgid "Import config"
-msgstr "Importar configuració"
+msgstr "Importar config"
 
 #: assets/plugin.bundle.js:2088
 msgid "Import Posts Bridge JSON config"
