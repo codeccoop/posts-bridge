@@ -61,6 +61,13 @@ $posts_bridge_remote_cpt = null;
 class Posts_Bridge extends Base_Plugin
 {
     /**
+     * Handles the plugin upgrade flag transient name.
+     *
+     * @var string
+     */
+    private const upgraded_flag = 'posts_bridge_upgraded_flag';
+
+    /**
      * Handle plugin's settings store class name.
      *
      * @var string $settings_class Plugin's settings store class name.
@@ -114,6 +121,17 @@ class Posts_Bridge extends Base_Plugin
         self::wp_hooks();
         self::rest_hooks();
         self::http_hooks();
+    }
+
+    /**
+     * Init hook callabck. Checks if comes from an upgrade and run db migrations.
+     */
+    protected static function init()
+    {
+        $do_migrations = get_transient(self::upgraded_flag) || false;
+        if ($do_migrations) {
+            self::do_migrations();
+        }
     }
 
     /**
@@ -206,7 +224,7 @@ class Posts_Bridge extends Base_Plugin
                     $extra['type'] === 'plugin' &&
                     in_array(self::index(), $extra['plugins'])
                 ) {
-                    self::do_migrations();
+                    set_transient(self::upgraded_flag, true, 60);
                 }
             },
             10,
