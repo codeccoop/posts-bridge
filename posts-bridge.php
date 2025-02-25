@@ -61,11 +61,11 @@ $posts_bridge_remote_cpt = null;
 class Posts_Bridge extends Base_Plugin
 {
     /**
-     * Handles the plugin upgrade flag transient name.
+     * Handles the plugin db version option name.
      *
      * @var string
      */
-    private const upgraded_flag = 'posts_bridge_upgraded_flag';
+    private const db_version = 'posts-bridge-version';
 
     /**
      * Handle plugin's settings store class name.
@@ -89,13 +89,18 @@ class Posts_Bridge extends Base_Plugin
     private static $rest_controllers = [];
 
     /**
-     * Schedules Posts_Synchronizer on plugin activation and adds the plugin's default thumbnail
-     * to the media store.
+     * Schedules Posts_Synchronizer on plugin activation, adds the plugin's default thumbnail
+     * to the media store, and initialize the db version option.
      */
     public static function activate()
     {
         Remote_Featured_Media::setup_default_thumbnail();
         Posts_Synchronizer::schedule();
+
+        $version = get_option(self::db_version);
+        if ($version === false) {
+            update_option(self::db_version, self::version(), true);
+        }
     }
 
     /**
@@ -109,7 +114,8 @@ class Posts_Bridge extends Base_Plugin
     }
 
     /**
-     * Initialized addons and setup plugin hooks.
+     * Initialized addons, sets up plugin hooks and run db migrations if db version mismatches
+     * the plugin version.
      */
     protected function construct(...$args)
     {
@@ -128,8 +134,8 @@ class Posts_Bridge extends Base_Plugin
      */
     protected static function init()
     {
-        $do_migrations = get_transient(self::upgraded_flag) || false;
-        if ($do_migrations) {
+        $db_version = get_option(self::db_version);
+        if ($db_version !== self::version()) {
             self::do_migrations();
         }
     }
@@ -216,20 +222,6 @@ class Posts_Bridge extends Base_Plugin
         add_action('admin_enqueue_scripts', static function ($admin_page) {
             self::admin_enqueue_scripts($admin_page);
         });
-
-        add_action(
-            'upgrade_process_complete',
-            static function ($upgrader, $extra) {
-                if (
-                    $extra['type'] === 'plugin' &&
-                    in_array(self::index(), $extra['plugins'])
-                ) {
-                    set_transient(self::upgraded_flag, true, 60);
-                }
-            },
-            10,
-            2
-        );
     }
 
     /**
@@ -322,7 +314,7 @@ class Posts_Bridge extends Base_Plugin
      */
     private static function do_migrations()
     {
-        $from = get_option('posts-bridge-version', '1.0.0');
+        $from = get_option(self::db_version, '1.0.0');
 
         if (!preg_match('/^\d+\.\d+\.\d+$/', $from)) {
             Logger::log('Invalid db plugin version', Logger::ERROR);
@@ -363,7 +355,7 @@ class Posts_Bridge extends Base_Plugin
             include $migrations_path . '/' . $migration;
         }
 
-        update_option('posts-bridge-version', $to);
+        update_option(self::db_version, $to);
     }
 }
 
