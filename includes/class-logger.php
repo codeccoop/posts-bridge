@@ -180,13 +180,9 @@ class Logger extends Singleton
     {
         if (self::is_active()) {
             error_reporting(E_ALL);
-            if (!ini_get('log_errors')) {
-                ini_set('log_errors', 1);
-            }
-
-            if (!defined('WP_DEBUG_LOG') || !boolval(WP_DEBUG_LOG)) {
-                ini_set('error_log', self::log_path());
-            }
+            ini_set('log_errors', 1);
+            ini_set('display_errors', 0);
+            ini_set('error_log', self::log_path());
         }
 
         return self::get_instance();
@@ -261,7 +257,13 @@ class Logger extends Singleton
             'methods' => WP_REST_Server::READABLE,
             'callback' => static function () {
                 $lines = isset($_GET['lines']) ? (int) $_GET['lines'] : 500;
-                return self::logs($lines);
+                $logs = self::logs($lines);
+
+                if (empty($logs)) {
+                    return [];
+                }
+
+                return $logs;
             },
             'permission_callback' => static function () {
                 return self::permission_callback();
