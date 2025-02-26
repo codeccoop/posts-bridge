@@ -232,7 +232,7 @@ class Post_Bridge_Template
                 'capability_type' => ['type' => 'string'],
                 'map_meta_cap' => ['type' => 'boolean'],
                 'supports' => [
-                    'typ' => 'array',
+                    'type' => 'array',
                     'items' => [
                         'type' => 'string',
                         'enum' => [
