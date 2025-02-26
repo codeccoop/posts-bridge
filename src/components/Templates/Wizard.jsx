@@ -66,7 +66,7 @@ export default function TemplateWizard({ steps = [], data, setData, onDone }) {
   const fields = useMemo(() => config?.fields || [], [config]);
   const defaults = useMemo(() => {
     return fields.reduce((defaults, field) => {
-      if (field.default) {
+      if (Object.prototype.hasOwnProperty.call(field, "default")) {
         const group = refToGroup(field.ref);
         defaults[group] = defaults[group] || {};
         defaults[group][field.name] = field.default;

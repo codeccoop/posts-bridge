@@ -56,6 +56,7 @@ class Custom_Post_Type
                     ),
                     'type' => 'string',
                     'required' => false,
+                    'default' => '',
                 ],
                 'singular_label' => [
                     'description' => __(
@@ -64,6 +65,7 @@ class Custom_Post_Type
                     ),
                     'type' => 'string',
                     'required' => false,
+                    'default' => '',
                 ],
                 'description' => [
                     'description' => __(
@@ -72,6 +74,7 @@ class Custom_Post_Type
                     ),
                     'type' => 'string',
                     'required' => false,
+                    'default' => '',
                 ],
                 'public' => [
                     'description' => __(
@@ -79,7 +82,7 @@ class Custom_Post_Type
                         'posts-bridge'
                     ),
                     'default' => true,
-                    'type' => 'string',
+                    'type' => 'boolean',
                     'required' => false,
                 ],
                 'exclude_from_search' => [
@@ -134,6 +137,7 @@ class Custom_Post_Type
                     ),
                     'type' => 'boolean',
                     'required' => false,
+                    'default' => true,
                 ],
                 'show_in_rest' => [
                     'description' => __(
@@ -151,6 +155,7 @@ class Custom_Post_Type
                     ),
                     'type' => 'string',
                     'required' => false,
+                    'default' => '',
                 ],
                 'menu_position' => [
                     'description' => __(
@@ -159,12 +164,14 @@ class Custom_Post_Type
                     ),
                     'type' => 'integer',
                     'required' => false,
+                    'default' => 10,
                 ],
                 'capability_type' => [
                     'description' => __(
                         'The string to use to build the read, edit, and delete capabilities',
                         'posts-bridge'
                     ),
+                    'default' => 'post',
                     'type' => 'string',
                     'required' => false,
                 ],
@@ -189,22 +196,21 @@ class Custom_Post_Type
                         'custom-fields',
                     ],
                     'type' => 'array',
-                    'items' => [
-                        'type' => 'string',
-                        'enum' => [
-                            'title',
-                            'editor',
-                            'comments',
-                            'revisions',
-                            'trackbacks',
-                            'author',
-                            'excerpt',
-                            'page-attributes',
-                            'thumbnail',
-                            'custom-fields',
-                            'post-formats',
-                        ],
+                    'items' => ['type' => 'string'],
+                    'enum' => [
+                        'title',
+                        'editor',
+                        'comments',
+                        'revisions',
+                        'trackbacks',
+                        'author',
+                        'excerpt',
+                        'page-attributes',
+                        'thumbnail',
+                        'custom-fields',
+                        'post-formats',
                     ],
+                    'uniqueItems' => true,
                     'required' => false,
                 ],
                 'taxonomies' => [
@@ -212,9 +218,9 @@ class Custom_Post_Type
                         'An array of taxonomy identifiers that will be registered for the post type',
                         'posts-bridge'
                     ),
-                    'type' => 'array',
-                    'items' => ['type' => 'string'],
+                    'type' => 'string',
                     'required' => false,
+                    'default' => 'category,post_tag',
                 ],
                 'has_archive' => [
                     'description' => __(
@@ -222,7 +228,7 @@ class Custom_Post_Type
                         'posts-bridge'
                     ),
                     'default' => false,
-                    'type' => ['boolean', 'string'],
+                    'type' => 'boolean',
                     'required' => false,
                 ],
                 'rewrite' => [
@@ -232,6 +238,7 @@ class Custom_Post_Type
                     ),
                     'type' => 'string',
                     'required' => false,
+                    'default' => '',
                 ],
                 'query_var' => [
                     'description' => __(
@@ -240,6 +247,7 @@ class Custom_Post_Type
                     ),
                     'type' => 'string',
                     'required' => false,
+                    'default' => '',
                 ],
             ],
             'additionalProperties' => false,
@@ -498,8 +506,8 @@ class Custom_Post_Type
                         ) {
                             $token = trim($token);
                             $tokens = self::schema()['properties']['supports'][
-                                'items'
-                            ]['enum'];
+                                'enum'
+                            ];
 
                             return in_array($token, $tokens, true);
                         })

@@ -185,7 +185,7 @@ class REST_Settings_Controller extends Base_Controller
                                             'posts-bridge'
                                         ),
                                         'type' => 'mixed',
-                                        'required' => true,
+                                        'required' => false,
                                     ],
                                 ],
                             ],

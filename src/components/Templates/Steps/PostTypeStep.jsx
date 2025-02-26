@@ -2,21 +2,32 @@ import { usePostTypes } from "../../../providers/Settings";
 import TemplateStep from "./Step";
 import Field from "../Field";
 
-const { useMemo } = wp.element;
+const { SelectControl } = wp.components;
+const { useMemo, useState, useEffect } = wp.element;
 const { __ } = wp.i18n;
 
 const fieldsOrder = [
   "name",
   "label",
   "singular_label",
+  "description",
   "public",
+  "exclude_from_search",
   "publicly_queryable",
-  "has_archive",
+  "show_ui",
   "show_in_menu",
-  "rewrite",
+  "show_in_nav_menus",
+  "show_in_admin_bar",
+  "show_in_rest",
   "rest_base",
+  "menu_position",
+  "capability_type",
+  "map_meta_cap",
   "supports",
   "taxonomies",
+  "has_archive",
+  "rewrite",
+  "query_var",
 ];
 
 export default function PostTypeStep({ fields, data, setData }) {
@@ -53,7 +64,7 @@ export default function PostTypeStep({ fields, data, setData }) {
 
   const filteredFields = useMemo(
     () => (postType ? [] : sortedFields.filter(({ name }) => name !== "name")),
-    [postTypes, sortedFields]
+    [postType, sortedFields]
   );
 
   const nameField = useMemo(

@@ -110,14 +110,14 @@ abstract class Post_Bridge
                 continue;
             }
 
-            $template_file = basename($templates_path);
+            $template_file = basename($template_path);
             $ext = pathinfo($template_file)['extension'];
 
             $config = null;
             if ($ext === 'php') {
-                $config = include $templates_path;
+                $config = include $template_path;
             } elseif ($ext === 'json') {
-                $content = file_get_contents($templates_path);
+                $content = file_get_contents($template_path);
                 $config = json_decode($content, true);
             }
 

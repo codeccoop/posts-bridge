@@ -113,9 +113,9 @@ class Post_Bridge_Template
                             'integer',
                             'number',
                             'string',
+                            'boolean',
                             'array',
                             // 'object',
-                            'boolean',
                             // 'null',
                         ],
                     ],
@@ -124,9 +124,9 @@ class Post_Bridge_Template
                             'integer',
                             'number',
                             'string',
+                            'boolean',
                             'array',
                             // 'object',
-                            'boolean',
                             // 'null',
                         ],
                     ],
@@ -169,33 +169,26 @@ class Post_Bridge_Template
             'properties' => [
                 'name' => ['type' => 'string'],
                 'post_type' => ['type' => 'string'],
-                'pipes' => [
+                'fields' => [
                     'type' => 'array',
                     'items' => [
                         'type' => 'object',
                         'properties' => [
-                            'from' => ['type' => 'string'],
-                            'to' => ['type' => 'string'],
-                            'cast' => [
+                            'name' => [
                                 'type' => 'string',
-                                'enum' => [
-                                    'boolean',
-                                    'string',
-                                    'integer',
-                                    'float',
-                                    'json',
-                                    'csv',
-                                    'concat',
-                                    'null',
-                                ],
+                                'minLength' => 1,
+                            ],
+                            'foreign' => [
+                                'type' => 'string',
+                                'minLength' => 1,
                             ],
                         ],
                         'additionalProperties' => false,
-                        'required' => ['from', 'to', 'cast'],
+                        'required' => ['name', 'foreign'],
                     ],
                 ],
             ],
-            'required' => ['name', 'post_type', 'pipes'],
+            'required' => ['name', 'post_type', 'fields'],
             'additionalProperties' => false,
         ],
         'backend' => [
@@ -235,6 +228,7 @@ class Post_Bridge_Template
                 'show_in_admin_bar' => ['type' => 'boolean'],
                 'show_in_rest' => ['type' => 'boolean'],
                 'rest_base' => ['type' => 'string'],
+                'menu_position' => ['type' => 'integer'],
                 'capability_type' => ['type' => 'string'],
                 'map_meta_cap' => ['type' => 'boolean'],
                 'supports' => [
@@ -311,7 +305,7 @@ class Post_Bridge_Template
         $post_type_schema = Custom_Post_Type::schema();
         $post_type_fields = [];
 
-        foreach ($post_type_schema as $prop => $defn) {
+        foreach ($post_type_schema['properties'] as $prop => $defn) {
             $field = [
                 'ref' => '#post_type',
                 'name' => $prop,
@@ -325,21 +319,24 @@ class Post_Bridge_Template
                 $field['default'] = $defn['default'];
             }
 
-            if (isset($defn['items'])) {
-                if (
-                    $defn['items']['type'] === 'string' &&
-                    isset($defn['items']['enum'])
-                ) {
-                    $field['options'] = array_map(function ($value) {
-                        return [
-                            'label' => $value,
-                            'value' => $value,
-                        ];
-                    }, $defn['items']['enum']);
+            if ($defn['type'] === 'integer') {
+                $field['type'] = 'number';
+            }
 
-                    $field['type'] = 'options';
-                    $field['multiple'] = true;
-                }
+            if (is_array($defn['type'])) {
+                $field['type'] = 'string';
+            }
+
+            if (isset($defn['items'], $defn['enum'])) {
+                $field['options'] = array_map(function ($value) {
+                    return [
+                        'label' => $value,
+                        'value' => $value,
+                    ];
+                }, $defn['enum']);
+
+                $field['type'] = 'options';
+                $field['multiple'] = true;
             }
 
             $post_type_fields[] = $field;
@@ -358,17 +355,17 @@ class Post_Bridge_Template
                             'type' => 'string',
                             'required' => true,
                         ],
-                        [
-                            'ref' => '#post_type',
-                            'name' => 'name',
-                            'label' => __('Name', 'posts-bridge'),
-                            'description' => __(
-                                'Custom post type key',
-                                'posts-bridge'
-                            ),
-                            'type' => 'string',
-                            'required' => true,
-                        ],
+                        // [
+                        //     'ref' => '#post_type',
+                        //     'name' => 'name',
+                        //     'label' => __('Name', 'posts-bridge'),
+                        //     'description' => __(
+                        //         'Custom post type key',
+                        //         'posts-bridge'
+                        //     ),
+                        //     'type' => 'string',
+                        //     'required' => true,
+                        // ],
                     ],
                     $post_type_fields
                 ),
@@ -391,15 +388,19 @@ class Post_Bridge_Template
                         ],
                     ],
                 ],
-                'post_type' => array_reduce(
-                    array_keys($post_type_schema['properties']),
-                    function ($props, $prop) use ($post_type_schema) {
-                        $props[$prop] =
-                            $post_type_schema['properties'][$prop]['default'] ??
-                            '';
-                        return $props;
-                    },
-                    []
+                'post_type' => array_merge(
+                    ['name' => ''],
+                    array_reduce(
+                        array_keys($post_type_schema['properties']),
+                        function ($props, $prop) use ($post_type_schema) {
+                            $props[$prop] =
+                                $post_type_schema['properties'][$prop][
+                                    'default'
+                                ] ?? '';
+                            return $props;
+                        },
+                        []
+                    )
                 ),
             ],
             $schema
@@ -635,6 +636,21 @@ class Post_Bridge_Template
             return;
         }
 
+        global $wp_post_types;
+        $post_type = array_filter($fields, function ($field) {
+            return $field['name'] === 'name' && $field['ref'] === '#post_type';
+        })[0]['value'];
+
+        if (isset($wp_post_types[$post_type])) {
+            foreach ($fields as $field) {
+                if ($field['ref'] !== '#post_type') {
+                    continue;
+                }
+
+                $field['value'] = $wp_post_types[$post_type][$field['name']];
+            }
+        }
+
         // Add constants to the user fields
         foreach ($template['fields'] as $field) {
             if (!empty($field['value'])) {
@@ -684,7 +700,7 @@ class Post_Bridge_Template
                 'required' => ['ref', 'name', 'value'],
             ]);
 
-            if (!$is_valid || ($field['ref'][0] ?? '') !== '#') {
+            if (is_wp_error($is_valid) || ($field['ref'][0] ?? '') !== '#') {
                 throw new Post_Bridge_Template_Exception(
                     'invalid_field',
                     sprintf(
@@ -783,6 +799,7 @@ class Post_Bridge_Template
 
             $result = $this->create_bridge(
                 array_merge($data['bridge'], [
+                    'post_type' => $data['post_type']['name'],
                     'template' => $this->name,
                 ])
             );
@@ -837,13 +854,10 @@ class Post_Bridge_Template
     {
         do_action('posts_bridge_before_template_post_type', $data, $this->name);
 
-        $name = $data['name'];
-        unset($data['name']);
-
-        Custom_Post_Type::register($name, $data);
+        Custom_Post_Type::register($data);
         Posts_Bridge::setting('general')->flush();
 
-        $is_valid = $this->post_type_exists($name);
+        $is_valid = $this->post_type_exists($data['name']);
         if (!$is_valid) {
             return false;
         }
@@ -940,17 +954,17 @@ class Post_Bridge_Template
     /**
      * Removes a bridge from the settings store by name.
      *
-     * @param string $name Bridge name.
+     * @param string $post_type Bridge's post type key.
      */
-    private function remove_bridge($name)
+    private function remove_bridge($post_type)
     {
         $setting = Posts_Bridge::setting($this->api);
         $bridges = $setting->bridges ?: [];
 
         $setting->bridges = array_filter($bridges, static function (
             $bridge
-        ) use ($name) {
-            return $bridge['name'] !== $name;
+        ) use ($post_type) {
+            return $bridge['post_type'] !== $post_type;
         });
     }
 
@@ -963,20 +977,20 @@ class Post_Bridge_Template
      */
     private function create_bridge($data)
     {
-        $setting = Posts_Bridge::setting($this->api);
-        $bridges = $setting->bridges ?: [];
-
-        $name_conflict = $this->bridge_exists($data['name']);
+        $name_conflict = $this->bridge_exists($data['post_type']);
         if ($name_conflict) {
             return false;
         }
+
+        $setting = Posts_Bridge::setting($this->api);
+        $bridges = $setting->bridges ?: [];
 
         do_action('forms_bridge_before_template_bridge', $data, $this->name);
 
         $setting->bridges = array_merge($bridges, [$data]);
         $setting->flush();
 
-        $is_valid = $this->bridge_exists($data['name']);
+        $is_valid = $this->bridge_exists($data['post_type']);
         if (!$is_valid) {
             return false;
         }
@@ -996,6 +1010,7 @@ class Post_Bridge_Template
     private function bridge_exists($name)
     {
         $bridges = Posts_Bridge::setting($this->api)->bridges ?: [];
-        return array_search($name, array_column($bridges, 'name')) !== false;
+        return array_search($name, array_column($bridges, 'post_type')) !==
+            false;
     }
 }

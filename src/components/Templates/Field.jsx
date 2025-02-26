@@ -3,6 +3,14 @@ const { __ } = wp.i18n;
 
 function Field({ data, error }) {
   switch (data.type) {
+    case "boolean":
+      return (
+        <ToggleField
+          name={data.name}
+          value={data.value}
+          onChange={data.onChange}
+        />
+      );
     case "number":
       return (
         <NumberField
@@ -21,6 +29,7 @@ function Field({ data, error }) {
           required={!!data.required}
           name={data.name}
           value={data.value}
+          multiple={data.multiple}
           onChange={data.onChange}
           options={data.options}
         />
@@ -37,6 +46,17 @@ function Field({ data, error }) {
         />
       );
   }
+}
+
+function ToggleField({ name, value, onChange }) {
+  return (
+    <input
+      type="checkbox"
+      name={name}
+      onChange={() => onChange(!value)}
+      checked={value}
+    />
+  );
 }
 
 function TextField({ name, value, onChange, required, error }) {
@@ -108,7 +128,15 @@ function NumberField({
   );
 }
 
-function OptionsField({ name, value, onChange, required, options, error }) {
+function OptionsField({
+  name,
+  value,
+  onChange,
+  required,
+  multiple,
+  options,
+  error,
+}) {
   const constraints = {};
   if (required) constraints.required = true;
 
@@ -129,6 +157,7 @@ function OptionsField({ name, value, onChange, required, options, error }) {
         value={value || ""}
         onChange={({ target }) => onChange(target.value)}
         style={style}
+        multiple={!!multiple}
         {...constraints}
       >
         {options.map(({ label, value }) => (
