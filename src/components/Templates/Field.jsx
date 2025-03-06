@@ -5,7 +5,7 @@ function Field({ data, error }) {
   switch (data.type) {
     case "boolean":
       return (
-        <ToggleField
+        <CheckboxField
           name={data.name}
           value={data.value}
           onChange={data.onChange}
@@ -48,7 +48,7 @@ function Field({ data, error }) {
   }
 }
 
-function ToggleField({ name, value, onChange }) {
+function CheckboxField({ name, value, onChange }) {
   return (
     <input
       type="checkbox"
