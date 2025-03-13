@@ -13,19 +13,19 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Remote posts index syncronzier.
+ * Remote posts index synchronzier.
  */
 class Posts_Synchronizer extends Singleton
 {
     /**
-     * Handle syncrhonization ajax nonce name.
+     * Handle synchronization ajax nonce name.
      *
      * @var string ajax_none
      */
     private const ajax_nonce = 'posts-bridge-ajax-sync';
 
     /**
-     * Handle syncrhonization ajax action name.
+     * Handle synchronization ajax action name.
      *
      * @var string ajax_action
      */
@@ -140,7 +140,7 @@ class Posts_Synchronizer extends Singleton
     }
 
     /**
-     * Gets syncronize general setting field and toggles schedule state.
+     * Gets synchronize general setting field and toggles schedule state.
      */
     public static function schedule()
     {
@@ -239,7 +239,7 @@ class Posts_Synchronizer extends Singleton
                     self::sync($bridge);
                 } catch (Error | Exception $e) {
                     Logger::log(
-                        'Scheduled syncrhonization error: ' . $e->getMessage(),
+                        'Scheduled synchronization error: ' . $e->getMessage(),
                         Logger::ERROR
                     );
                 }
@@ -287,7 +287,7 @@ class Posts_Synchronizer extends Singleton
             wp_send_json(['success' => true], 200);
         } catch (Exception $e) {
             Logger::log(
-                'Ajax syncrhonization error: ' . $e->getMessage(),
+                'Ajax synchronization error: ' . $e->getMessage(),
                 Logger::ERROR
             );
 
@@ -330,7 +330,7 @@ class Posts_Synchronizer extends Singleton
             'post_status' => 'any',
         ]);
 
-        Logger::log('Starts syncrhonization clean up', Logger::DEBUG);
+        Logger::log('Starts synchronization clean up', Logger::DEBUG);
 
         global $posts_bridge_remote_cpt;
         while ($query->have_posts()) {
@@ -341,14 +341,14 @@ class Posts_Synchronizer extends Singleton
                 // if post does not exists on the remote backend, then remove it.
                 $post_id = get_the_ID();
                 Logger::log(
-                    "Remove post {$post_id} as syncrhonization clean up",
+                    "Remove post {$post_id} as synchronization clean up",
                     Logger::DEBUG
                 );
 
                 wp_delete_post($post_id);
             } else {
                 if (self::$sync_mode === 'light') {
-                    // if light mode, skip syncrhonization for existing ones
+                    // if light mode, skip synchronization for existing ones
                     unset($remote_pairs[$foreign_id]);
                 } else {
                     $remote_pairs[$foreign_id] = get_post();
@@ -356,11 +356,11 @@ class Posts_Synchronizer extends Singleton
             }
         }
 
-        Logger::log('Ends syncrhonization clean up', Logger::DEBUG);
+        Logger::log('Ends synchronization clean up', Logger::DEBUG);
 
         wp_reset_postdata();
 
-        Logger::log('Starts remote posts syncrhonization', Logger::DEBUG);
+        Logger::log('Starts remote posts synchronization', Logger::DEBUG);
 
         foreach ($remote_pairs as $foreign_id => $post) {
             // if is a new remote model, mock a post as its local counterpart
@@ -379,12 +379,30 @@ class Posts_Synchronizer extends Singleton
 
             if (is_wp_error($data) || empty($data)) {
                 Logger::log(
-                    'Fetching remote data error on syncrhonization',
+                    'Fetching remote data error on synchronization',
                     Logger::ERROR
                 );
                 Logger::log(['foreign_id' => $foreign_id]);
 
                 throw new Exception('sync_error', 500);
+            }
+
+            $skip = apply_filters(
+                'posts_bridge_skip_synchronization',
+                false,
+                $rcpt,
+                $data
+            );
+
+            if ($skip) {
+                Logger::log(
+                    "Skip synchrionization for rcpt with foreign id {$foreign_id}",
+                    Logger::DEBUG
+                );
+                Logger::log($data, Logger::DEBUG);
+
+                $rcpt->ID && wp_delete_post($rcpt->ID);
+                continue;
             }
 
             $data = $bridge->map_remote_fields($data);
@@ -395,30 +413,13 @@ class Posts_Synchronizer extends Singleton
                 $data['ID'] = $rcpt->ID;
             }
 
-            $skip = apply_filters(
-                'posts_bridge_skip_syncrhonization',
-                false,
-                $rcpt,
-                $data
-            );
-
-            if ($skip) {
-                Logger::log(
-                    "Skip syncrionization for rcpt with foreign id {$foreign_id}",
-                    Logger::DEBUG
-                );
-                Logger::log($data, Logger::DEBUG);
-
-                continue;
-            }
-
             do_action('posts_bridge_before_synchronization', $rcpt, $data);
 
             $post_id = wp_insert_post($data);
 
             if (is_wp_error($post_id) || !$post_id) {
                 Logger::log(
-                    'Post creation error on syncrhonization',
+                    'Post creation error on synchronization',
                     Logger::ERROR
                 );
                 Logger::log($data, Logger::ERROR);
@@ -447,7 +448,7 @@ class Posts_Synchronizer extends Singleton
             do_action('posts_bridge_synchronization', $rcpt, $data);
         }
 
-        Logger::log('Ends remote posts syncrhonization', Logger::DEBUG);
+        Logger::log('Ends remote posts synchronization', Logger::DEBUG);
     }
 }
 
