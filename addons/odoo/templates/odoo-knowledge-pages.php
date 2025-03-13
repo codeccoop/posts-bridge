@@ -68,6 +68,13 @@ return [
         ],
         [
             'ref' => '#post_type',
+            'name' => 'query_var',
+            'label' => 'query_var',
+            'type' => 'string',
+            'default' => 'knowledge',
+        ],
+        [
+            'ref' => '#post_type',
             'name' => 'has_archive',
             'label' => 'has_archive',
             'type' => 'boolean',
