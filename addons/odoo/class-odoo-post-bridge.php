@@ -214,6 +214,9 @@ class Odoo_Post_Bridge extends Post_Bridge
 
         [$sid, $uid] = $session;
 
+        $fields = array_map(function ($field) {
+            return preg_replace('/(\[|\.).*$/', '', $field);
+        }, array_keys($this->remote_fields()));
         $payload = self::rpc_payload($sid, 'object', 'execute', [
             $database->name,
             $uid,
@@ -221,6 +224,7 @@ class Odoo_Post_Bridge extends Post_Bridge
             $this->model,
             'read',
             [(int) $foreign_id],
+            $fields,
         ]);
 
         $response = $this->backend()->post(self::endpoint, $payload);
