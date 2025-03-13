@@ -155,7 +155,12 @@ function OptionsField({
       <select
         name={name}
         value={value || ""}
-        onChange={({ target }) => onChange(target.value)}
+        onChange={({ target }) => {
+          const value = Array.from(target.children)
+            .filter((opt) => opt.selected)
+            .map((opt) => opt.value);
+          onChange(value);
+        }}
         style={style}
         multiple={!!multiple}
         {...constraints}

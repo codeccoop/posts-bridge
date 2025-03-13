@@ -66,6 +66,13 @@ return [
             'type' => 'string',
             'default' => 'knowledge',
         ],
+        [
+            'ref' => '#post_type',
+            'name' => 'has_archive',
+            'label' => 'has_archive',
+            'type' => 'boolean',
+            'default' => true,
+        ],
     ],
     'bridge' => [
         'model' => 'document.page',
