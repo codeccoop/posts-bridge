@@ -180,7 +180,7 @@ class Custom_Post_Type
                         'Whether to use the internal default meta capability handling',
                         'posts-bridge'
                     ),
-                    'default' => false,
+                    'default' => true,
                     'type' => 'boolean',
                     'required' => false,
                 ],
@@ -310,6 +310,15 @@ class Custom_Post_Type
             },
             10,
             2
+        );
+
+        add_action(
+            'posts_bridge_template_post_type',
+            function () {
+                flush_rewrite_rules();
+            },
+            10,
+            0
         );
     }
 
@@ -528,7 +537,7 @@ class Custom_Post_Type
                     ? sanitize_title($args['rest_base'])
                     : $name,
             'query_var' =>
-                isset($args['query_var']) && is_string($args['query_var'])
+                !empty($args['query_var']) && is_string($args['query_var'])
                     ? sanitize_key($args['query_var'])
                     : $name,
         ];

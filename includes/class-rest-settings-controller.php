@@ -326,6 +326,8 @@ class REST_Settings_Controller extends Base_Controller
             );
         }
 
+        flush_rewrite_rules();
+
         $data = apply_filters('posts_bridge_custom_post_type', [], $key);
         $data['name'] = $key;
 
