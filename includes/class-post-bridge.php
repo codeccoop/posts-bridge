@@ -247,6 +247,25 @@ abstract class Post_Bridge
     abstract public function foreign_ids();
 
     /**
+     * Returns a clone of the bridge instance with its data patched by
+     * the partial array.
+     *
+     * @param array $partial Bridge data.
+     *
+     * @return Post_Bridge
+     */
+    public function patch($partial = [])
+    {
+        $data = array_merge($this->data, $partial);
+
+        if (empty($data['name']) || $data['name'] === $this->name) {
+            $data['name'] = 'bridge-' . time();
+        }
+
+        return new static($data, $this->api);
+    }
+
+    /**
      * Bridge's remote fields getter.
      *
      * @return array Map of remote fields with foreign as keys and names as values.
