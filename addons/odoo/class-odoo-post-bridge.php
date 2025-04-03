@@ -149,6 +149,7 @@ class Odoo_Post_Bridge extends Post_Bridge
         parent::__construct(
             array_merge($data, [
                 'foreign_key' => 'id',
+                'method' => $data['method'] ?? 'read',
             ]),
             $api
         );
@@ -222,7 +223,7 @@ class Odoo_Post_Bridge extends Post_Bridge
             $uid,
             $database->password,
             $this->model,
-            'read',
+            $this->method,
             [(int) $foreign_id],
             $fields,
         ]);
