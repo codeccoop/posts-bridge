@@ -3,7 +3,7 @@ Contributors: codeccoop
 Tags: posts, bridge, http, api, backend
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable Tag: 3.0.5
+Stable Tag: 3.0.6
 Tested up to: 6.7
 
 Bridge any backend or service data to posts collections.
