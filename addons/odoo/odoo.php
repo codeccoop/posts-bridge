@@ -250,6 +250,9 @@ class Odoo_Addon extends Addon
                     })
                 );
 
+                unset($bridge['backend']);
+                unset($bridge['foreign_key']);
+
                 $valid_bridges[] = $bridge;
             }
         }
