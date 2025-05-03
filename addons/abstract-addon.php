@@ -16,6 +16,13 @@ if (!defined('ABSPATH')) {
 abstract class Addon extends Singleton
 {
     /**
+     * Handles mounted addons instance references.
+     *
+     * @var array<string, Addon>
+     */
+    public static $addons = [];
+
+    /**
      * Handles addon's registry option name.
      *
      * @var string registry
@@ -108,6 +115,7 @@ abstract class Addon extends Singleton
         foreach ($registry as $addon => $enabled) {
             if ($enabled) {
                 require_once dirname(__FILE__) . "/{$addon}/{$addon}.php";
+                self::$addons[$addon]->mount();
             }
         }
 
@@ -182,7 +190,20 @@ abstract class Addon extends Singleton
             throw new Exception('Invalid addon registration');
         }
 
-        static::load_templates();
+        self::$addons[static::$api] = $this;
+    }
+
+    public function mount()
+    {
+        add_action(
+            'init',
+            static function () {
+                static::load_templates();
+            },
+            5,
+            0
+        );
+
         static::handle_settings();
         static::admin_scripts();
 
