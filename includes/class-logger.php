@@ -43,6 +43,8 @@ class Logger extends Singleton
 
     /**
      * Log file path getter.
+     *
+     * @return string
      */
     private static function log_path()
     {
@@ -56,21 +58,11 @@ class Logger extends Singleton
      */
     private static function logs($lines = 500)
     {
-        if (
-            defined('WP_DEBUG') &&
-            WP_DEBUG &&
-            defined('WP_DEBUG_LOG') &&
-            (bool) WP_DEBUG_LOG
-        ) {
-            $log_path = ini_get('error_log');
-        } else {
-            $log_path = self::log_path();
+        if (!self::is_active()) {
+            return [];
         }
 
-        if (!is_file($log_path) || !is_readable($log_path)) {
-            return '';
-        }
-
+        $log_path = self::log_path();
         $socket = fopen($log_path, 'r');
         $cursor = -1;
         fseek($socket, $cursor, SEEK_END);
@@ -81,14 +73,9 @@ class Logger extends Singleton
             $char = fgetc($socket);
         }
 
+        $content = $char;
         $line = 0;
-        $content = '';
-
         while ($line < $lines) {
-            if ($char === false) {
-                break;
-            }
-
             while ($char !== "\n" && $char !== "\r") {
                 if ($char === false) {
                     break;
@@ -96,12 +83,21 @@ class Logger extends Singleton
 
                 fseek($socket, $cursor--, SEEK_END);
                 $char = fgetc($socket);
+
+                if ($char === "\t") {
+                    $char = '  ';
+                }
+
                 $content = $char . $content;
             }
 
             while ($char === "\n" || $char === "\r") {
                 fseek($socket, $cursor--, SEEK_END);
                 $char = fgetc($socket);
+            }
+
+            if ($char === false) {
+                break;
             }
 
             $content = $char . $content;
@@ -127,6 +123,17 @@ class Logger extends Singleton
 
         if (!in_array($level, ['DEBUG', 'ERROR', 'INFO'], true)) {
             $level = 'DEBUG';
+        }
+
+        if (is_object($data)) {
+            $data = (array) $data;
+        }
+
+        if (is_array($data)) {
+            $data = json_encode(
+                $data,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
+            );
         }
 
         $msg = sprintf("[%s] %s\n", $level, print_r($data, true));
@@ -175,6 +182,8 @@ class Logger extends Singleton
 
     /**
      * Logger's setup method. Initializes php log configurations.
+     *
+     * @return Logger
      */
     public static function setup()
     {

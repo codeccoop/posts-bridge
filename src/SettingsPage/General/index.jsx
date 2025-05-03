@@ -80,9 +80,7 @@ export default function GeneralSettings() {
         <CustomPostTypes />
       </PanelBody>
       <Addons />
-      <PanelBody title={__("Debug", "posts-bridge")} initialOpen={!!debug}>
-        <Logger />
-      </PanelBody>
+      <Logger />
       <PanelBody
         title={__("Import / Export", "posts-bridge")}
         initialOpen={false}
