@@ -217,6 +217,10 @@ class WP_Post_Bridge extends Post_Bridge
 
     private function authorization()
     {
+        if ($authorization = $this->backend->headers['Authorization'] ?? null) {
+            return $authorization;
+        }
+
         $credentials = Posts_Bridge::setting($this->api)->credentials;
         return 'Basic ' .
             base64_encode(
