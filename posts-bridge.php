@@ -17,13 +17,13 @@
 
 namespace POSTS_BRIDGE;
 
-use WPCT_ABSTRACT\Plugin as Base_Plugin;
+use WPCT_PLUGIN\Plugin as Base_Plugin;
 
 if (!defined('ABSPATH')) {
     exit();
 }
 
-require_once 'abstracts/class-plugin.php';
+require_once 'common/class-plugin.php';
 
 require_once 'deps/i18n/wpct-i18n.php';
 require_once 'deps/http/http-bridge.php';
@@ -31,6 +31,7 @@ require_once 'deps/http/http-bridge.php';
 require_once 'includes/class-custom-post-type.php';
 require_once 'includes/class-i18n.php';
 require_once 'includes/class-json-finger.php';
+require_once 'includes/class-settings-store.php';
 require_once 'includes/class-logger.php';
 require_once 'includes/class-menu.php';
 require_once 'includes/class-post-bridge-template.php';
@@ -40,7 +41,6 @@ require_once 'includes/class-remote-cpt.php';
 require_once 'includes/class-remote-featured-media.php';
 require_once 'includes/class-rest-remote-posts-controller.php';
 require_once 'includes/class-rest-settings-controller.php';
-require_once 'includes/class-settings-store.php';
 
 require_once 'includes/shortcodes.php';
 
@@ -72,14 +72,14 @@ class Posts_Bridge extends Base_Plugin
      *
      * @var string $settings_class Plugin's settings store class name.
      */
-    protected static $settings_class = '\POSTS_BRIDGE\Settings_Store';
+    protected const store_class = '\POSTS_BRIDGE\Settings_Store';
 
     /**
      * Handle plugin menu class name.
      *
      * @var string $menu_class Plugin menu class name.
      */
-    protected static $menu_class = '\POSTS_BRIDGE\Menu';
+    protected const menu_class = '\POSTS_BRIDGE\Menu';
 
     /**
      * Handle post types REST Controller instances
@@ -126,7 +126,6 @@ class Posts_Bridge extends Base_Plugin
 
         self::wp_hooks();
         self::rest_hooks();
-        self::http_hooks();
     }
 
     /**
@@ -138,69 +137,6 @@ class Posts_Bridge extends Base_Plugin
         if ($db_version !== self::version()) {
             self::do_migrations();
         }
-    }
-
-    /**
-     * Aliases to the http bride filters API.
-     */
-    private static function http_hooks()
-    {
-        add_filter(
-            'posts_bridge_backends',
-            static function ($backends) {
-                return apply_filters('http_bridge_backends', $backends);
-            },
-            10,
-            1
-        );
-
-        add_filter(
-            'posts_bridge_backend',
-            static function ($backend, $name) {
-                return apply_filters('http_bridge_backend', $backend, $name);
-            },
-            10,
-            2
-        );
-
-        add_filter(
-            'http_bridge_backend_headers',
-            static function ($headers, $backend) {
-                return apply_filters(
-                    'posts_bridge_backend_headers',
-                    $headers,
-                    $backend
-                );
-            },
-            99,
-            2
-        );
-
-        add_filter(
-            'http_bridge_backend_url',
-            static function ($url, $backend) {
-                return apply_filters(
-                    'posts_bridge_backend_url',
-                    $url,
-                    $backend
-                );
-            },
-            99,
-            2
-        );
-
-        add_filter(
-            'http_bridge_response',
-            static function ($response, $request) {
-                return apply_filters(
-                    'posts_bridge_http_response',
-                    $response,
-                    $request
-                );
-            },
-            99,
-            2
-        );
     }
 
     /**
@@ -356,6 +292,19 @@ class Posts_Bridge extends Base_Plugin
         }
 
         update_option(self::db_version, $to);
+    }
+
+    public static function upload_dir()
+    {
+        $dir = wp_upload_dir()['basedir'] . '/posts-bridge';
+
+        if (!is_dir($dir)) {
+            if (!mkdir($dir, 755)) {
+                return;
+            }
+        }
+
+        return $dir;
     }
 }
 

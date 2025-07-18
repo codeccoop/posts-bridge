@@ -189,7 +189,12 @@ abstract class Post_Bridge
             return $backend_name;
         }
 
-        return apply_filters('http_bridge_backend', null, $backend_name);
+        $backends = apply_filters('http_bridge_backends', []);
+        foreach ($backends as $backend) {
+            if ($backend->name === $backend_name) {
+                return $backend;
+            }
+        }
     }
 
     /**

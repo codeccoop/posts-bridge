@@ -52,11 +52,12 @@ class Odoo_DB
      */
     private function backend()
     {
-        return apply_filters(
-            'http_bridge_backend',
-            null,
-            $this->data['backend']
-        );
+        $backends = apply_filters('http_bridge_backends', []);
+        foreach ($backends as $backend) {
+            if ($backend->name === $this->data['backend']) {
+                return $backend;
+            }
+        }
     }
 
     /**

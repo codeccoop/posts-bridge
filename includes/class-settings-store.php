@@ -2,7 +2,8 @@
 
 namespace POSTS_BRIDGE;
 
-use WPCT_ABSTRACT\Settings_Store as Base_Settings_Store;
+use WPCT_PLUGIN\Settings_Store as Base_Settings_Store;
+use HTTP_BRIDGE\Settings_Store as Http_Store;
 
 if (!defined('ABSPATH')) {
     exit();
@@ -18,7 +19,7 @@ class Settings_Store extends Base_Settings_Store
      *
      * @var string REST Settings Controller class name.
      */
-    protected static $rest_controller_class = '\POSTS_BRIDGE\REST_Settings_Controller';
+    protected const rest_controller_class = '\POSTS_BRIDGE\REST_Settings_Controller';
 
     /**
      * Inherits the parent constructor and sets up setting validation callbacks.
@@ -27,119 +28,64 @@ class Settings_Store extends Base_Settings_Store
     {
         parent::construct(...$args);
 
-        $slug = Posts_Bridge::slug();
-
-        // Patch http bridge default settings to plugin settings
-        add_filter(
-            'wpct_setting_default',
-            static function ($default, $name) use ($slug) {
-                if ($name !== $slug . '_general') {
-                    return $default;
-                }
-
-                $http = \HTTP_BRIDGE\Settings_Store::setting('general');
-
-                $data = [];
-                foreach (['backends', 'whitelist'] as $key) {
-                    $data[$key] = $http->$key;
-                }
-
-                return array_merge($default, $data);
-            },
-            10,
-            2
-        );
-
-        // Patch http bridge settings to plugin settings
-        add_filter(
-            "option_{$slug}_general",
-            static function ($value) {
-                if (!is_array($value)) {
-                    return $value;
-                }
-
-                $http = \HTTP_BRIDGE\Settings_Store::setting('general');
-
-                $data = [];
-                foreach (['backends', 'whitelist'] as $key) {
-                    $data[$key] = $http->$key;
-                }
-
-                return array_merge($value, $data);
-            },
-            10,
-            1
-        );
-    }
-
-    /**
-     * Plugin's settings configuration.
-     */
-    public static function config()
-    {
-        return [
-            [
-                'general',
-                [
-                    'synchronize' => [
-                        'type' => 'object',
-                        'additionalProperties' => false,
-                        'properties' => [
-                            'enabled' => ['type' => 'boolean'],
-                            'recurrence' => [
-                                'type' => 'string',
-                                'enum' => [
-                                    'minutly',
-                                    'quarterly',
-                                    'twicehourly',
-                                    'hourly',
-                                    'twicedaily',
-                                    'daily',
-                                    'weekly',
-                                ],
+        self::register_setting([
+            'name' => 'general',
+            'properties' => [
+                'synchronize' => [
+                    'type' => 'object',
+                    'additionalProperties' => false,
+                    'properties' => [
+                        'enabled' => ['type' => 'boolean'],
+                        'recurrence' => [
+                            'type' => 'string',
+                            'enum' => [
+                                'minutly',
+                                'quarterly',
+                                'twicehourly',
+                                'hourly',
+                                'twicedaily',
+                                'daily',
+                                'weekly',
                             ],
                         ],
-                        'required' => ['enabled', 'recurrence'],
                     ],
-                ],
-                [
-                    'synchronize' => [
-                        'enabled' => false,
-                        'recurrence' => 'hourly',
-                    ],
+                    'required' => ['enabled', 'recurrence'],
                 ],
             ],
-        ];
-    }
+            'required' => ['synchronize'],
+            'default' => [
+                'enabled' => false,
+                'recurrence' => 'hourly',
+            ],
+        ]);
 
-    /**
-     * Validates setting data before database inserts.
-     *
-     * @param array $data Setting data.
-     * @param Setting $setting Setting instance.
-     *
-     * @return array $value Validated setting data.
-     */
-    protected static function validate_setting($data, $setting)
-    {
-        if ($setting->name() !== 'general') {
-            return $data;
-        }
+        self::ready(function ($store) {
+            $store::use_getter('general', function ($data) {
+                $http = Http_Store::setting('general');
+                foreach (['backends', 'whitelist'] as $key) {
+                    $data[$key] = $http->$key;
+                }
 
-        $http_settings = [
-            'whitelist' => boolval($data['whitelist'] ?? false),
-            'backends' => \HTTP_BRIDGE\Settings_Store::validate_backends(
-                $data['backends'] ?? []
-            ),
-        ];
+                return $data;
+            });
 
-        $http = \HTTP_BRIDGE\Settings_Store::setting('general');
-        $http->update(array_merge($http->data(), $http_settings));
+            $store::use_setter(
+                'general',
+                function ($data) {
+                    $http = Http_Store::setting('general');
+                    foreach (['backends', 'whitelist'] as $key) {
+                        if (!isset($data[$key])) {
+                            continue;
+                        }
 
-        foreach (array_keys($http_settings) as $field) {
-            unset($data[$field]);
-        }
+                        $http->$key = $data[$key];
+                        unset($data[$key]);
+                    }
 
-        return $data;
+                    return $data;
+                },
+                9
+            );
+        });
     }
 }

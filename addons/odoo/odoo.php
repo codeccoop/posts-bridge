@@ -162,11 +162,10 @@ class Odoo_Addon extends Addon
      * Validate setting data callback.
      *
      * @param array $data Setting data.
-     * @param Setting $setting Setting instance.
      *
      * @return array Validated setting data.
      */
-    protected static function validate_setting($data, $setting)
+    protected static function validate_setting($data)
     {
         $data['databases'] = self::validate_databases($data['databases']);
         $data['bridges'] = self::validate_bridges(
