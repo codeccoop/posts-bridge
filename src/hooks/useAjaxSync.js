@@ -39,20 +39,8 @@ export default function useAjaxSync({ fullMode, postType }) {
         "application/x-www-form-urlencoded"
       );
 
-      ajax.send();
+      ajax.send(body.toString());
     });
-
-    return fetch(postsBridgeAjaxSync.url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: body.toString(),
-    })
-      .catch(() =>
-        wppb.emit("error", __("AJAX synchronization error", "posts-bridge"))
-      )
-      .finally(() => wppb.emit("loading", false));
   };
 
   return sync;
