@@ -414,51 +414,23 @@ class Custom_Post_Type
 
     private static function handle_setting()
     {
-        $setting_name = Posts_Bridge::slug() . '_general';
-
-        add_filter(
-            'wpct_setting_default',
-            static function ($default, $name) use ($setting_name) {
-                if ($name !== $setting_name) {
-                    return $default;
-                }
-
-                return array_merge($default, [
-                    'post_types' => self::post_types(),
-                ]);
-            },
-            10,
-            2
-        );
-
-        add_filter(
-            "option_{$setting_name}",
-            static function ($value) {
-                if (!is_array($value)) {
-                    return $value;
-                }
-
-                return array_merge($value, [
-                    'post_types' => self::post_types(),
-                ]);
-            },
-            9,
-            2
-        );
-
-        add_filter(
-            'wpct_validate_setting',
-            static function ($data, $setting) use ($setting_name) {
-                if ($setting->full_name() !== $setting_name) {
-                    return $data;
-                }
-
-                unset($data['post_types']);
+        Settings_Store::ready(static function ($store) {
+            $store::use_getter('general', static function ($data) {
+                $data['post_types'] = self::post_types();
                 return $data;
-            },
-            9,
-            2
-        );
+            });
+
+            $store::use_setter(
+                'general',
+                static function ($data) {
+                    if (isset($data['post_types'])) {
+                        unset($data['post_types']);
+                    }
+                    return $data;
+                },
+                9
+            );
+        });
     }
 
     private static function sanitize_args($name, $args)
