@@ -21,6 +21,8 @@ export default function useAjaxSync({ fullMode, postType }) {
         if (this.readyState === 4) {
           if (this.status === 200) {
             res({ json: () => Promise.resolve(JSON.parse(this.responseText)) });
+          } else {
+            rej(new Error(`HTTP error response status code: ${this.status}`));
           }
         }
       };
@@ -40,7 +42,11 @@ export default function useAjaxSync({ fullMode, postType }) {
       );
 
       ajax.send(body.toString());
-    });
+    })
+      .catch(() =>
+        wppb.emit("error", __("AJAX synchronization error", "posts-bridge"))
+      )
+      .finally(() => wppb.emit("loading", false));
   };
 
   return sync;
