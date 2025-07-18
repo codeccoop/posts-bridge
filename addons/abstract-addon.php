@@ -4,7 +4,7 @@ namespace POSTS_BRIDGE;
 
 use Exception;
 use ReflectionClass;
-use WPCT_ABSTRACT\Singleton;
+use WPCT_PLUGIN\Singleton;
 
 if (!defined('ABSPATH')) {
     exit();
@@ -119,49 +119,27 @@ abstract class Addon extends Singleton
             }
         }
 
-        $general_setting = Posts_Bridge::slug() . '_general';
-
-        add_filter(
-            'wpct_setting_default',
-            static function ($default, $name) use ($general_setting) {
-                if ($name !== $general_setting) {
-                    return $default;
-                }
-
-                return array_merge($default, ['addons' => self::registry()]);
-            },
-            10,
-            2
-        );
-
-        add_filter(
-            "option_{$general_setting}",
-            static function ($value) {
-                if (!is_array($value)) {
-                    return $value;
-                }
-
-                return array_merge($value, ['addons' => self::registry()]);
-            },
-            9,
-            1
-        );
-
-        add_filter(
-            'wpct_validate_setting',
-            static function ($data, $setting) use ($general_setting) {
-                if ($setting->full_name() !== $general_setting) {
-                    return $data;
-                }
-
-                self::update_registry((array) $data['addons']);
-                unset($data['addons']);
-
+        Settings_Store::ready(static function ($store) {
+            $store::use_getter('general', static function ($data) {
+                $data['addons'] = self::registry();
                 return $data;
-            },
-            9,
-            2
-        );
+            });
+
+            $store::use_setter(
+                'general',
+                static function ($data) {
+                    if (!isset($data['addons']) || !is_array($data['addons'])) {
+                        return $data;
+                    }
+
+                    self::update_registry((array) $data['addons']);
+
+                    unset($data['addons']);
+                    return $data;
+                },
+                9
+            );
+        });
     }
 
     /**
@@ -174,11 +152,10 @@ abstract class Addon extends Singleton
      * This method will be executed before each database update on the options table.
      *
      * @param array $data Setting value.
-     * @param Setting $setting Setting instance.
      *
      * @return array Validated value.
      */
-    abstract protected static function validate_setting($value, $setting);
+    abstract protected static function validate_setting($value);
 
     /**
      * Private class constructor. Add addons scripts as dependency to the
@@ -198,14 +175,36 @@ abstract class Addon extends Singleton
         add_action(
             'init',
             static function () {
-                static::load_templates();
+                // static::load_templates();
             },
             5,
             0
         );
 
-        static::handle_settings();
         static::admin_scripts();
+
+        Settings_Store::register_setting(static function ($settings) {
+            [$name, $properties, $default] = static::setting_config();
+            $settings[] = [
+                'name' => $name,
+                'properties' => $properties,
+                'default' => $default,
+            ];
+            return $settings;
+        });
+
+        Settings_Store::ready(static function ($store) {
+            $store::use_getter(static::$api, static function ($data) {
+                $data['templates'] = static::templates();
+                return $data;
+            });
+
+            $store::use_setter(static::$api, static function ($data) {
+                return static::do_validation($data);
+            });
+
+            self::register_meta();
+        });
 
         add_filter(
             'posts_bridge_bridges',
@@ -269,15 +268,6 @@ abstract class Addon extends Singleton
             10,
             2
         );
-
-        add_action(
-            'init',
-            static function () {
-                static::register_meta();
-            },
-            10,
-            0
-        );
     }
 
     /**
@@ -323,65 +313,6 @@ abstract class Addon extends Singleton
         return array_map(static function ($bridge_data) {
             return new static::$bridge_class($bridge_data, static::$api);
         }, $bridges);
-    }
-
-    /**
-     * Settings hooks interceptors to register on the plugin's settings store
-     * the addon setting.
-     */
-    private static function handle_settings()
-    {
-        add_filter(
-            'wpct_settings_config',
-            static function ($config, $group) {
-                if ($group !== Posts_Bridge::slug()) {
-                    return $config;
-                }
-
-                return array_merge($config, [static::setting_config()]);
-            },
-            10,
-            2
-        );
-
-        add_filter(
-            'wpct_validate_setting',
-            static function ($data, $setting) {
-                return static::do_validation($data, $setting);
-            },
-            11,
-            2
-        );
-
-        add_filter(
-            'wpct_setting_default',
-            static function ($default, $name) {
-                if ($name !== static::setting_name()) {
-                    return $default;
-                }
-
-                return array_merge($default, [
-                    'templates' => static::templates(),
-                ]);
-            },
-            10,
-            2
-        );
-
-        add_filter(
-            'option_' . static::setting_name(),
-            static function ($value) {
-                if (!is_array($value)) {
-                    return $value;
-                }
-
-                return array_merge($value, [
-                    'templates' => static::templates(),
-                ]);
-            },
-            10,
-            1
-        );
     }
 
     /**
@@ -440,18 +371,13 @@ abstract class Addon extends Singleton
      * setting updates.
      *
      * @param array $data Setting data.
-     * @param Setting $setting Setting instance.
      *
      * @return array Validated setting data.
      */
-    private static function do_validation($data, $setting)
+    private static function do_validation($data)
     {
-        if ($setting->full_name() !== static::setting_name()) {
-            return $data;
-        }
-
         unset($data['templates']);
-        return static::validate_setting($data, $setting);
+        return static::validate_setting($data);
     }
 
     /**

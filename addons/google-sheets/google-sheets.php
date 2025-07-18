@@ -53,47 +53,24 @@ class Google_Sheets_Addon extends Addon
      */
     private static function setting_hooks()
     {
-        add_filter(
-            'wpct_setting_default',
-            static function ($data, $name) {
-                if ($name !== self::setting_name()) {
-                    return $data;
-                }
-
-                return array_merge($data, [
-                    'authorized' => Google_Sheets_Service::is_authorized(),
-                ]);
-            },
-            10,
-            2
-        );
-
-        add_filter(
-            'wpct_validate_setting',
-            static function ($data, $setting) {
-                if ($setting->full_name() === self::setting_name()) {
-                    unset($data['authorized']);
-                }
-
+        Settings_Store::ready(static function ($store) {
+            $store::use_getter(self::$name, static function ($data) {
+                $data['authorized'] = Google_Sheets_Service::is_authorized();
                 return $data;
-            },
-            9,
-            2
-        );
+            });
 
-        add_filter(
-            'option_' . self::setting_name(),
-            static function ($value) {
-                if (!is_array($value)) {
-                    return $value;
-                }
+            $store::use_setter(
+                self::$name,
+                static function ($data) {
+                    if (isset($data['authorized'])) {
+                        unset($data['authorized']);
+                    }
 
-                $value['authorized'] = Google_Sheets_Service::is_authorized();
-                return $value;
-            },
-            9,
-            1
-        );
+                    return $data;
+                },
+                9
+            );
+        });
     }
 
     /**
@@ -159,7 +136,7 @@ class Google_Sheets_Addon extends Addon
      *
      * @return array Validated setting data.
      */
-    protected static function validate_setting($data, $setting)
+    protected static function validate_setting($data)
     {
         $data['bridges'] = self::validate_bridges($data['bridges']);
         return $data;

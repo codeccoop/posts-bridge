@@ -13,6 +13,35 @@ export default function useAjaxSync({ fullMode, postType }) {
       body.set("post_type", postType);
     }
 
+    return new Promise((res, rej) => {
+      const ajax = new XMLHttpRequest();
+      ajax.timeout = 6e4;
+
+      ajax.onreadystatechange = function () {
+        if (this.readyState === 4) {
+          if (this.status === 200) {
+            res({ json: () => Promise.resolve(JSON.parse(this.responseText)) });
+          }
+        }
+      };
+
+      ajax.ontimeout = function () {
+        rej(new Error("Timeout error"));
+      };
+
+      ajax.onerror = function (err) {
+        rej(err);
+      };
+
+      ajax.open("POST", postsBridgeAjaxSync.url, true);
+      ajax.setRequestHeader(
+        "Content-Type",
+        "application/x-www-form-urlencoded"
+      );
+
+      ajax.send();
+    });
+
     return fetch(postsBridgeAjaxSync.url, {
       method: "POST",
       headers: {

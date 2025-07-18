@@ -2,6 +2,8 @@
 
 namespace POSTS_BRIDGE;
 
+use HTTP_BRIDGE\Settings_Store as Http_Store;
+
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -102,11 +104,11 @@ class WP_Addon extends Addon
      *
      * @return array Validated setting data.
      */
-    protected static function validate_setting($data, $setting)
+    protected static function validate_setting($data)
     {
         $data['bridges'] = self::validate_bridges(
             $data['bridges'],
-            \HTTP_BRIDGE\Settings_Store::setting('general')->backends ?: []
+            Http_Store::setting('general')->backends ?: []
         );
 
         return $data;

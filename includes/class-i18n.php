@@ -4,7 +4,7 @@ namespace POSTS_BRIDGE;
 
 use Error;
 use Exception;
-use WPCT_ABSTRACT\Singleton;
+use WPCT_PLUGIN\Singleton;
 
 if (!defined('ABSPATH')) {
     exit();
