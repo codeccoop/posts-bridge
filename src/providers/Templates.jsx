@@ -1,40 +1,33 @@
 // source
-import { useApis } from "./Settings";
+import { useLoading } from "../providers/Loading";
+import { useError } from "../providers/Error";
+import useTab from "../hooks/useTab";
+import { useFetchSettings } from "./Settings";
+import { useForms } from "./Forms";
 
 const apiFetch = wp.apiFetch;
-const { createContext, useContext, useEffect, useState, useMemo, useRef } =
+const { createContext, useContext, useEffect, useState, useCallback } =
   wp.element;
 const { __ } = wp.i18n;
 
 const TemplatesContext = createContext({
-  templates: [],
   template: null,
   setTemplate: () => {},
-  config: {},
+  config: null,
   submit: () => {},
+  reset: () => {},
 });
 
 export default function TemplatesProvider({ children }) {
-  const [apis] = useApis();
+  const [, setLoading] = useLoading();
+  const [, setError] = useError();
 
-  const [api, setApi] = useState(null);
+  const [addon] = useTab();
   const [template, setTemplate] = useState(null);
   const [config, setConfig] = useState(null);
 
-  const templates = useMemo(() => {
-    if (!api) return [];
-    return apis[api]?.templates || [];
-  }, [api, apis]);
-
-  const onApi = useRef((api) => setApi(api)).current;
-
-  useEffect(() => {
-    wppb.on("api", onApi);
-
-    return () => {
-      wppb.off("api", onApi);
-    };
-  }, []);
+  const [, fetchForms] = useForms();
+  const fetchSettings = useFetchSettings();
 
   useEffect(() => {
     if (!template) {
@@ -44,50 +37,75 @@ export default function TemplatesProvider({ children }) {
     }
   }, [template]);
 
-  const fetchConfig = (template) => {
-    wppb.emit("loading", true);
+  const fetchConfig = useCallback(
+    (template) => {
+      return apiFetch({
+        path: `forms-bridge/v1/${addon}/templates/${template}`,
+      })
+        .then(setConfig)
+        .catch(() =>
+          setError("error", __("Template config load error", "forms-bridge"))
+        );
+    },
+    [addon]
+  );
 
-    return apiFetch({
-      path: "posts-bridge/v1/templates/" + template,
-    })
-      .then(setConfig)
-      .catch(() =>
-        wppb.emit("error", __("Loading config error", "posts-bridge"))
-      )
-      .finally(() => wppb.emit("loading", false));
-  };
+  const submit = useCallback(
+    ({ fields, integration }) => {
+      if (!template) {
+        return Promise.reject();
+      }
 
-  const submit = ({ fields, integration }) => {
+      setLoading(true);
+
+      return apiFetch({
+        path: `forms-bridge/v1/${addon}/templates/${template}/use`,
+        method: "POST",
+        data: {
+          integration,
+          fields,
+        },
+      })
+        .then(({ success }) => {
+          if (success) {
+            fetchForms().then(fetchSettings);
+          }
+
+          return success;
+        })
+        .catch(() => setError(__("Template submit error", "forms-bridge")))
+        .finally(() => setLoading(false));
+    },
+    [addon, template]
+  );
+
+  const reset = useCallback(() => {
     if (!template) {
-      return;
+      return Promise.reject();
     }
 
-    wppb.emit("loading", true);
+    setLoading(true);
 
     return apiFetch({
-      path: "posts-bridge/v1/templates/" + template,
-      method: "POST",
-      data: {
-        template,
-        integration,
-        fields,
-      },
+      path: `forms-bridge/v1/${addon}/templates/${template}`,
+      method: "DELETE",
     })
-      .then(() => wppb.emit("flushStore"))
-      .catch(() => {
-        wppb.emit("error", __("Template submit error", "posts-bridge"));
+      .then((config) => {
+        if (!config) setConfig(null);
+        else setConfig(config);
       })
-      .finally(() => wppb.emit("loading", false));
-  };
+      .catch(() => setError(__("Template reset error", "forms-bridge")))
+      .finally(() => setLoading(false));
+  }, [addon, template]);
 
   return (
     <TemplatesContext.Provider
       value={{
         template,
         setTemplate,
-        templates,
         config,
         submit,
+        reset,
       }}
     >
       {children}
@@ -100,17 +118,7 @@ export function useTemplate() {
   return [template, setTemplate];
 }
 
-export function useTemplates() {
-  const { templates } = useContext(TemplatesContext);
-  return templates || [];
-}
-
-export function useConfig() {
-  const { config } = useContext(TemplatesContext);
-  return config;
-}
-
-export function useSubmitTemplate() {
-  const { submit } = useContext(TemplatesContext);
-  return (data) => submit(data);
+export function useTemplateConfig() {
+  const { config, submit, reset } = useContext(TemplatesContext);
+  return [config, submit, reset];
 }

@@ -1,3 +1,4 @@
+import { useError } from "../../providers/Error";
 import useBackendNames from "../../hooks/useBackendNames";
 import { uploadJson, validateBackend, validateUrl } from "../../lib/utils";
 import BackendFields from "./Fields";
@@ -26,6 +27,7 @@ export default function NewBackend({ add }) {
 
   const [data, setData] = useState(TEMPLATE);
 
+  const [error, setError] = useError();
   const names = useBackendNames();
 
   const nameConflict = useMemo(() => {
@@ -38,6 +40,8 @@ export default function NewBackend({ add }) {
   }, [data.base_url]);
 
   const create = () => {
+    window.__wpfbInvalidated = true;
+
     setData(TEMPLATE);
     add({ ...data });
   };
@@ -52,7 +56,7 @@ export default function NewBackend({ add }) {
         const isValid = validateBackend(data);
 
         if (!isValid) {
-          wppb.emit("error", __("Invalid backend config", "posts-bridge"));
+          setError(__("Invalid backend config", "posts-bridge"));
           return;
         }
 
@@ -75,8 +79,7 @@ export default function NewBackend({ add }) {
         if (!err) return;
 
         console.error(err);
-        wppb.emit(
-          "error",
+        setError(
           __(
             "An error has ocurred while uploading the backend config",
             "posts-bridge"
@@ -122,6 +125,7 @@ export default function NewBackend({ add }) {
             {__("Add", "posts-bridge")}
           </Button>
           <Button
+            disabled={!!error}
             variant="tertiary"
             size="compact"
             style={{

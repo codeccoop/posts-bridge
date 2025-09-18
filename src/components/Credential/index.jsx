@@ -1,55 +1,100 @@
 // source
-import useBackendNames from "../../hooks/useBackendNames";
 import RemoveButton from "../RemoveButton";
-import BackendHeaders from "./Headers";
-import { downloadJson, validateUrl, validateBackend } from "../../lib/utils";
+import { useCredentials } from "../../hooks/useHttp";
+import CredentialFields, { INTERNALS } from "./Fields";
+import { downloadJson, isset } from "../../lib/utils";
+import { useLoading } from "../../providers/Loading";
+import diff from "../../lib/diff";
 import useResponsive from "../../hooks/useResponsive";
 import CopyIcon from "../icons/Copy";
 import ArrowDownIcon from "../icons/ArrowDown";
-import diff from "../../lib/diff";
-import { useLoading } from "../../providers/Loading";
-import BackendFields from "./Fields";
+import AuthorizeButton from "./AuthorizeButton";
 
 const { Button } = wp.components;
-const { useState, useEffect, useMemo, useRef } = wp.element;
+const { useState, useEffect, useMemo, useRef, useCallback } = wp.element;
 const { __ } = wp.i18n;
 
-export default function Backend({ update, remove, data, copy }) {
+export default function Credential({
+  addon,
+  data,
+  update,
+  remove,
+  schema: schemas,
+  copy,
+}) {
+  const isResponsive = useResponsive(780);
+
   const [loading] = useLoading();
-  const isResponsive = useResponsive();
 
   const name = useRef(data.name);
   const [state, setState] = useState({ ...data });
 
-  const names = useBackendNames();
+  const schema = useMemo(() => {
+    return schemas.oneOf.find(
+      (schema) =>
+        schema.properties.schema.const === state.schema ||
+        schema.properties.schema.enum?.includes(state.schema)
+    );
+  }, [state.schema]);
+
+  const [credentials] = useCredentials();
+  const names = useMemo(() => {
+    return new Set(credentials.map((c) => c.name));
+  }, [credentials]);
 
   const nameConflict = useMemo(() => {
     if (!state.name) return false;
-    if (state.name.trim() === name.current.trim()) return false;
-    return state.name !== name.current && names.has(state.name.trim());
+    if (name.current.trim() === state.name.trim()) return false;
+    return name.current !== state.name && names.has(state.name.trim());
   }, [names, state.name]);
 
-  const invalidUrl = useMemo(() => {
-    return !validateUrl(state.base_url, true);
-  }, [state.base_url]);
+  const validate = useCallback(
+    (data) => {
+      return !!Object.keys(schema.properties)
+        .filter((prop) => !INTERNALS.includes(prop))
+        .reduce((isValid, prop) => {
+          if (!isValid) return isValid;
 
-  const isValid = useMemo(
-    () => !nameConflict && !invalidUrl && validateBackend(state),
-    [state, nameConflict, invalidUrl]
+          if (!schema.required.includes(prop)) {
+            return isValid;
+          }
+
+          const value = data[prop];
+
+          if (schema.properties[prop].pattern) {
+            isValid =
+              isValid &&
+              new RegExp(schema.properties[prop].pattern).test(value);
+          }
+
+          return (
+            isValid && (value || isset(schema.properties[prop], "default"))
+          );
+        }, true);
+    },
+    [schema]
   );
+
+  const isValid = useMemo(() => {
+    return validate(state);
+  }, [validate, state, nameConflict]);
+
+  const frozen = useMemo(() => {
+    return !!data.refresh_token;
+  }, [data]);
 
   const timeout = useRef();
   useEffect(() => {
     clearTimeout(timeout.current);
 
     if (isValid) {
-      if (state.name !== data.name) {
+      if (data.name !== state.name) {
         timeout.current = setTimeout(() => {
           name.current = state.name;
-          update(state);
+          update({ ...state });
         }, 1e3);
-      } else if (diff(state, data)) {
-        update(state);
+      } else if (diff(data, state)) {
+        update({ ...state });
       }
     }
   }, [isValid, state]);
@@ -72,10 +117,13 @@ export default function Backend({ update, remove, data, copy }) {
     };
   }, [loading, data, state]);
 
-  function exportConfig() {
-    const backendData = { ...data };
-    downloadJson(backendData, data.name + " backend config");
-  }
+  const exportConfig = () => {
+    const credentialData = { ...data };
+    INTERNALS.forEach((prop) => delete credentialData[prop]);
+    downloadJson(credentialData, credentialData.name + " credential config");
+  };
+
+  const authorizable = !!schema.properties.refresh_token;
 
   return (
     <div
@@ -89,12 +137,16 @@ export default function Backend({ update, remove, data, copy }) {
       }}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        <BackendFields
-          state={state}
-          setState={setState}
+        <CredentialFields
+          disabled={frozen}
+          data={state}
+          setData={setState}
+          schema={schema}
+          schemas={schemas}
           errors={{
-            name: nameConflict,
-            base_url: invalidUrl,
+            name: nameConflict
+              ? __("This name is already in use", "posts-bridge")
+              : false,
           }}
         />
         <div
@@ -131,6 +183,7 @@ export default function Backend({ update, remove, data, copy }) {
             />
           </Button>
           <Button
+            size="compact"
             variant="tertiary"
             style={{
               height: "40px",
@@ -141,32 +194,15 @@ export default function Backend({ update, remove, data, copy }) {
               color: "gray",
             }}
             onClick={exportConfig}
-            label={__("Download", "posts-bridge")}
-            showTooltip
             __next40pxDefaultSize
+            label={__("Download bridge config", "posts-bridge")}
+            showTooltip
           >
             <ArrowDownIcon width="12" height="20" color="gray" />
           </Button>
+          {(authorizable && <AuthorizeButton addon={addon} data={data} />) ||
+            null}
         </div>
-      </div>
-      <div
-        style={
-          isResponsive
-            ? {
-                paddingTop: "2rem",
-                borderTop: "1px solid",
-              }
-            : {
-                paddingLeft: "2rem",
-                borderLeft: "1px solid",
-                flex: 1,
-              }
-        }
-      >
-        <BackendHeaders
-          headers={state.headers}
-          setHeaders={(headers) => setState({ ...state, headers })}
-        />
       </div>
     </div>
   );

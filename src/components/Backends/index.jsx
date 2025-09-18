@@ -6,7 +6,7 @@ import TabTitle from "../TabTitle";
 import AddIcon from "../icons/Add";
 
 const { useRef, useEffect } = wp.element;
-const { TabPanel, __experimentalSpacer: Spacer } = wp.components;
+const { TabPanel } = wp.components;
 const { __ } = wp.i18n;
 
 const CSS = `.backends-tabs-panel .components-tab-panel__tabs{overflow-x:auto;}
@@ -26,7 +26,7 @@ export default function Backends({ backends, setBackends }) {
       {
         index: -1,
         name: "new",
-        title: __("Add a backend", "posts-bridge"),
+        title: __("Add a backend", "forms-bridge"),
         icon: (
           <div style={{ marginBottom: "-2px" }}>
             <AddIcon width="15" height="15" />
@@ -75,6 +75,7 @@ export default function Backends({ backends, setBackends }) {
       copy.name += "-copy";
     }
 
+    window.__wpfbInvalidated = true;
     setBackends(backends.concat(copy));
   };
 
@@ -90,13 +91,9 @@ export default function Backends({ backends, setBackends }) {
 
   return (
     <div style={{ width: "100%" }}>
-      <p>
-        {__(
-          "Configure your backend connexions and reuse them on your bridges",
-          "posts-bridge"
-        )}
-      </p>
-      <Spacer paddingBottom="5px" />
+      <h3 style={{ marginTop: 0, fontSize: "13px" }}>
+        {__("Backends", "forms-bridge")}
+      </h3>
       <TabPanel tabs={tabs} className="backends-tabs-panel">
         {(tab) => {
           const backend = backends[tab.index];

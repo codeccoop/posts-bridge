@@ -11,7 +11,7 @@ export default function useLogs({ debug }) {
   const fetch = () => {
     setLoading(true);
     return apiFetch({
-      path: "posts-bridge/v1/logs?lines=1000",
+      path: "forms-bridge/v1/logs?lines=1000",
     })
       .then((logs) => setLogs(logs))
       .catch(() => setError(true))
@@ -21,7 +21,7 @@ export default function useLogs({ debug }) {
   useEffect(() => {
     if (!debug) return;
 
-    fetch();
+    setTimeout(fetch, 1e3);
     interval.current = setInterval(() => fetch(), 1e4);
 
     return () => {

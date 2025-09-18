@@ -15,19 +15,19 @@ export default function BackendAuthentication({ data = {}, setData }) {
     <>
       <FieldWrapper>
         <SelectControl
-          label={__("Authentication", "forms-bridge")}
-          value={data.type || ""}
-          onChange={(type) => setData({ ...data, type })}
+          label={__("Authentication", "posts-bridge")}
+          value={data.schema || ""}
+          onChange={(schema) => setData({ ...data, schema })}
           options={OPTIONS}
           __next40pxDefaultSize
           __nextHasNoMarginBottom
         />
       </FieldWrapper>
-      {data.type && data.type !== "Bearer" && (
+      {data.schema && data.schema !== "Bearer" && (
         <FieldWrapper>
           <TextControl
-            label={__("Client ID", "forms-bridge")}
-            help={!data.client_id && __("Required", "forms-bridge")}
+            label={__("Client ID", "posts-bridge")}
+            help={!data.client_id && __("Required", "posts-bridge")}
             value={data.client_id}
             onChange={(client_id) => setData({ ...data, client_id })}
             __next40pxDefaultSize
@@ -35,11 +35,11 @@ export default function BackendAuthentication({ data = {}, setData }) {
           />
         </FieldWrapper>
       )}
-      {data.type && (
+      {data.schema && (
         <FieldWrapper>
           <TextControl
-            label={__("Client secret", "forms-bridge")}
-            help={!data.client_secret && __("Required", "forms-bridge")}
+            label={__("Client secret", "posts-bridge")}
+            help={!data.client_secret && __("Required", "posts-bridge")}
             value={data.client_secret}
             onChange={(client_secret) => setData({ ...data, client_secret })}
             __next40pxDefaultSize

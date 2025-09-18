@@ -1,10 +1,12 @@
-export default function (to, from) {
+import { isset } from "./utils";
+
+export default function (to, from, throwError = true) {
   try {
-    const changes = diff(to, from);
+    const changes = diff(to, from, throwError);
     return count(changes) > 0;
   } catch (err) {
     // If error, there are something wrong with the state, isn't? Better to reload.
-    return false;
+    return true;
   }
 }
 
@@ -36,19 +38,20 @@ function typeOf(x) {
   }
 }
 
-function diff(to, from, changes = {}) {
-  changes = getChanges(to, from, changes);
-  changes = getChanges(from, to, changes);
+function diff(to, from, changes = {}, throwError = true) {
+  changes = getChanges(to, from, changes, throwError);
+  changes = getChanges(from, to, changes, throwError);
   return changes;
 }
 
-function getChanges(to, from, changes) {
+function getChanges(to, from, changes, throwError) {
   for (const k in to) {
-    if (Object.prototype.hasOwnProperty.call(changes, k)) {
+    if (isset(changes, k)) {
       continue;
     }
 
-    if (!Object.prototype.hasOwnProperty.call(from, k)) {
+    if (!isset(from, k)) {
+      if (throwError) throw "change";
       changes[k] = true;
       continue;
     }
@@ -61,13 +64,15 @@ function getChanges(to, from, changes) {
     }
 
     if (tt !== ft) {
+      if (throwError) throw "change";
       changes[k] = true;
       continue;
     }
 
     if (tt === "object" || tt === "array") {
-      changes = { ...changes, [k]: diff(to[k], from[k], {}) };
+      changes = { ...changes, [k]: diff(to[k], from[k], {}, throwError) };
     } else if (to[k] !== from[k]) {
+      if (throwError) throw "change";
       changes[k] = true;
     } else {
       changes[k] = false;

@@ -31,6 +31,14 @@ export function validateBackend(data) {
   let isValid = validateUrl(data.base_url) && Array.isArray(data.headers);
   if (!isValid) return false;
 
+  const contentType = data.headers.find(
+    ({ name }) => name === "Content-Type"
+  )?.value;
+
+  if (!contentType) {
+    return false;
+  }
+
   if (data.authentication?.type) {
     isValid = isValid && data.authentication.client_secret;
 
@@ -114,4 +122,40 @@ export function uploadJson() {
     document.body.appendChild(input);
     input.click();
   });
+}
+
+export function defrost(obj) {
+  if (obj === null || typeof obj !== "object") return obj;
+
+  if (Array.isArray(obj)) {
+    return [...obj];
+  }
+
+  return { ...obj };
+}
+
+export function isset(obj, attr) {
+  if (!obj || typeof obj !== "object") {
+    return false;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.length > attr;
+  }
+
+  return Object.prototype.hasOwnProperty.call(obj, attr);
+}
+
+export function adminUrl(path = "", query = {}) {
+  const url = new URL(wpApiSettings.root.replace(/wp-json/, "wp-admin"));
+  url.pathname += path.replace(/^\/+/, "");
+  url.search = new URLSearchParams(query).toString();
+  return url.toString();
+}
+
+export function restUrl(path = "", query = {}) {
+  const url = new URL(wpApiSettings.root);
+  url.pathname += path.replace(/^\/+/, "");
+  url.search = new URLSearchParams(query).toString();
+  return url.toString();
 }

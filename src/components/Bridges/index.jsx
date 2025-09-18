@@ -1,91 +1,64 @@
 // source
-import { usePostTypes } from "../../providers/Settings";
-import CopyIcon from "../CopyIcon";
+import { usePostTypes } from "../../hooks/useGeneral";
+import { useBridges } from "../../hooks/useAddon";
+import useBridgeNames from "../../hooks/useBridgeNames";
+import { useSchemas } from "../../providers/Schemas";
+import Bridge from "../Bridge";
+import NewBridge from "../Bridge/NewBridge";
+import TabTitle from "../TabTitle";
+import AddIcon from "../icons/Add";
 
 const { TabPanel } = wp.components;
-const { useEffect, useState, useRef } = wp.element;
+const { useEffect, useMemo, useRef } = wp.element;
 const { __ } = wp.i18n;
 
-function TabTitle({ name, focus, setFocus, copy }) {
-  return (
-    <div
-      style={{ position: "relative", padding: "0px 24px 0px 10px" }}
-      onMouseEnter={() => setFocus(true)}
-      onMouseLeave={() => setFocus(false)}
-    >
-      <span>{name}</span>
-      {focus && <CopyIcon onClick={copy} />}
-    </div>
-  );
-}
+const CSS = `.bridges-tabs-panel .components-tab-panel__tabs{overflow-x:auto;}
+.bridges-tabs-panel .components-tab-panel__tabs>button{flex-shrink:0;}`;
 
-export default function Bridges({ bridges, setBridges, Bridge }) {
+const DEFAULTS = {
+  enabled: true,
+  is_valid: true,
+  fields: [],
+  mutations: [],
+};
+
+export default function Bridges() {
+  const { bridge: schema } = useSchemas();
+  const [bridges, setBridges] = useBridges();
+  const names = useBridgeNames();
   const postTypes = usePostTypes({ filter: true });
 
-  const [currentTab, setCurrentTab] = useState(String(bridges.length ? 0 : -1));
-  const [tabFocus, setTabFocus] = useState(null);
-  const tabs = bridges
-    .map(
-      (
+  const tabs = useMemo(() => {
+    return Array.from(names)
+      .map((name, index) => ({
+        index,
+        name: String(index),
+        title: name,
+        icon: <TabTitle name={name} />,
+      }))
+      .concat([
         {
-          backend,
-          post_type,
-          foreign_key = "id",
-          fields = [],
-          ...customFields
+          index: -1,
+          name: "new",
+          title: __("Add a bridge", "posts-bridge"),
+          icon: (
+            <div style={{ marginBottom: "-2px" }}>
+              <AddIcon width="15" height="15" />
+            </div>
+          ),
         },
-        i
-      ) => ({
-        ...customFields,
-        name: String(i),
-        title: post_type,
-        post_type,
-        backend,
-        foreign_key,
-        fields,
-        icon: postTypes.length ? (
-          <TabTitle
-            name={post_type}
-            focus={tabFocus === post_type}
-            setFocus={(value) => setTabFocus(value ? post_type : null)}
-            copy={() => copyBridge(post_type)}
-          />
-        ) : null,
-      })
-    )
-    .concat([
-      {
-        name: "-1",
-        title: __("Add bridge", "posts-bridge"),
-      },
-    ]);
-
-  const bridgesCount = useRef(bridges.length);
-  useEffect(() => {
-    if (bridges.length > bridgesCount.current) {
-      setCurrentTab(String(bridges.length - 1));
-    } else if (bridges.length < bridgesCount.current) {
-      setCurrentTab(String(currentTab - 1));
-    }
-
-    return () => {
-      bridgesCount.current = bridges.length;
-    };
-  }, [bridges]);
+      ]);
+  }, [names]);
 
   const updateBridge = (index, data) => {
     if (index === -1) index = bridges.length;
 
+    data.name = data.name.trim();
+
     const newBridges = bridges
       .slice(0, index)
-      .concat([data])
+      .concat([{ ...DEFAULTS, ...data }])
       .concat(bridges.slice(index + 1, bridges.length));
-
-    newBridges.forEach((rel) => {
-      delete rel.name;
-      delete rel.title;
-      delete rel.icon;
-    });
 
     setBridges(newBridges);
   };
@@ -104,43 +77,51 @@ export default function Bridges({ bridges, setBridges, Bridge }) {
       ...bridge,
       post_type: postTypes[0],
       fields: JSON.parse(JSON.stringify(bridge.fields || [])),
+      mutations: JSON.parse(JSON.stringify(bridge.mutations || [])),
     };
 
     setBridges(bridges.concat(copy));
   };
 
+  const style = useRef(document.createElement("style"));
+  useEffect(() => {
+    style.current.appendChild(document.createTextNode(CSS));
+    document.head.appendChild(style.current);
+
+    return () => {
+      document.head.removeChild(style.current);
+    };
+  }, []);
+
+  if (!schema) return null;
+
   return (
     <div style={{ width: "100%" }}>
-      <label
-        className="components-base-control__label"
-        style={{
-          fontSize: "11px",
-          textTransform: "uppercase",
-          fontWeight: 500,
-          marginBottom: "calc(8px)",
-        }}
-      >
+      <h3 style={{ marginTop: 0, fontSize: "13px" }}>
         {__("Bridges", "posts-bridge")}
-      </label>
-      <TabPanel
-        tabs={tabs}
-        onSelect={setCurrentTab}
-        initialTabName={currentTab}
-      >
-        {(bridge) => {
-          bridge.name = bridge.name >= 0 ? bridges[+bridge.name].name : "add";
+      </h3>
+      <TabPanel tabs={tabs} className="bridges-tabs-panel">
+        {(tab) => {
+          const bridge = bridges[tab.index];
+
+          if (!bridge) {
+            return (
+              <NewBridge
+                add={(data) => updateBridge(tab.index, data)}
+                schema={schema}
+                names={names}
+              />
+            );
+          }
+
           return (
             <Bridge
               data={bridge}
+              schema={schema}
               remove={removeBridge}
-              update={(data) =>
-                updateBridge(
-                  bridges.findIndex(
-                    ({ post_type }) => post_type === bridge.post_type
-                  ),
-                  data
-                )
-              }
+              update={(data) => updateBridge(tab.index, data)}
+              copy={() => copyBridge(bridge.name)}
+              names={names}
             />
           );
         }}

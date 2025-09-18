@@ -1,6 +1,6 @@
 // source
-import useDebug from "../../../hooks/useDebug";
-import useLogs from "../../../hooks/useLogs";
+import { useDebug } from "../../hooks/useGeneral";
+import useLogs from "../../hooks/useLogs";
 
 const { useEffect, useRef } = wp.element;
 const {
@@ -23,20 +23,20 @@ export default function Logger() {
   }, [logs]);
 
   return (
-    <PanelBody title={__("Debug", "posts-bridge")} initialOpen={!!debug}>
+    <PanelBody title={__("Debug", "forms-bridge")} initialOpen={!!debug}>
       <p>
         {__(
-          "Activate the debug mode and open the loggin console to see posts bridge logs",
-          "posts-bridge"
+          "Activate the debug mode and open the loggin console to see bridged form submissions' logs",
+          "forms-bridge"
         )}
       </p>
       <Spacer paddingBottom="5px" />
       <PanelRow>
         <ToggleControl
-          label={__("Logging", "posts-bridge")}
+          label={__("Logging", "forms-bridge")}
           help={__(
             "When debug mode is activated, logs will be write to the log file and readed from there. Make sure to deactivate the debug mode once you've done to erase this file contents.",
-            "posts-bridge"
+            "forms-bridge"
           )}
           checked={!!debug}
           onChange={() => setDebug(!debug)}
@@ -50,7 +50,7 @@ export default function Logger() {
             <div
               ref={console}
               style={{
-                height: "300px",
+                height: "500px",
                 width: "100%",
                 background: "black",
                 color: error ? "red" : "white",
@@ -74,22 +74,24 @@ function LogLines({ loading, error, logs }) {
 
   if (loading && !logs.length) {
     return (
-      <p style={{ textAlign: "center" }}>{__("Loading...", "posts-bridge")}</p>
+      <p style={{ textAlign: "center" }}>{__("Loading...", "forms-bridge")}</p>
     );
   }
 
-  return logs.map((line, i) => (
-    <p key={i} style={{ margin: 0, fontSize: "12px" }}>
-      <pre
-        style={{
-          width: "max-content",
-          paddingLeft: "1.5em",
-          paddingRight: "1em",
-          margin: 0,
-        }}
-      >
-        {line}
-      </pre>
-    </p>
-  ));
+  return (
+    <pre
+      style={{
+        width: "max-content",
+        paddingLeft: "1.5em",
+        paddingRight: "1em",
+        margin: 0,
+      }}
+    >
+      {logs.map((line, i) => (
+        <p key={i} style={{ margin: 0, fontSize: "12px" }}>
+          {line}
+        </p>
+      ))}
+    </pre>
+  );
 }
