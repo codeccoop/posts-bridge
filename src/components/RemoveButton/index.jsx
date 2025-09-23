@@ -25,7 +25,7 @@ export default function RemoveButton({
   function doubleClickAlert() {
     clearTimeout(alertDelay.current);
     alertDelay.current = setTimeout(
-      () => alert(__("Double click to remove", "forms-bridge")),
+      () => alert(__("Double click to remove", "posts-bridge")),
       300
     );
   }
@@ -41,7 +41,7 @@ export default function RemoveButton({
       }}
       style={style}
       showTooltip={true}
-      label={label || __("Double click to remove", "forms-bridge")}
+      label={label || __("Double click to remove", "posts-bridge")}
       disabled={disabled}
       isDestructive
       __next40pxDefaultSize

@@ -53,8 +53,6 @@ export default function Bridges() {
   const updateBridge = (index, data) => {
     if (index === -1) index = bridges.length;
 
-    data.name = data.name.trim();
-
     const newBridges = bridges
       .slice(0, index)
       .concat([{ ...DEFAULTS, ...data }])
@@ -109,7 +107,6 @@ export default function Bridges() {
               <NewBridge
                 add={(data) => updateBridge(tab.index, data)}
                 schema={schema}
-                names={names}
               />
             );
           }
@@ -120,8 +117,7 @@ export default function Bridges() {
               schema={schema}
               remove={removeBridge}
               update={(data) => updateBridge(tab.index, data)}
-              copy={() => copyBridge(bridge.name)}
-              names={names}
+              copy={() => copyBridge(bridge.post_type)}
             />
           );
         }}

@@ -1,5 +1,5 @@
 // source
-import useAjaxSync from "../../../hooks/useAjaxSync";
+import useAjaxSync from "../../hooks/useAjaxSync";
 
 const {
   __experimentalSpacer: Spacer,

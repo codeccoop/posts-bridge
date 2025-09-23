@@ -26,11 +26,11 @@ export function useBridges() {
   return [addon.bridges || [], (bridges) => setAddon({ ...addon, bridges })];
 }
 
-export function useTemplates() {
-  const [addon, setAddon] = useAddon();
+// export function useTemplates() {
+//   const [addon, setAddon] = useAddon();
 
-  return [
-    addon.templates || [],
-    (templates) => setAddon({ ...addon, templates }),
-  ];
-}
+//   return [
+//     addon.templates || [],
+//     (templates) => setAddon({ ...addon, templates }),
+//   ];
+// }

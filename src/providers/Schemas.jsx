@@ -36,12 +36,12 @@ export default function SchemasProvider({ children }) {
       setLoading(true);
 
       apiFetch({
-        path: `forms-bridge/v1/${addon}/schemas`,
+        path: `posts-bridge/v1/${addon}/schemas`,
       })
         .then((schema) =>
           setSchemas({ ...schemasRef.current, [addon]: schema })
         )
-        .catch(() => setError(__("Schema loading error", "forms-bridge")))
+        .catch(() => setError(__("Schema loading error", "posts-bridge")))
         .finally(() => setLoading(false));
     },
     [schemas]

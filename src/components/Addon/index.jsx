@@ -1,16 +1,13 @@
 // source
-import TemplatesProvider from "../../providers/Templates";
 import { useAddons } from "../../hooks/useGeneral";
 import Bridges from "../Bridges";
 import useTab from "../../hooks/useTab";
-import { useSchemas } from "../../providers/Schemas";
 
 const { PanelRow } = wp.components;
 const { useEffect, useMemo } = wp.element;
 
 export default function Addon() {
   const [name] = useTab();
-  const { bridge: bridgeSchema } = useSchemas() || {};
   const [addons] = useAddons();
 
   const logo = useMemo(() => {
@@ -29,10 +26,8 @@ export default function Addon() {
   }, [name, logo]);
 
   return (
-    <TemplatesProvider>
-      <PanelRow>
-        <Bridges />
-      </PanelRow>
-    </TemplatesProvider>
+    <PanelRow>
+      <Bridges />
+    </PanelRow>
   );
 }

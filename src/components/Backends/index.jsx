@@ -26,7 +26,7 @@ export default function Backends({ backends, setBackends }) {
       {
         index: -1,
         name: "new",
-        title: __("Add a backend", "forms-bridge"),
+        title: __("Add a backend", "posts-bridge"),
         icon: (
           <div style={{ marginBottom: "-2px" }}>
             <AddIcon width="15" height="15" />
@@ -92,7 +92,7 @@ export default function Backends({ backends, setBackends }) {
   return (
     <div style={{ width: "100%" }}>
       <h3 style={{ marginTop: 0, fontSize: "13px" }}>
-        {__("Backends", "forms-bridge")}
+        {__("Backends", "posts-bridge")}
       </h3>
       <TabPanel tabs={tabs} className="backends-tabs-panel">
         {(tab) => {

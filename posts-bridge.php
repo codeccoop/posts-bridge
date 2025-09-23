@@ -23,29 +23,37 @@ if (!defined('ABSPATH')) {
     exit();
 }
 
+define('POSTS_BRIDGE_INDEX', __FILE__);
+define('POSTS_BRIDGE_DIR', dirname(__FILE__));
+define('POSTS_BRIDGE_ADDONS_DIR', POSTS_BRIDGE_DIR . '/addons');
+
+// Commons
 require_once 'common/class-plugin.php';
 
+// Deps
 require_once 'deps/i18n/wpct-i18n.php';
 require_once 'deps/http/http-bridge.php';
 
+// Classes
+require_once 'includes/class-api.php';
 require_once 'includes/class-custom-post-type.php';
 require_once 'includes/class-i18n.php';
 require_once 'includes/class-json-finger.php';
 require_once 'includes/class-settings-store.php';
 require_once 'includes/class-logger.php';
 require_once 'includes/class-menu.php';
-require_once 'includes/class-post-bridge-template.php';
 require_once 'includes/class-post-bridge.php';
 require_once 'includes/class-posts-synchronizer.php';
 require_once 'includes/class-remote-cpt.php';
 require_once 'includes/class-remote-featured-media.php';
 require_once 'includes/class-rest-remote-posts-controller.php';
 require_once 'includes/class-rest-settings-controller.php';
+require_once 'includes/class-addon.php';
 
+// Shortcodes
 require_once 'includes/shortcodes.php';
 
-require_once 'addons/abstract-addon.php';
-
+// Custom blocks
 require_once 'custom-blocks/remote-fields/remote-fields.php';
 
 /**
@@ -121,11 +129,74 @@ class Posts_Bridge extends Base_Plugin
     {
         parent::construct(...$args);
 
-        Custom_Post_Type::load();
-        Addon::load();
+        Custom_Post_Type::load_custom_post_types();
+        Addon::load_addons();
 
-        self::wp_hooks();
-        self::rest_hooks();
+        // Store global remote cpts
+        add_action(
+            'the_post',
+            static function ($post) {
+                self::the_post($post);
+            },
+            9,
+            2
+        );
+
+        // Initalize REST controllers on API init
+        add_action('rest_api_init', static function () {
+            $post_types = apply_filters('posts_bridge_remote_cpts', []);
+            foreach ($post_types as $post_type) {
+                self::$rest_controllers[
+                    $post_type
+                ] = new REST_Remote_Posts_Controller($post_type);
+            }
+        });
+
+        add_action('admin_enqueue_scripts', static function ($admin_page) {
+            if ('settings_page_posts-bridge' === $admin_page) {
+                self::admin_enqueue_scripts();
+            }
+        });
+
+        add_action(
+            'in_plugin_update_message-posts-bridge/posts-bridge.php',
+            function ($plugin_data, $response) {
+                if ($response->slug !== 'posts-bridge') {
+                    return;
+                }
+
+                if (
+                    !preg_match(
+                        '/^(\d+)\.\d+\.\d+$/',
+                        $response->new_version,
+                        $matches
+                    )
+                ) {
+                    return;
+                }
+
+                $new_version = $matches[1];
+                $db_version = get_option(self::db_version, '1.0.0');
+
+                if (!preg_match('/^(\d+)\.\d+\.\d+$/', $db_version, $matches)) {
+                    return;
+                }
+
+                $from_version = $matches[1];
+
+                if ($new_version > $from_version) {
+                    echo '<br /><b>' .
+                        '&nbsp' .
+                        __(
+                            'This is a major release and while tested thoroughly you might experience conflicts or lost data. We recommend you back up your data before updating and check your configuration after updating.',
+                            'posts-bridge'
+                        ) .
+                        '</b>';
+                }
+            },
+            10,
+            2
+        );
     }
 
     /**
@@ -140,86 +211,33 @@ class Posts_Bridge extends Base_Plugin
     }
 
     /**
-     * Registers plugin's callbacks to wp hooks.
-     */
-    private static function wp_hooks()
-    {
-        // Store global remote cpts
-        add_action(
-            'the_post',
-            static function ($post) {
-                self::the_post($post);
-            },
-            9,
-            2
-        );
-
-        // Enqueue plugin admin client scripts
-        add_action('admin_enqueue_scripts', static function ($admin_page) {
-            self::admin_enqueue_scripts($admin_page);
-        });
-    }
-
-    /**
-     * Registers callbacks to wp rest hooks.
-     */
-    private static function rest_hooks()
-    {
-        // Initalize REST controllers on API init
-        add_action('rest_api_init', static function () {
-            $post_types = apply_filters('posts_bridge_remote_cpts', []);
-            foreach ($post_types as $post_type) {
-                self::$rest_controllers[
-                    $post_type
-                ] = new REST_Remote_Posts_Controller($post_type);
-            }
-        });
-    }
-
-    /**
      * Enqueue admin client scripts
-     *
-     * @param string $admin_page Current admin page.
      */
-    private static function admin_enqueue_scripts($admin_page)
+    private static function admin_enqueue_scripts()
     {
-        $slug = self::slug();
         $version = self::version();
-        if ('settings_page_' . $slug !== $admin_page) {
-            return;
-        }
-
-        $dependencies = apply_filters('posts_bridge_admin_script_deps', [
-            'react',
-            'react-jsx-runtime',
-            'wp-api-fetch',
-            'wp-components',
-            'wp-dom-ready',
-            'wp-element',
-            'wp-i18n',
-            'wp-api',
-        ]);
 
         wp_enqueue_script(
-            $slug,
-            plugins_url('assets/wppb.js', __FILE__),
-            [],
-            $version,
-            ['in_footer' => false]
-        );
-
-        wp_enqueue_script(
-            $slug . '-admin',
+            'posts-bridge',
             plugins_url('assets/plugin.bundle.js', __FILE__),
-            $dependencies,
+            [
+                'react',
+                'react-jsx-runtime',
+                'wp-api-fetch',
+                'wp-components',
+                'wp-dom-ready',
+                'wp-element',
+                'wp-i18n',
+                'wp-api',
+            ],
             $version,
             ['in_footer' => true]
         );
 
         wp_set_script_translations(
-            $slug . '-admin',
-            $slug,
-            plugin_dir_path(__FILE__) . 'languages'
+            'posts-bridge',
+            'posts-bridge',
+            self::path() . 'languages'
         );
 
         wp_enqueue_style('wp-components');
@@ -236,7 +254,8 @@ class Posts_Bridge extends Base_Plugin
         global $posts_bridge_remote_cpt;
 
         if (!empty($post) && !empty($post->ID)) {
-            $post_types = apply_filters('posts_bridge_remote_cpts', []);
+            $post_types = PBAPI::get_remote_cpts();
+
             if (in_array($post->post_type, $post_types, true)) {
                 $posts_bridge_remote_cpt = new Remote_CPT($post);
             }
@@ -281,7 +300,10 @@ class Posts_Bridge extends Base_Plugin
                 continue;
             }
 
-            if ($as_int($version) >= $as_int($from)) {
+            if (
+                $as_int($version) > $as_int($from) &&
+                $as_int($version) <= $as_int($to)
+            ) {
                 $migrations[] = $migration;
             }
         }

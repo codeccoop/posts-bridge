@@ -1,5 +1,5 @@
 // source
-import { usePostTypes } from "../../providers/Settings";
+import { usePostTypes } from "../../hooks/useGeneral";
 import { useCustomPostTypeData } from "../../providers/CustomPostTypes";
 
 const {

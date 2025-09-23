@@ -1,7 +1,7 @@
 const { useEffect, useState, useRef } = wp.element;
 
 export default function useTab() {
-  const root = useRef(document.querySelector("#forms-bridge")).current;
+  const root = useRef(document.querySelector("#posts-bridge")).current;
 
   const [tab, setTab] = useState(() => {
     const query = new URLSearchParams(window.location.search);

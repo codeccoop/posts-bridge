@@ -32,7 +32,7 @@ export default function Exporter() {
     let day = String(date.getDate());
     if (day.length === 1) day = "0" + day;
 
-    link.download = `${year}${month}${day}-forms-bridge.json`;
+    link.download = `${year}${month}${day}-posts-bridge.json`;
     link.href = url;
     document.body.appendChild(link);
     link.click();
@@ -44,16 +44,16 @@ export default function Exporter() {
       .then((settings) => {
         setSettings(settings).catch(() => {
           setError(
-            __("It has been an error with config import", "forms-bridge")
+            __("It has been an error with config import", "posts-bridge")
           );
         });
       })
       .catch((err) => {
         if (err.name === "SyntaxError") {
-          setError(__("JSON syntax error", "forms-bridge"));
+          setError(__("JSON syntax error", "posts-bridge"));
         } else {
           setError(
-            __("Something went wrong with the file upload", "forms-bridge")
+            __("Something went wrong with the file upload", "posts-bridge")
           );
         }
       });
@@ -63,12 +63,12 @@ export default function Exporter() {
     setLoading(true);
 
     apiFetch({
-      path: "forms-bridge/v1/settings",
+      path: "posts-bridge/v1/settings",
       method: "DELETE",
     })
       .then(fetchSettings)
       .catch(() => {
-        setError(__("Wipe config error", "forms-bridge"));
+        setError(__("Wipe config error", "posts-bridge"));
       })
       .finally(() => setLoading(false));
   }, [fetchSettings]);
@@ -94,7 +94,7 @@ export default function Exporter() {
       <p>
         {__(
           "Export or import your configuration as a JSON to migrate your bridges to, or from, any other WordPress instance",
-          "forms-bridge"
+          "posts-bridge"
         )}
       </p>
       <Spacer paddingBottom="5px" />
@@ -102,99 +102,99 @@ export default function Exporter() {
         <Button
           disabled={!!error || loading}
           variant="secondary"
-          description={__("Export Forms Bridge config as JSON", "forms-bridge")}
+          description={__("Export Forms Bridge config as JSON", "posts-bridge")}
           onClick={downloadConfig}
           style={{ width: "150px", justifyContent: "center" }}
           __next40pxDefaultSize
         >
-          {__("Download config", "forms-bridge")}
+          {__("Download config", "posts-bridge")}
         </Button>
         <Button
           disabled={!!error || loading}
           variant="primary"
-          description={__("Import Forms Bridge JSON config", "forms-bridge")}
+          description={__("Import Forms Bridge JSON config", "posts-bridge")}
           onClick={() => setShowModal("import")}
           style={{ width: "150px", justifyContent: "center" }}
           __next40pxDefaultSize
         >
-          {__("Import config", "forms-bridge")}
+          {__("Import config", "posts-bridge")}
         </Button>
         <Button
           disabled={!!error || loading}
           variant="primary"
-          description={__("Wipe Forms Bridge settings", "forms-bridge")}
+          description={__("Wipe Forms Bridge settings", "posts-bridge")}
           onClick={() => setShowModal("wipe")}
           style={{ width: "150px", justifyContent: "center" }}
           isDestructive
           __next40pxDefaultSize
         >
-          {__("Wipe config", "forms-bridge")}
+          {__("Wipe config", "posts-bridge")}
         </Button>
       </div>
       {showModal === "import" && (
         <Modal
-          title={__("Config import warning", "forms-bridge")}
+          title={__("Config import warning", "posts-bridge")}
           onRequestClose={() => setShowModal(false)}
           size="small"
         >
           <p>
             {__(
               "Import a new configuration is a destructive action. Your current configuration will be replaced with the new one. If there are some errors on the new config, Forms Bridge will filter it to avoid bugs.",
-              "forms-bridge"
+              "posts-bridge"
             )}
           </p>
-          <p>{__("Are you sure to continue?", "forms-bridge")}</p>
+          <p>{__("Are you sure to continue?", "posts-bridge")}</p>
           <div
             style={{ display: "flex", gap: "0.5rem", justifyContent: "center" }}
           >
             <Button
               variant="primary"
-              description={__("Continue", "forms-bridge")}
+              description={__("Continue", "posts-bridge")}
               onClick={() => setUserConsent(true)}
             >
-              {__("Continue", "forms-bridge")}
+              {__("Continue", "posts-bridge")}
             </Button>
             <Button
               variant="primary"
               isDestructive={true}
-              description={__("Cancel", "forms-bridge")}
+              description={__("Cancel", "posts-bridge")}
               onClick={() => setUserConsent(false)}
             >
-              {__("Cancel", "forms-bridge")}
+              {__("Cancel", "posts-bridge")}
             </Button>
           </div>
         </Modal>
       )}
       {showModal === "wipe" && (
         <Modal
-          title={__("Wipe config warning", "forms-bridge")}
+          title={__("Wipe config warning", "posts-bridge")}
           onRequestClose={() => setShowModal(false)}
           size="small"
         >
           <p>
             {__(
               "You are going to wipe Forms Bridge config. After that, Forms Bridge will be reset to factory defaults. All your data will be lost.",
-              "forms-bridge"
+              "posts-bridge"
             )}
           </p>
-          <p>{__("Are you sure to continue?", "forms-bridge")}</p>
+          <p>{__("Are you sure to continue?", "posts-bridge")}</p>
           <div
             style={{ display: "flex", gap: "0.5rem", justifyContent: "center" }}
           >
             <Button
               variant="primary"
-              description={__("Continue", "forms-bridge")}
+              description={__("Continue", "posts-bridge")}
               onClick={() => setUserConsent(true)}
             >
-              {__("Continue", "forms-bridge")}
+              {__("Continue", "posts-bridge")}
             </Button>
             <Button
               variant="primary"
               isDestructive={true}
-              description={__("Cancel", "forms-bridge")}
+              description={__("Cancel", "posts-bridge")}
               onClick={() => setUserConsent(false)}
             >
-              {__("Cancel", "forms-bridge")}
+              {__("Cancel", "posts-bridge")}
             </Button>
           </div>
         </Modal>

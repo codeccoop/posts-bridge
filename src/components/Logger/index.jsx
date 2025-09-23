@@ -23,20 +23,20 @@ export default function Logger() {
   }, [logs]);
 
   return (
-    <PanelBody title={__("Debug", "forms-bridge")} initialOpen={!!debug}>
+    <PanelBody title={__("Debug", "posts-bridge")} initialOpen={!!debug}>
       <p>
         {__(
           "Activate the debug mode and open the loggin console to see bridged form submissions' logs",
-          "forms-bridge"
+          "posts-bridge"
         )}
       </p>
       <Spacer paddingBottom="5px" />
       <PanelRow>
         <ToggleControl
-          label={__("Logging", "forms-bridge")}
+          label={__("Logging", "posts-bridge")}
           help={__(
             "When debug mode is activated, logs will be write to the log file and readed from there. Make sure to deactivate the debug mode once you've done to erase this file contents.",
-            "forms-bridge"
+            "posts-bridge"
           )}
           checked={!!debug}
           onChange={() => setDebug(!debug)}
@@ -74,7 +74,7 @@ function LogLines({ loading, error, logs }) {
 
   if (loading && !logs.length) {
     return (
-      <p style={{ textAlign: "center" }}>{__("Loading...", "forms-bridge")}</p>
+      <p style={{ textAlign: "center" }}>{__("Loading...", "posts-bridge")}</p>
     );
   }
 

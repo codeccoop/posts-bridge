@@ -44,7 +44,6 @@ export default function GeneralSettings() {
       >
         <CustomPostTypes />
       </PanelBody>
-      <Addons />
       <Logger />
       <PanelBody
         title={__("Import / Export", "posts-bridge")}

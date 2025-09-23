@@ -3,7 +3,6 @@ import ErrorBoundary from "./ErrorBoundary";
 import ErrorProvider from "./providers/Error";
 import LoadingProvider from "./providers/Loading";
 import SchemasProvider from "./providers/Schemas";
-import FormsProvider from "./providers/Forms";
 import SettingsProvider from "./providers/Settings";
 import Settings from "./components/Settings";
 import SaveButton from "./components/SaveButton";
@@ -39,22 +38,20 @@ function App() {
         <ErrorProvider>
           <LoadingProvider>
             <SettingsProvider>
-              <FormsProvider>
-                <SchemasProvider>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      paddingTop: "calc(16px)",
-                      alignItems: "baseline",
-                    }}
-                  >
-                    <Heading level={1}>Forms Bridge</Heading>
-                    <SaveButton />
-                  </div>
-                  <Settings />
-                </SchemasProvider>
-              </FormsProvider>
+              <SchemasProvider>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    paddingTop: "calc(16px)",
+                    alignItems: "baseline",
+                  }}
+                >
+                  <Heading level={1}>Posts Bridge</Heading>
+                  <SaveButton />
+                </div>
+                <Settings />
+              </SchemasProvider>
             </SettingsProvider>
           </LoadingProvider>
         </ErrorProvider>

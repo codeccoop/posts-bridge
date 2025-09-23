@@ -2,6 +2,8 @@
 
 namespace POSTS_BRIDGE;
 
+use PBAPI;
+use WP_Error;
 use HTTP_BRIDGE\Http_Backend;
 
 if (!defined('ABSPATH')) {
@@ -11,12 +13,12 @@ if (!defined('ABSPATH')) {
 /**
  * Post bridge object.
  */
-abstract class Post_Bridge
+class Post_Bridge
 {
     /**
      * Handles WP_Post model fields.
      *
-     * @var array<string> WP_Post model fields.
+     * @var string[]
      */
     public const post_model = [
         'ID',
@@ -51,109 +53,163 @@ abstract class Post_Bridge
     ];
 
     /**
+     * Bridge data common schema.
+     *
+     * @var array
+     */
+    public static function schema($addon = null)
+    {
+        $schema = [
+            '$schema' => 'http://json-schema.org/draft-04/schema#',
+            'title' => 'form-bridge',
+            'type' => 'object',
+            'properties' => [
+                'post_type' => [
+                    'title' => _x('Post type', 'Bridge schema', 'posts-bridge'),
+                    'description' => __(
+                        'Post type of the bridge',
+                        'posts-bridge'
+                    ),
+                    'type' => 'string',
+                    'minLength' => 1,
+                ],
+                'foreign_key' => [
+                    'title' => _x(
+                        'Foreign key',
+                        'Bridge schema',
+                        'posts-bridge'
+                    ),
+                    'description' => __(
+                        'Name of the primary key of the remote objects',
+                        'posts-birdge'
+                    ),
+                    'type' => 'string',
+                ],
+                'backend' => [
+                    'title' => _x('Backend', 'Bridge schema', 'posts-bridge'),
+                    'description' => __('Backend name', 'posts-bridge'),
+                    'type' => 'string',
+                    // 'default' => '',
+                ],
+                'endpoint' => [
+                    'title' => _x('Endpoint', 'Bridge schema', 'posts-bridge'),
+                    'description' => __('HTTP API endpoint', 'posts-bridge'),
+                    'type' => 'string',
+                    'default' => '/',
+                ],
+                'method' => [
+                    'title' => _x('Method', 'Bridge schema', 'posts-bridge'),
+                    'description' => __('HTTP method', 'posts-bridge'),
+                    'type' => 'string',
+                    'enum' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+                    'default' => 'GET',
+                ],
+                'mappers' => [
+                    'description' => __(
+                        'Array of bridge\'s remote field mappings',
+                        'posts-bridge'
+                    ),
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'name' => [
+                                'type' => 'string',
+                                'minLength' => 1,
+                                'validate_callback' =>
+                                    '\FORMS_BRIDGE\JSON_Finger::validate',
+                            ],
+                            'foreign' => [
+                                'type' => 'string',
+                                'minLength' => 1,
+                                'validate_callback' =>
+                                    '\FORMS_BRIDGE\JSON_Finger::validate',
+                            ],
+                        ],
+                        'additionalProperties' => false,
+                        'required' => ['name', 'foreign'],
+                    ],
+                    'default' => [],
+                ],
+                'is_valid' => [
+                    'description' => __(
+                        'Validation result of the bridge setting',
+                        'posts-bridge'
+                    ),
+                    'type' => 'boolean',
+                    'default' => true,
+                ],
+                'enabled' => [
+                    'description' => __(
+                        'Boolean flag to enable/disable a bridge',
+                        'posts-bridge'
+                    ),
+                    'type' => 'boolean',
+                    'default' => true,
+                ],
+            ],
+            'required' => [
+                'post_type',
+                'foreign_key',
+                'backend',
+                'method',
+                'endpoint',
+                'mappers',
+                'is_valid',
+                'enabled',
+            ],
+            'additionalProperties' => false,
+        ];
+
+        if (!$addon) {
+            return $schema;
+        }
+
+        return apply_filters('posts_bridge_bridge_schema', $schema, $addon);
+    }
+
+    /**
      * Handles bridge's data.
      *
      * @var array $data Settings data of the bridge.
      */
     protected $data;
 
-    /** Handles the bridge's API slug.
-     *
-     * @var string $api API slug.
-     */
-    protected $api;
+    protected $id;
 
-    /**
-     * Handles the form bridge's template class.
+    /** Handles post bridge's addon slug.
      *
      * @var string
      */
-    protected static $template_class = '\POSTS_BRIDGE\Post_Bridge_Template';
-
-    /**
-     * Handles available template instances.
-     *
-     * @var array
-     */
-    private static $templates = [];
-
-    /**
-     * Loads template configs from a given directory path.Allowed file formats
-     * are php and json.
-     *
-     * @param string $templates_path Source templates directory path.
-     * @param string $api API name.
-     */
-    final public static function load_templates($templates_path, $api)
-    {
-        if (!is_dir($templates_path)) {
-            $res = mkdir($templates_path);
-            if (!$res) {
-                return;
-            }
-        }
-
-        if (!is_readable($templates_path)) {
-            return;
-        }
-
-        $template_files = apply_filters(
-            'posts_bridge_template_files',
-            array_map(static function ($template_file) use ($templates_path) {
-                return $templates_path . '/' . $template_file;
-            }, array_diff(scandir($templates_path), ['.', '..'])),
-            $api
-        );
-
-        foreach ($template_files as $template_path) {
-            if (!is_file($template_path) || !is_readable($template_path)) {
-                continue;
-            }
-
-            $template_file = basename($template_path);
-            $ext = pathinfo($template_file)['extension'];
-
-            $config = null;
-            if ($ext === 'php') {
-                $config = include $template_path;
-            } elseif ($ext === 'json') {
-                $content = file_get_contents($template_path);
-                $config = json_decode($content, true);
-            }
-
-            if (is_array($config)) {
-                static::$templates[] = new static::$template_class(
-                    $template_file,
-                    $config,
-                    $api
-                );
-            }
-        }
-    }
-
-    /**
-     * Gets a template instance by name.
-     *
-     * @param string $name Template name.
-     *
-     * @return Post_Bridge_Template|null
-     */
-    final public static function get_template($name)
-    {
-        foreach (static::$templates as $template) {
-            if ($template->name === $name) {
-                return $template;
-            }
-        }
-    }
+    protected $addon;
 
     /**
      * Stores the post bridge's data as a private attribute.
      */
-    public function __construct($data, $api)
+    public function __construct($data, $addon)
     {
-        $this->api = $api;
-        $this->data = $data;
+        $this->data = wpct_plugin_sanitize_with_schema(
+            $data,
+            static::schema($addon)
+        );
+        $this->addon = $addon;
+
+        if ($this->is_valid) {
+            $this->id = $addon . '-' . $data['name'];
+        }
+    }
+
+    public function data()
+    {
+        if (!$this->is_valid) {
+            return;
+        }
+
+        return array_merge($this->data, [
+            'id' => $this->id,
+            'name' => $this->name,
+            'addon' => $this->addon,
+        ]);
     }
 
     /**
@@ -166,13 +222,23 @@ abstract class Post_Bridge
     public function __get($name)
     {
         switch ($name) {
-            case 'api':
-                return $this->api;
+            case 'id':
+                return $this->id;
+            case 'addon':
+                return $this->addon;
             case 'backend':
                 return $this->backend();
             case 'content_type':
                 return $this->content_type();
+            case 'is_valid':
+                return !is_wp_error($this->data) &&
+                    $this->data['is_valid'] &&
+                    Addon::addon($this->addon) !== null;
             default:
+                if (!$this->is_valid) {
+                    return;
+                }
+
                 return $this->data[$name] ?? null;
         }
     }
@@ -184,17 +250,11 @@ abstract class Post_Bridge
      */
     protected function backend()
     {
-        $backend_name = $this->data['backend'] ?? null;
-        if (!$backend_name) {
-            return $backend_name;
+        if (!$this->is_valid) {
+            return;
         }
 
-        $backends = apply_filters('http_bridge_backends', []);
-        foreach ($backends as $backend) {
-            if ($backend->name === $backend_name) {
-                return $backend;
-            }
-        }
+        return PBAPI::get_backend($this->data['backend']);
     }
 
     /**
@@ -204,9 +264,12 @@ abstract class Post_Bridge
      */
     protected function content_type()
     {
-        $backend = $this->backend();
+        if (!$this->is_valid) {
+            return;
+        }
 
-        if (empty($backend)) {
+        $backend = PBAPI::get_backend($this->data['backend']);
+        if (!$backend) {
             return;
         }
 
@@ -222,53 +285,42 @@ abstract class Post_Bridge
      */
     final public function fetch($foreign_id)
     {
-        do_action('posts_bridge_before_fetch', $this, $foreign_id);
-
-        $response = $this->do_fetch($foreign_id);
-
-        if (is_wp_error($response)) {
-            do_action('posts_bridge_fetch_error', $response, $this);
-        } else {
-            do_action('posts_bridge_fetch', $response, $this);
+        if (!$this->is_valid) {
+            return new WP_Error('invalid_bridge');
         }
 
-        return $response;
-    }
+        $schema = $this->schema();
 
-    /**
-     * Fetches remote data for a given foreign id.
-     *
-     * @param int|string $foreign_id Foreig key value.
-     *
-     * @return array|WP_Error Remote data for the given id.
-     */
-    abstract protected function do_fetch($foreign_id);
-
-    /**
-     * Retrives the bridge's remote key values.
-     *
-     * @return array List of foreign ids.
-     */
-    abstract public function foreign_ids();
-
-    /**
-     * Returns a clone of the bridge instance with its data patched by
-     * the partial array.
-     *
-     * @param array $partial Bridge data.
-     *
-     * @return Post_Bridge
-     */
-    public function patch($partial = [])
-    {
-        $data = array_merge($this->data, $partial);
-
-        if (empty($data['name']) || $data['name'] === $this->name) {
-            $data['name'] = 'bridge-' . time();
+        if (
+            !in_array(
+                $this->method,
+                $schema['properties']['method']['enum'],
+                true
+            )
+        ) {
+            return new WP_Error(
+                'method_not_allowed',
+                sprintf(
+                    /* translators: %s: method name */
+                    __('HTTP method %s is not allowed', 'forms-bridge'),
+                    sanitize_text_field($this->method)
+                ),
+                ['method' => $this->method]
+            );
         }
 
-        return new static($data, $this->api);
+        $backend = $this->backend();
+        $method = $this->method;
+
+        return $backend->$method($this->endpoint);
     }
+
+    // /**
+    //  * Retrives the bridge's remote key values.
+    //  *
+    //  * @return array List of foreign ids.
+    //  */
+    // abstract public function foreign_ids();
 
     /**
      * Bridge's remote fields getter.
@@ -475,5 +527,74 @@ abstract class Post_Bridge
                 'sanitize_callback' => 'wp_kses_post',
             ]);
         }
+    }
+
+    /**
+     * Returns a clone of the bridge instance with its data patched by
+     * the partial array.
+     *
+     * @param array $partial Bridge data.
+     *
+     * @return Post_Bridge
+     */
+    public function patch($partial = [])
+    {
+        if (!$this->is_valid) {
+            return $this;
+        }
+
+        $data = array_merge($this->data, $partial);
+        return new static($data, $this->addon);
+    }
+
+    public function save()
+    {
+        if (!$this->is_valid) {
+            return false;
+        }
+
+        $setting = Settings_Store::setting($this->addon);
+        if (!$setting) {
+            return false;
+        }
+
+        $bridges = $setting->bridges ?: [];
+
+        $index = array_search($this->name, array_column($bridges, 'name'));
+
+        if ($index === false) {
+            $bridges[] = $this->data;
+        } else {
+            $bridges[$index] = $this->data;
+        }
+
+        $setting->bridges = $bridges;
+
+        return true;
+    }
+
+    public function delete()
+    {
+        if (!$this->is_valid) {
+            return false;
+        }
+
+        $setting = Settings_Store::setting($this->addon);
+        if (!$setting) {
+            return false;
+        }
+
+        $bridges = $setting->bridges ?: [];
+
+        $index = array_search($this->name, array_column($bridges, 'name'));
+
+        if ($index === false) {
+            return false;
+        }
+
+        array_splice($bridges, $index, 1);
+        $setting->bridges = $bridges;
+
+        return true;
     }
 }

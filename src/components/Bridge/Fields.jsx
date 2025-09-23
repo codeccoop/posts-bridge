@@ -1,3 +1,5 @@
+// source
+import { usePostTypes } from "../../hooks/useGeneral";
 import { useBackends } from "../../hooks/useHttp";
 import { isset, prependEmptyOption } from "../../lib/utils";
 import FieldWrapper from "../FieldWrapper";
@@ -5,17 +7,22 @@ import FieldWrapper from "../FieldWrapper";
 const { TextControl, SelectControl } = wp.components;
 const { useEffect, useMemo } = wp.element;
 
-export const INTERNALS = [
-  "enabled",
-  "is_valid",
-  "workflow",
-  "custom_fields",
-  "mutations",
-];
+export const INTERNALS = ["enabled", "is_valid", "mappers"];
 
 const ORDER = ["name", "backend", "endpoint", "method"];
 
 export default function BridgeFields({ data, setData, schema, errors = {} }) {
+  const [postTypes] = usePostTypes();
+
+  const postTypeOptions = useMemo(() => {
+    if (postTypes.length === 0) return [{ label: "", value: "" }];
+
+    return postTypes.sort().map((postType) => ({
+      label: postType,
+      value: postType,
+    }));
+  }, [postTypes]);
+
   const [backends] = useBackends();
   const backendOptions = useMemo(() => {
     if (!backends.length) return [{ label: "", value: "" }];
@@ -37,12 +44,18 @@ export default function BridgeFields({ data, setData, schema, errors = {} }) {
       .filter((name) => !INTERNALS.includes(name))
       .map((name) => ({
         ...schema.properties[name],
-        label: schema.properties[name].name || name,
+        label: schema.properties[name].title || name,
         name,
         value: schema.properties[name].const,
       }))
       .map((field) => {
-        if (field.name === "backend") {
+        if (field.name === "post_type") {
+          return {
+            ...field,
+            type: "select",
+            options: postTypeOptions,
+          };
+        } else if (field.name === "backend") {
           return {
             ...field,
             type: "select",

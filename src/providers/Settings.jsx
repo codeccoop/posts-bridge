@@ -18,10 +18,11 @@ const DEFAULTS = Object.freeze({
   state: {
     general: {
       loading: true,
-      notification_receiver: "",
-      backends: [],
+      synchronize: {
+        enabled: false,
+        recurrence: "weekly",
+      },
       addons: [],
-      integrations: null,
       debug: false,
     },
     http: {
@@ -49,14 +50,14 @@ export default function SettingsProvider({ children }) {
     setLoading(true);
 
     return apiFetch({
-      path: "forms-bridge/v1/settings",
+      path: "posts-bridge/v1/settings",
     })
       .then((state) => {
         initialState.current = state;
         currentState.current = state;
         setState(state);
       })
-      .catch(() => setError(__("Settings loading error", "forms-bridge")))
+      .catch(() => setError(__("Settings loading error", "posts-bridge")))
       .finally(() => setLoading(false));
   }).current;
 
@@ -101,7 +102,7 @@ export default function SettingsProvider({ children }) {
     setLoading(true);
 
     return apiFetch({
-      path: "forms-bridge/v1/settings",
+      path: "posts-bridge/v1/settings",
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -109,7 +110,7 @@ export default function SettingsProvider({ children }) {
       data: state,
     })
       .catch(() => {
-        setError(__("Settings submission error", "forms-bridge"));
+        setError(__("Settings submission error", "posts-bridge"));
         return { success: false };
       })
       .then((state) => {
