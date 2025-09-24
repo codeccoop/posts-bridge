@@ -322,7 +322,7 @@ class Addon extends Singleton
             }
         }
 
-        $bridge['mappers'] = $mapper;
+        $bridge['mappers'] = $mappers;
 
         $bridge['is_valid'] =
             $bridge['backend'] && $bridge['method'] && $bridge['endpoint'];

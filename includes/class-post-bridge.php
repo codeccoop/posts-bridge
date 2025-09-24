@@ -61,7 +61,7 @@ class Post_Bridge
     {
         $schema = [
             '$schema' => 'http://json-schema.org/draft-04/schema#',
-            'title' => 'form-bridge',
+            'title' => 'post-bridge',
             'type' => 'object',
             'properties' => [
                 'post_type' => [
@@ -121,7 +121,7 @@ class Post_Bridge
                                 'type' => 'string',
                                 'minLength' => 1,
                                 'validate_callback' =>
-                                    '\FORMS_BRIDGE\JSON_Finger::validate',
+                                    '\POSTS_BRIDGE\JSON_Finger::validate',
                             ],
                         ],
                         'additionalProperties' => false,
@@ -300,7 +300,7 @@ class Post_Bridge
                 'method_not_allowed',
                 sprintf(
                     /* translators: %s: method name */
-                    __('HTTP method %s is not allowed', 'forms-bridge'),
+                    __('HTTP method %s is not allowed', 'posts-bridge'),
                     sanitize_text_field($this->method)
                 ),
                 ['method' => $this->method]
