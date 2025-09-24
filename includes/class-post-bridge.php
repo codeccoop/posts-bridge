@@ -277,11 +277,11 @@ class Post_Bridge
     /**
      * Fetches remote data for a given foreign id.
      *
-     * @param int|string $foreign_id Foreig key value.
+     * @param int|string|null $foreign_id Foreig key value.
      *
      * @return array|WP_Error Remote data for the given id.
      */
-    final public function fetch($foreign_id)
+    final public function fetch($foreign_id = null)
     {
         if (!$this->is_valid) {
             return new WP_Error('invalid_bridge');
@@ -310,7 +310,53 @@ class Post_Bridge
         $backend = $this->backend();
         $method = $this->method;
 
-        return $backend->$method($this->endpoint);
+        $endpoint = $this->endpoint($foreign_id);
+
+        return $backend->$method($endpoint);
+    }
+
+    protected function endpoint($foreign_id = null)
+    {
+        $endpoint = $this->data['endpoint'] ?? '';
+        $parsed = wp_parse_url($endpoint);
+
+        $endpoint = $parsed['path'] ?? '';
+
+        if ($foreign_id) {
+            $endpoint .= '/' . $foreign_id;
+        }
+
+        if (isset($parsed['query'])) {
+            $endpoint .= '?' . $parsed['query'];
+        }
+
+        return apply_filters(
+            'posts_bridge_endpoint',
+            $endpoint,
+            $foreign_id,
+            $this
+        );
+    }
+
+    public function foreign_ids()
+    {
+        $response = $this->fetch();
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $ids = [];
+        foreach ($response['data'] as $item_data) {
+            $finger = new JSON_Finger($item_data);
+            $id = $finger->get($this->foreign_key);
+
+            if ($id) {
+                $ids[] = $id;
+            }
+        }
+
+        return $ids;
     }
 
     // /**
@@ -341,15 +387,13 @@ class Post_Bridge
     final public function remote_post_fields()
     {
         $fields = [];
-        foreach ($this->fields as $field) {
-            extract($field);
-
-            if (empty($name) || empty($foreign)) {
+        foreach ($this->mappers as $mapper) {
+            if (empty($mapper['name']) || empty($mapper['foreign'])) {
                 continue;
             }
 
-            if (in_array($name, self::post_model)) {
-                $fields[$foreign] = $name;
+            if (in_array($mapper['name'], self::post_model)) {
+                $fields[$mapper['foreign']] = $mapper['name'];
             }
         }
 
@@ -364,15 +408,13 @@ class Post_Bridge
     final public function remote_custom_fields()
     {
         $fields = [];
-        foreach ($this->fields as $field) {
-            extract($field);
-
-            if (empty($foreign) || empty($name)) {
+        foreach ($this->mappers as $mapper) {
+            if (empty($mapper['foreign']) || empty($mapper['name'])) {
                 continue;
             }
 
-            if (!in_array($name, self::post_model)) {
-                $fields[$foreign] = $name;
+            if (!in_array($mapper['name'], self::post_model)) {
+                $fields[$mapper['foreign']] = $mapper['name'];
             }
         }
 
