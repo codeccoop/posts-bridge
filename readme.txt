@@ -3,7 +3,7 @@ Contributors: codeccoop
 Tags: posts, bridge, http, api, backend
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable Tag: 3.0.9
+Stable Tag: 4.0.0
 Tested up to: 6.7
 
 Bridge any backend or service data to posts collections.
@@ -21,6 +21,16 @@ Posts Bridge has core support for REST API connexions and addons for [Odoo](http
 See the official plugin's documentation on our [gitlab repository](https://git.coopdevs.org/codeccoop/wp/plugins/posts-bridge/).
 
 == Changelog ==
+
+= 4.0.0 =
+* feat: schemas refactor
+* feat: frontend refactor
+* feat: improve custom post types ui
+* feat: sync ping poll
+* feat: remove templates
+* feat: remove gsheets addon
+* feat: bridge enabled state
+* feat: update deps
 
 = 3.0.8 =
 * feat: setting sanitization with defaults recovery
