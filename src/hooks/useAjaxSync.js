@@ -62,7 +62,7 @@ export default function useAjaxSync({ fullMode, postType }) {
 
     return new Promise((res, rej) => {
       const ajax = new XMLHttpRequest();
-      ajax.timeout = 100 * 60;
+      ajax.timeout = 1000 * 60;
 
       ajax.onreadystatechange = function () {
         if (this.readyState === 4) {
@@ -71,10 +71,13 @@ export default function useAjaxSync({ fullMode, postType }) {
               json: () => Promise.resolve(JSON.parse(this.responseText)),
             });
           } else if (this.status === 409 || this.status === 0) {
-            setTimeout(() => {
-              ajax.onreadystatechange = () => {};
-              ping().then((response) => res(response));
-            }, 2000);
+            setTimeout(
+              () => {
+                ajax.onreadystatechange = () => {};
+                ping().then((response) => res(response));
+              },
+              fullMode ? 4000 : 2000
+            );
           } else {
             rej(new Error(`HTTP error response status code: ${this.status}`));
           }

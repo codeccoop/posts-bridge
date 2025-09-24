@@ -68,7 +68,7 @@ class Settings_Store extends Base_Settings_Store
         ]);
 
         self::ready(function ($store) {
-            $store::use_setter('http', static function () {
+            $store::use_getter('http', static function () {
                 $setting = Http_Store::setting('general');
                 return $setting->data();
             });
@@ -77,14 +77,12 @@ class Settings_Store extends Base_Settings_Store
                 'http',
                 function ($data) {
                     if (
-                        !isset($data['backends']) ||
-                        !isset($data['credentials'])
+                        isset($data['backends']) &&
+                        isset($data['credentials'])
                     ) {
-                        return $data;
+                        $setting = Http_Store::setting('general');
+                        $setting->update($data);
                     }
-
-                    $setting = Http_Store::setting('general');
-                    $setting->update($data);
 
                     return [];
                 },
