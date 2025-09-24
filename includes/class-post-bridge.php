@@ -192,7 +192,7 @@ class Post_Bridge
         $this->addon = $addon;
 
         if ($this->is_valid) {
-            $this->id = $addon . '-' . $data['name'];
+            $this->id = $addon . '-' . $data['post_type'];
         }
     }
 

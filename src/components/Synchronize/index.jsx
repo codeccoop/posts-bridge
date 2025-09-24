@@ -1,5 +1,7 @@
 // source
 import useAjaxSync from "../../hooks/useAjaxSync";
+import { useError } from "../../providers/Error";
+import { useLoading } from "../../providers/Loading";
 import ToggleControl from "../Toggle";
 
 const {
@@ -43,11 +45,14 @@ const recurrenceOptions = [
 ];
 
 export default function Synchronize({ synchronize, setSynchronize }) {
+  const [loading] = useLoading();
+  const [error] = useError();
+
   const { enabled, recurrence } = synchronize;
 
   const [fullMode, setFullMode] = useState(false);
 
-  const { loading, error, sync } = useAjaxSync({ fullMode });
+  const sync = useAjaxSync({ fullMode });
 
   useEffect(() => {
     if (!loading) return;
@@ -64,12 +69,10 @@ export default function Synchronize({ synchronize, setSynchronize }) {
       <PanelRow>
         <Button
           variant="primary"
-          isBusy={loading}
-          disabled={error}
-          isDestructive={error}
+          disabled={loading || error}
           onClick={sync}
-          __next40pxDefaultSize
           style={{ width: "150px", justifyContent: "center" }}
+          __next40pxDefaultSize
         >
           {__("Synchronize", "posts-bridge")}
         </Button>
@@ -89,7 +92,7 @@ export default function Synchronize({ synchronize, setSynchronize }) {
       </PanelRow>
       <Spacer paddingY="calc(8px)" />
       <hr />
-      <p>Schedule</p>
+      <p>{__("Schedule", "posts-bridge")}</p>
       <PanelRow>
         <ToggleControl
           label={__("Automatic syncrhonization", "posts-bridge")}
