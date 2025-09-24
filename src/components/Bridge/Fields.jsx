@@ -1,4 +1,5 @@
 // source
+import useBridgeNames from "../../hooks/useBridgeNames";
 import { usePostTypes } from "../../hooks/useGeneral";
 import { useBackends } from "../../hooks/useHttp";
 import { isset, prependEmptyOption } from "../../lib/utils";
@@ -13,14 +14,19 @@ const ORDER = ["name", "backend", "endpoint", "method"];
 
 export default function BridgeFields({ data, setData, schema, errors = {} }) {
   const [postTypes] = usePostTypes();
+  const names = useBridgeNames();
 
   const postTypeOptions = useMemo(() => {
     if (postTypes.length === 0) return [{ label: "", value: "" }];
 
-    return postTypes.sort().map((postType) => ({
-      label: postType,
-      value: postType,
-    }));
+    return postTypes
+      .filter((postType) => !names.has(postType))
+      .concat([data.post_type].filter((p) => p))
+      .sort()
+      .map((postType) => ({
+        label: postType,
+        value: postType,
+      }));
   }, [postTypes]);
 
   const [backends] = useBackends();
