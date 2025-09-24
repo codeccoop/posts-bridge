@@ -24,7 +24,7 @@ export default function Bridges() {
   const { bridge: schema } = useSchemas();
   const [bridges, setBridges] = useBridges();
   const rcpts = useRemoteCPTs();
-  const [postTypes] = usePostTypes();
+  const postTypes = usePostTypes();
 
   const tabs = useMemo(() => {
     return Array.from(rcpts)

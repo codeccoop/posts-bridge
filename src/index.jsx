@@ -6,6 +6,7 @@ import SchemasProvider from "./providers/Schemas";
 import SettingsProvider from "./providers/Settings";
 import Settings from "./components/Settings";
 import SaveButton from "./components/SaveButton";
+import CustomPostTypesProvider from "./providers/CustomPostTypes";
 
 const { createRoot, useRef } = wp.element;
 const { __experimentalHeading: Heading } = wp.components;
@@ -37,22 +38,24 @@ function App() {
       >
         <ErrorProvider>
           <LoadingProvider>
-            <SettingsProvider>
-              <SchemasProvider>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    paddingTop: "calc(16px)",
-                    alignItems: "baseline",
-                  }}
-                >
-                  <Heading level={1}>Posts Bridge</Heading>
-                  <SaveButton />
-                </div>
-                <Settings />
-              </SchemasProvider>
-            </SettingsProvider>
+            <CustomPostTypesProvider>
+              <SettingsProvider>
+                <SchemasProvider>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      paddingTop: "calc(16px)",
+                      alignItems: "baseline",
+                    }}
+                  >
+                    <Heading level={1}>Posts Bridge</Heading>
+                    <SaveButton />
+                  </div>
+                  <Settings />
+                </SchemasProvider>
+              </SettingsProvider>
+            </CustomPostTypesProvider>
           </LoadingProvider>
         </ErrorProvider>
       </ErrorBoundary>

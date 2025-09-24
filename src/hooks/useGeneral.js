@@ -24,17 +24,8 @@ export function useAddons() {
 }
 
 export function usePostTypes() {
-  const [general, setGeneral] = useGeneral();
-
-  return [
-    general.post_types || [],
-    (post_types) => {
-      setGeneral({
-        ...general,
-        post_types: updateRegistry(general.post_types || [], post_types),
-      });
-    },
-  ];
+  const [general] = useGeneral();
+  return general.post_types || [];
 }
 
 export function useDebug() {

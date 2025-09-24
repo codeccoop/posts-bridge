@@ -39,7 +39,7 @@ export default function GeneralSettings() {
       <Spacer paddingY="calc(8px)" />
       <Addons />
       <PanelBody
-        title={__("Custom post types", "posts-bridge")}
+        title={__("Custom Post Types", "posts-bridge")}
         initialOpen={false}
       >
         <CustomPostTypes />

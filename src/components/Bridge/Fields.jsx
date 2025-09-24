@@ -13,7 +13,7 @@ export const INTERNALS = ["enabled", "is_valid", "mappers"];
 const ORDER = ["name", "backend", "endpoint", "method"];
 
 export default function BridgeFields({ data, setData, schema, errors = {} }) {
-  const [postTypes] = usePostTypes();
+  const postTypes = usePostTypes();
   const rcpts = useRemoteCPTs();
 
   const postTypeOptions = useMemo(() => {

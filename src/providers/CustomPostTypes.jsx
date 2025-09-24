@@ -1,5 +1,9 @@
-const apiFetch = wp.apiFetch;
+// source
+import { useLoading } from "./Loading";
+import { useError } from "./Error";
+
 const { createContext, useContext, useEffect, useState } = wp.element;
+const apiFetch = wp.apiFetch;
 const { __ } = wp.i18n;
 
 const CustomPostTypesContext = createContext({
@@ -11,6 +15,9 @@ const CustomPostTypesContext = createContext({
 });
 
 export default function CustomPostTypesProvider({ children }) {
+  const [loading, setLoading] = useLoading();
+  const [error, setError] = useError();
+
   const [postTypes, setPostTypes] = useState([]);
   const [postType, setPostType] = useState(null);
   const [data, setData] = useState(null);
@@ -28,16 +35,16 @@ export default function CustomPostTypesProvider({ children }) {
   }, [postType]);
 
   const fetchPostTypes = () => {
-    wppb.emit("loading", true);
+    if (loading || error) return;
+
+    setLoading(true);
 
     apiFetch({
       path: "posts-bridge/v1/post_types",
     })
       .then(setPostTypes)
-      .catch(() =>
-        wppb.emit("error", __("Loading post types error", "posts-bridge"))
-      )
-      .finally(() => wppb.emit("loading", false));
+      .catch(() => setError(__("Loading post types error", "posts-bridge")))
+      .finally(() => setLoading(false));
   };
 
   const fetchData = (postType) => {
@@ -45,13 +52,12 @@ export default function CustomPostTypesProvider({ children }) {
       path: "posts-bridge/v1/post_types/" + postType,
     })
       .then(setData)
-      .catch(() =>
-        wppb.emit("error", __("Loading post type error", "posts-bridge"))
-      );
+      .catch(() => setError(__("Loading post type error", "posts-bridge")));
   };
 
   const register = (data) => {
-    wppb.emit("loading", true);
+    if (loading || error) return Promise.resolve(false);
+    setLoading(true);
 
     return apiFetch({
       path: "posts-bridge/v1/post_types/" + data.name,
@@ -61,17 +67,15 @@ export default function CustomPostTypesProvider({ children }) {
       .then((data) => {
         setData(data);
         fetchPostTypes();
-        wppb.emit("flushStore");
         return true;
       })
-      .catch(() =>
-        wppb.emit("error", __("Post type submit error", "posts-bridge"))
-      )
-      .finally(() => wppb.emit("loading", false));
+      .catch(() => setError(__("Post type submit error", "posts-bridge")))
+      .finally(() => setLoading(false));
   };
 
   const unregister = (postType) => {
-    wppb.emit("loading", true);
+    if (loading || error) return Promise.resolve(false);
+    setLoading(true);
 
     return apiFetch({
       path: "posts-bridge/v1/post_types/" + postType,
@@ -80,13 +84,12 @@ export default function CustomPostTypesProvider({ children }) {
       .then(() => {
         setData(null);
         fetchPostTypes();
-        wppb.emit("flushStore");
         return true;
       })
       .catch(() =>
-        wppb.emit("error", __("Post type unregistration error", "posts-bridge"))
+        setError(__("Post type unregistration error", "posts-bridge"))
       )
-      .finally(() => wppb.emit("loading", false));
+      .finally(() => setLoading(false));
   };
 
   return (
