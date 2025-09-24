@@ -1,7 +1,6 @@
 // source
 import { usePostTypes } from "../../hooks/useGeneral";
-import { useBridges } from "../../hooks/useAddon";
-import useBridgeNames from "../../hooks/useBridgeNames";
+import { useBridges, useRemoteCPTs } from "../../hooks/useAddon";
 import { useSchemas } from "../../providers/Schemas";
 import Bridge from "../Bridge";
 import NewBridge from "../Bridge/NewBridge";
@@ -24,11 +23,11 @@ const DEFAULTS = {
 export default function Bridges() {
   const { bridge: schema } = useSchemas();
   const [bridges, setBridges] = useBridges();
-  const names = useBridgeNames();
-  const postTypes = usePostTypes({ filter: true });
+  const rcpts = useRemoteCPTs();
+  const [postTypes] = usePostTypes();
 
   const tabs = useMemo(() => {
-    return Array.from(names)
+    return Array.from(rcpts)
       .map((name, index) => ({
         index,
         name: String(index),
@@ -47,7 +46,7 @@ export default function Bridges() {
           ),
         },
       ]);
-  }, [names]);
+  }, [rcpts]);
 
   const updateBridge = (index, data) => {
     if (index === -1) index = bridges.length;
@@ -72,9 +71,8 @@ export default function Bridges() {
 
     const copy = {
       ...bridge,
-      post_type: postTypes[0],
-      fields: JSON.parse(JSON.stringify(bridge.fields || [])),
-      mutations: JSON.parse(JSON.stringify(bridge.mutations || [])),
+      post_type: postTypes.find((p) => !rcpts.has(p)),
+      mappers: JSON.parse(JSON.stringify(bridge.mappers || [])),
     };
 
     setBridges(bridges.concat(copy));

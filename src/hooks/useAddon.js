@@ -24,3 +24,11 @@ export function useBridges() {
   const [addon, setAddon] = useAddon();
   return [addon.bridges || [], (bridges) => setAddon({ ...addon, bridges })];
 }
+
+export function useRemoteCPTs() {
+  const [bridges] = useBridges();
+
+  return useMemo(() => {
+    return new Set(bridges.map((b) => b.post_type));
+  }, [bridges]);
+}
