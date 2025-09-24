@@ -102,7 +102,7 @@ export default function Exporter() {
         <Button
           disabled={!!error || loading}
           variant="secondary"
-          description={__("Export Forms Bridge config as JSON", "posts-bridge")}
+          description={__("Export Posts Bridge config as JSON", "posts-bridge")}
           onClick={downloadConfig}
           style={{ width: "150px", justifyContent: "center" }}
           __next40pxDefaultSize
@@ -112,7 +112,7 @@ export default function Exporter() {
         <Button
           disabled={!!error || loading}
           variant="primary"
-          description={__("Import Forms Bridge JSON config", "posts-bridge")}
+          description={__("Import Posts Bridge JSON config", "posts-bridge")}
           onClick={() => setShowModal("import")}
           style={{ width: "150px", justifyContent: "center" }}
           __next40pxDefaultSize
@@ -122,7 +122,7 @@ export default function Exporter() {
         <Button
           disabled={!!error || loading}
           variant="primary"
-          description={__("Wipe Forms Bridge settings", "posts-bridge")}
+          description={__("Wipe Posts Bridge settings", "posts-bridge")}
           onClick={() => setShowModal("wipe")}
           style={{ width: "150px", justifyContent: "center" }}
           isDestructive
@@ -139,7 +139,7 @@ export default function Exporter() {
         >
           <p>
             {__(
-              "Import a new configuration is a destructive action. Your current configuration will be replaced with the new one. If there are some errors on the new config, Forms Bridge will filter it to avoid bugs.",
+              "Import a new configuration is a destructive action. Your current configuration will be replaced with the new one. If there are some errors on the new config, Posts Bridge will filter it to avoid bugs.",
               "posts-bridge"
             )}
           </p>
@@ -173,7 +173,7 @@ export default function Exporter() {
         >
           <p>
             {__(
-              "You are going to wipe Forms Bridge config. After that, Forms Bridge will be reset to factory defaults. All your data will be lost.",
+              "You are going to wipe Posts Bridge config. After that, Posts Bridge will be reset to factory defaults. All your data will be lost.",
               "posts-bridge"
             )}
           </p>

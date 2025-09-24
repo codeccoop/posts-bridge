@@ -88,7 +88,7 @@ export default function Bridge({ data, update, remove, schema, copy }) {
           }}
         >
           <RemoveButton
-            label={__("Delete", "forms-bridge")}
+            label={__("Delete", "posts-bridge")}
             onClick={() => remove(data)}
             icon
           />
@@ -103,7 +103,7 @@ export default function Bridge({ data, update, remove, schema, copy }) {
               padding: "6px 6px",
             }}
             onClick={copy}
-            label={__("Duplaicate", "forms-bridge")}
+            label={__("Duplaicate", "posts-bridge")}
             showTooltip
             __next40pxDefaultSize
           >
@@ -125,7 +125,7 @@ export default function Bridge({ data, update, remove, schema, copy }) {
             }}
             onClick={exportConfig}
             __next40pxDefaultSize
-            label={__("Download bridge config", "forms-bridge")}
+            label={__("Download bridge config", "posts-bridge")}
             showTooltip
           >
             <ArrowDownIcon width="12" height="20" color="gray" />
@@ -200,8 +200,8 @@ export default function Bridge({ data, update, remove, schema, copy }) {
               }}
             >
               {!isValid || !data.enabled
-                ? __("Disabled", "forms-bridge")
-                : __("Enabled", "forms-bridge")}
+                ? __("Disabled", "posts-bridge")
+                : __("Enabled", "posts-bridge")}
             </span>
           </div>
         </div>

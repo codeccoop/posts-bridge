@@ -18,8 +18,7 @@ const CSS = `.bridges-tabs-panel .components-tab-panel__tabs{overflow-x:auto;}
 const DEFAULTS = {
   enabled: true,
   is_valid: true,
-  fields: [],
-  mutations: [],
+  mappers: [],
 };
 
 export default function Bridges() {

@@ -67,7 +67,7 @@ export function prependEmptyOption(options) {
   return [{ label: "", value: "" }].concat(options);
 }
 
-export function downloadJson(data, fileName = "forms-bridge-export") {
+export function downloadJson(data, fileName = "posts-bridge-export") {
   const json = JSON.stringify(data);
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);

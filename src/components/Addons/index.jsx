@@ -34,7 +34,7 @@ export default function Addons() {
     <PanelBody title={__("Addons", "posts-bridge")} initialOpen={false}>
       <p>
         {__(
-          "Each addon allows you to create API specific bridges and comes with a library of bridge templates and workflow jobs",
+          "Each addon allows you to create API specific bridges",
           "posts-bridge"
         )}
       </p>

@@ -5,7 +5,6 @@ const { useMemo } = wp.element;
 
 const DEFAULT = {
   title: "",
-  templates: [],
   bridges: [],
 };
 
@@ -25,12 +24,3 @@ export function useBridges() {
   const [addon, setAddon] = useAddon();
   return [addon.bridges || [], (bridges) => setAddon({ ...addon, bridges })];
 }
-
-// export function useTemplates() {
-//   const [addon, setAddon] = useAddon();
-
-//   return [
-//     addon.templates || [],
-//     (templates) => setAddon({ ...addon, templates }),
-//   ];
-// }
