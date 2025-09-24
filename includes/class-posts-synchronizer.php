@@ -201,7 +201,7 @@ class Posts_Synchronizer extends Singleton
         add_action(
             'updated_option',
             static function ($option) {
-                if ($option === Posts_Bridge::slug() . '_general') {
+                if ($option === 'posts-bridge_general') {
                     self::schedule();
                 }
             },
@@ -212,7 +212,7 @@ class Posts_Synchronizer extends Singleton
         add_action(
             'admin_enqueue_scripts',
             static function ($admin_page) {
-                if ('settings_page_' . Posts_Bridge::slug() !== $admin_page) {
+                if ('settings_page_posts-bridge' !== $admin_page) {
                     return;
                 }
 
@@ -233,6 +233,22 @@ class Posts_Synchronizer extends Singleton
             $bridges = PBAPI::get_bridges();
 
             foreach ($bridges as $bridge) {
+                if (!$bridge->is_valid) {
+                    Logger::log(
+                        'Skip synchronization for invalid bridge ' .
+                            $bridge->name
+                    );
+                    continue;
+                }
+
+                if (!$bridge->enabled) {
+                    Logger::log(
+                        'Skip synchronization for disabled bridge ' .
+                            $bridge->name
+                    );
+                    continue;
+                }
+
                 try {
                     self::sync($bridge);
                 } catch (Error | Exception $e) {
@@ -282,7 +298,7 @@ class Posts_Synchronizer extends Singleton
             }
 
             wp_send_json(['success' => true], 200);
-        } catch (Exception $e) {
+        } catch (Error | Exception $e) {
             Logger::log(
                 'Ajax synchronization error: ' . $e->getMessage(),
                 Logger::ERROR
