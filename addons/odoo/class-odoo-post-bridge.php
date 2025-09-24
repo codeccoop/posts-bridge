@@ -25,12 +25,7 @@ class Odoo_Post_Bridge extends Post_Bridge
      */
     private static $session;
 
-    /**
-     * Handles the bridge's template class.
-     *
-     * @var string
-     */
-    protected static $template_class = '\POSTS_BRIDGE\Odoo_Post_Bridge_Template';
+    private static $request;
 
     /**
      * RPC payload decorator.
@@ -39,11 +34,21 @@ class Odoo_Post_Bridge extends Post_Bridge
      * @param string $service RPC service name.
      * @param string $method RPC method name.
      * @param array $args RPC request arguments.
+     * @param array $more_args RPC additional arguments.
      *
      * @return array JSON-RPC conformant payload.
      */
-    private static function rpc_payload($session_id, $service, $method, $args)
-    {
+    private static function rpc_payload(
+        $session_id,
+        $service,
+        $method,
+        $args,
+        $more_args = []
+    ) {
+        if (!empty($more_args)) {
+            $args[] = $more_args;
+        }
+
         return [
             'jsonrpc' => '2.0',
             'method' => 'call',
@@ -64,7 +69,7 @@ class Odoo_Post_Bridge extends Post_Bridge
      *
      * @return mixed|WP_Error Request result.
      */
-    private static function rpc_response($res, $single = false)
+    private static function rpc_response($res)
     {
         if (is_wp_error($res)) {
             return $res;
@@ -86,25 +91,33 @@ class Odoo_Post_Bridge extends Post_Bridge
         }
 
         if (isset($res['data']['error'])) {
-            return new WP_Error(
-                $res['data']['error']['code'],
+            $error = new WP_Error(
+                'response_code_' . $res['data']['error']['code'],
                 $res['data']['error']['message'],
                 $res['data']['error']['data']
             );
+
+            $error_data = ['response' => $res];
+            if (self::$request) {
+                $error_data['request'] = self::$request;
+            }
+
+            $error->add_data($error_data);
+            return $error;
         }
 
         $data = $res['data'];
 
         if (empty($data['result'])) {
-            return new WP_Error(
-                'rpc_api_error',
-                'An unkown error has ocurred with the RPC API',
-                ['response' => $res]
-            );
-        }
+            $error = new WP_Error('not_found');
 
-        if ($single) {
-            return $data['result'][0];
+            $error_data = ['response' => $res];
+            if (self::$request) {
+                $error_data['request'] = self::$request;
+            }
+
+            $error->add_data($error_data);
+            return $error;
         }
 
         return $data['result'];
@@ -117,20 +130,15 @@ class Odoo_Post_Bridge extends Post_Bridge
      *
      * @return array|WP_Error Tuple with RPC session id and user id.
      */
-    private static function rpc_login($db)
+    private static function rpc_login($login, $backend)
     {
         if (self::$session) {
             return self::$session;
         }
 
-        $session_id = Posts_Bridge::slug() . '-' . time();
-        $backend = $db->backend;
+        $session_id = 'posts-bridge-' . time();
 
-        $payload = self::rpc_payload($session_id, 'common', 'login', [
-            $db->name,
-            $db->user,
-            $db->password,
-        ]);
+        $payload = self::rpc_payload($session_id, 'common', 'login', $login);
 
         $response = $backend->post(self::endpoint, $payload);
 
@@ -144,56 +152,13 @@ class Odoo_Post_Bridge extends Post_Bridge
         return self::$session;
     }
 
-    public function __construct($data, $api)
+    public function __construct($data, $addon)
     {
-        parent::__construct(
-            array_merge($data, [
-                'foreign_key' => 'id',
-                'method' => $data['method'] ?? 'read',
-            ]),
-            $api
-        );
-    }
+        parent::__construct($data, $addon);
 
-    /**
-     * Parent getter interceptor to short curcuit database access.
-     *
-     * @param string $name Attribute name.
-     *
-     * @return mixed Attribute value or null.
-     */
-    public function __get($name)
-    {
-        switch ($name) {
-            case 'database':
-                return $this->database();
-            default:
-                return parent::__get($name);
+        if ($this->is_valid && isset($data['method'])) {
+            $this->data['method'] = $data['method'];
         }
-    }
-
-    /**
-     * Bridge's database private getter.
-     *
-     * @return Odoo_BD|null
-     */
-    private function database()
-    {
-        return apply_filters(
-            'posts_bridge_odoo_db',
-            null,
-            $this->data['database']
-        );
-    }
-
-    /**
-     * Intercepts backend access and returns it from the database.
-     *
-     * @return Http_Backend|null
-     */
-    protected function backend()
-    {
-        return $this->database()->backend;
     }
 
     /**
@@ -203,69 +168,83 @@ class Odoo_Post_Bridge extends Post_Bridge
      *
      * @return array|WP_Error Remote data for the given id.
      */
-    public function do_fetch($foreign_id)
+    public function fetch($foreign_id = null, $params = [], $headers = [])
     {
-        $database = $this->database();
+        if (!$this->is_valid) {
+            return new WP_Error('invalid_bridge');
+        }
 
-        $session = self::rpc_login($database);
+        $backend = $this->backend();
+
+        if (!$backend) {
+            return new WP_Error(
+                'invalid_backend',
+                'The bridge does not have a valid backend'
+            );
+        }
+
+        $credential = $backend->credential;
+        if (!$credential) {
+            return new WP_Error(
+                'invalid_credential',
+                'The bridge does not have a valid credential'
+            );
+        }
+
+        add_filter(
+            'http_bridge_request',
+            static function ($request) {
+                self::$request = $request;
+                return $request;
+            },
+            10,
+            1
+        );
+
+        $login = $credential->authorization();
+        $session = self::rpc_login($login, $backend);
 
         if (is_wp_error($session)) {
             return $session;
         }
 
         [$sid, $uid] = $session;
+        $login[1] = $uid;
 
-        $fields = array_map(function ($field) {
-            return preg_replace('/(\[|\.).*$/', '', $field);
-        }, array_keys($this->remote_fields()));
-        $payload = self::rpc_payload($sid, 'object', 'execute', [
-            $database->name,
-            $uid,
-            $database->password,
-            $this->model,
-            $this->method,
-            [(int) $foreign_id],
-            $fields,
-        ]);
+        $fields = [];
+        $foreigns = array_keys($this->remote_fields());
+        foreach ($foreigns as $foreign) {
+            $fields[] = preg_replace('/(\[|\.).*$/', '', $foreign);
+        }
 
-        $response = $this->backend()->post(self::endpoint, $payload);
+        $args = array_merge($login, [$this->endpoint, $this->method]);
+        $args[] = array_filter([(int) $foreign_id]);
 
-        $result = self::rpc_response($response, true);
+        $payload = self::rpc_payload($sid, 'object', 'execute', $args, $fields);
+
+        $response = $backend->post(self::endpoint, $payload);
+
+        $result = self::rpc_response($response);
         if (is_wp_error($result)) {
             return $result;
         }
 
-        return $result;
+        if ($this->method === 'read') {
+            $response['data'] = $response['data']['result'][0];
+        }
+
+        return $response;
     }
 
     public function foreign_ids()
     {
-        $database = $this->database();
-
-        $session = self::rpc_login($database);
-
-        if (is_wp_error($session)) {
-            return [];
-        }
-
-        [$sid, $uid] = $session;
-
-        $payload = self::rpc_payload($sid, 'object', 'execute', [
-            $database->name,
-            $uid,
-            $database->password,
-            $this->model,
-            'search',
-            [],
+        $bridge = $this->patch([
+            'name' => '__odoo-search',
+            'method' => 'search',
+            'mappers' => [],
         ]);
 
-        $response = $this->backend->post(self::endpoint, $payload);
-
-        $result = self::rpc_response($response);
-        if (is_wp_error($result)) {
-            return [];
-        }
-
-        return $result;
+        $response = $bridge->fetch();
+        return $response['data']['result'];
     }
 }

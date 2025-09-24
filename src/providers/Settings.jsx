@@ -1,168 +1,173 @@
-import useDiff from "../hooks/useDiff";
+import diff from "../lib/diff";
+import { useError } from "./Error";
+import { useLoading } from "./Loading";
 
-const { createContext, useContext, useState, useEffect, useRef } = wp.element;
+const {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} = wp.element;
+const apiFetch = wp.apiFetch;
+const { __ } = wp.i18n;
 
-const defaults = {
-  general: {
-    backends: [],
-    whitelist: false,
-    synchronize: {
-      enabled: false,
-      recurrence: "hourly",
+const DEFAULTS = Object.freeze({
+  state: {
+    general: {
+      loading: true,
+      synchronize: {
+        enabled: false,
+        recurrence: "weekly",
+      },
+      addons: [],
+      debug: false,
     },
-    addons: {},
-    post_types: [],
+    http: {
+      backends: [],
+      credentials: [],
+    },
   },
-  apis: {},
-};
+  patch: () => {},
+  submit: () => Promise.resolve(),
+  fetch: () => Promise.resolve(),
+});
 
-const SettingsContext = createContext([defaults, () => {}]);
+const SettingsContext = createContext(DEFAULTS);
 
-export default function SettingsProvider({ children, handle = ["general"] }) {
+export default function SettingsProvider({ children }) {
+  const [, setLoading] = useLoading();
+  const [, setError] = useError();
+
   const initialState = useRef(null);
-  const currentState = useRef(defaults);
-  const [state, setState] = useState(defaults);
-  const [reload, setReload] = useState(false);
-  // const [flush, setFlush] = useState(false);
+  const [state, setState] = useState(null);
+  const currentState = useRef(state);
   currentState.current = state;
 
-  const onPatch = useRef((state) => setState(state)).current;
+  const fetch = useRef(() => {
+    setLoading(true);
 
-  const onFetch = useRef((settings) => {
-    const newState = {
-      general: { ...defaults.general, ...settings.general },
-      apis: Object.fromEntries(
-        Object.entries(settings)
-          .filter(([key]) => key !== "general")
-          .map(([key, data]) => [
-            key,
-            { ...(defaults.apis[key] || {}), ...data },
-          ])
-      ),
-    };
-
-    setState(newState);
-    const previousState = initialState.current;
-    initialState.current = { ...newState };
-    if (previousState === null) return;
-
-    const reload = Object.keys(newState.general.addons).reduce(
-      (changed, addon) => {
-        return (
-          changed ||
-          newState.general.addons[addon] !== previousState.general.addons[addon]
-        );
-      },
-      false
-    );
-
-    setReload(reload);
-
-    // const flush =
-    //   !reload &&
-    //   Object.keys(newState.general.integrations).reduce(
-    //     (changed, integration) =>
-    //       changed ||
-    //       newState.general.integrations[integration] !==
-    //         previousState.general.integrations[integration],
-    //     false
-    //   );
-
-    // setFlush(flush);
-  }).current;
-
-  const onSubmit = useRef((bus) => {
-    const state = currentState.current;
-    if (handle.indexOf("general") !== -1) {
-      bus.data.general = state.general;
-    }
-    Object.entries(state.apis).forEach(([name, value]) => {
-      if (handle.indexOf(name) !== -1) {
-        bus.data[name] = value;
-      }
-    });
+    return apiFetch({
+      path: "posts-bridge/v1/settings",
+    })
+      .then((state) => {
+        initialState.current = state;
+        currentState.current = state;
+        setState(state);
+      })
+      .catch(() => setError(__("Settings loading error", "posts-bridge")))
+      .finally(() => setLoading(false));
   }).current;
 
   const beforeUnload = useRef((ev) => {
-    const state = currentState.current;
-    if (useDiff(state, initialState.current) && !window.__wppbReloading) {
+    if (diff(currentState.current, initialState.current)) {
       ev.preventDefault();
       ev.returnValue = true;
     }
   }).current;
 
   useEffect(() => {
-    wppb.on("patch", onPatch);
-    wppb.on("fetch", onFetch);
-    wppb.join("submit", onSubmit);
     window.addEventListener("beforeunload", beforeUnload);
+    fetch();
 
-    () => {
-      wppb.off("patch", onPatch);
-      wppb.off("fetch", onFetch);
-      wppb.leave("submit", onSubmit);
+    return () => {
       window.removeEventListener("beforeunload", beforeUnload);
     };
   }, []);
 
   useEffect(() => {
-    if (reload) {
-      window.__wppbReloading = true;
-      window.location.reload();
+    if (window.__wpfbInvalidated === true) {
+      submit(state)
+        .then(() => {
+          if (window.__wpfbReload) {
+            window.location.reload();
+          }
+        })
+        .finally(() => {
+          window.__wpfbReload = false;
+        });
+
+      window.__wpfbInvalidated = false;
     }
-  }, [reload]);
+  }, [state]);
 
-  // useEffect(() => {
-  //   if (flush && !window.__wpfbFlushing) {
-  //     window.__wpfbFlushing = true;
-  //     wpfb.emit("flushStore");
-  //     setFlush(false);
-  //   }
+  const patch = useCallback(
+    (partial) => setState({ ...state, ...partial }),
+    [state]
+  );
 
-  //   return () => {
-  //     if (flush) {
-  //       window.__wpfbFlushing = false;
-  //     }
-  //   };
-  // }, [flush]);
+  const submit = useRef((state) => {
+    setLoading(true);
 
-  const patchState = (partial) => wppb.emit("patch", { ...state, ...partial });
+    return apiFetch({
+      path: "posts-bridge/v1/settings",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: state,
+    })
+      .catch(() => {
+        setError(__("Settings submission error", "posts-bridge"));
+        return { success: false };
+      })
+      .then((state) => {
+        initialState.current = state;
+        currentState.current = state;
+        setState(state);
+      })
+      .finally(() => setLoading(false));
+  }).current;
+
+  const settings = state || DEFAULTS.state;
 
   return (
-    <SettingsContext.Provider value={[state, patchState]}>
+    <SettingsContext.Provider value={{ state: settings, patch, submit, fetch }}>
       {children}
     </SettingsContext.Provider>
   );
 }
 
+export function useSettings() {
+  const { state, submit } = useContext(SettingsContext);
+  return [state, (state) => submit(state)];
+}
+
+export function useFetchSettings() {
+  const { fetch } = useContext(SettingsContext);
+  return fetch;
+}
+
 export function useGeneral() {
-  const [{ general }, patch] = useContext(SettingsContext);
+  const {
+    state: { general },
+    patch,
+  } = useContext(SettingsContext);
   return [general, (general) => patch({ general })];
 }
 
-export function useApis() {
-  const [{ apis }, patch] = useContext(SettingsContext);
-  return [apis, (api) => patch({ apis: { ...apis, ...api } })];
+export function useHttp() {
+  const {
+    state: { http },
+    patch,
+  } = useContext(SettingsContext);
+  return [http, (http) => patch({ http })];
 }
 
-export function useBridges() {
-  const [apis] = useApis();
+export function useAddons() {
+  const { state, patch } = useContext(SettingsContext);
 
-  return Object.keys(apis).reduce((bridges, api) => {
-    return bridges.concat(apis[api].bridges);
-  }, []);
-}
+  const addons = useMemo(() => {
+    return Object.keys(state).reduce((addons, setting) => {
+      if (setting !== "general" && setting !== "http") {
+        addons[setting] = state[setting];
+      }
 
-export function usePostTypes({ filter } = { filter: false }) {
-  const [{ general }] = useContext(SettingsContext);
-  const bridges = useBridges();
+      return addons;
+    }, {});
+  }, [state]);
 
-  let postTypes = general.post_types || [];
-
-  if (filter) {
-    const bridgedPostTypes = new Set(bridges.map(({ post_type }) => post_type));
-    postTypes = postTypes.filter((postType) => !bridgedPostTypes.has(postType));
-  }
-
-  return postTypes;
+  return [addons, patch];
 }

@@ -54,38 +54,45 @@ class Settings_Store extends Base_Settings_Store
             ],
             'required' => ['synchronize'],
             'default' => [
-                'enabled' => false,
-                'recurrence' => 'hourly',
+                'synchronize' => [
+                    'enabled' => false,
+                    'recurrence' => 'hourly',
+                ],
             ],
         ]);
 
-        self::ready(function ($store) {
-            $store::use_getter('general', function ($data) {
-                $http = Http_Store::setting('general');
-                foreach (['backends', 'whitelist'] as $key) {
-                    $data[$key] = $http->$key;
-                }
+        self::register_setting([
+            'name' => 'http',
+            'properties' => [],
+            'default' => [],
+        ]);
 
-                return $data;
+        self::ready(function ($store) {
+            $store::use_getter('http', static function () {
+                $setting = Http_Store::setting('general');
+                return $setting->data();
             });
 
             $store::use_setter(
-                'general',
+                'http',
                 function ($data) {
-                    $http = Http_Store::setting('general');
-                    foreach (['backends', 'whitelist'] as $key) {
-                        if (!isset($data[$key])) {
-                            continue;
-                        }
-
-                        $http->$key = $data[$key];
-                        unset($data[$key]);
+                    if (
+                        isset($data['backends']) &&
+                        isset($data['credentials'])
+                    ) {
+                        $setting = Http_Store::setting('general');
+                        $setting->update($data);
                     }
 
-                    return $data;
+                    return [];
                 },
                 9
             );
+
+            $store::use_cleaner('general', static function () {
+                $setting = Http_Store::setting('general');
+                $setting->update(['backends' => [], 'credentials' => []]);
+            });
         });
     }
 }

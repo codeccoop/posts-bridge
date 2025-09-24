@@ -4,65 +4,43 @@ import {
   useRegisterCustomPostType,
   useUnregisterCustomPostType,
 } from "../../providers/CustomPostTypes";
-import CopyIcon from "../CopyIcon";
-import CustomPostType from "./CustomPostType";
+import TabTitle from "../TabTitle";
+import CustomPostType from "../CustomPostType";
+import AddIcon from "../icons/Add";
+import { usePostTypes } from "../../hooks/useGeneral";
+import NewCustomPostType from "../CustomPostType/NewCPT";
 
 const { TabPanel } = wp.components;
-const { useState, useEffect, useRef } = wp.element;
+const { useState, useEffect, useMemo, useRef } = wp.element;
 const { __ } = wp.i18n;
 
-function TabTitle({ name, focus, setFocus, copy }) {
-  return (
-    <div
-      style={{ position: "relative", padding: "0px 24px 0px 10px" }}
-      onMouseEnter={() => setFocus(true)}
-      onMouseleave={() => setFocus(false)}
-    >
-      <span>{name}</span>
-      {focus && <CopyIcon onClick={copy} />}
-    </div>
-  );
-}
+const CSS = `.cpts-tabs-panel .components-tab-panel__tabs{overflow-x:auto;}
+.cpts-tabs-panel .components-tab-panel__tabs>button{flex-shrink:0;}`;
 
 export default function CustomPostTypes() {
-  const postTypes = useCustomPostTypes();
+  const customPostTypes = useCustomPostTypes();
 
-  const [currentTab, setCurrentTab] = useState(
-    String(postTypes.length ? 0 : -1)
-  );
-  const [tabFocus, setTabFocus] = useState(null);
-  const tabs = postTypes
-    .map((postType, i) => ({
-      name: String(i),
-      title: postType,
-      icon: (
-        <TabTitle
-          name={postType}
-          focus={tabFocus === postType}
-          setFocus={(value) => setTabFocus(value ? postType : null)}
-          copy={() => copyPostType(postType)}
-        />
-      ),
-    }))
-    .concat([
-      {
-        name: "-1",
-        title: __("Add a custom post type", "posts-bridge"),
-      },
-    ]);
-
-  const postTypesCount = useRef(postTypes.length);
-  useEffect(() => {
-    if (postTypes.length > postTypesCount.current) {
-      setCurrentTab(String(postTypes.length - 1));
-    } else if (postTypes.length < postTypesCount.current) {
-      setCurrentTab(String(currentTab - 1));
-    }
-
-    return () => {
-      postTypesCount.current = postTypes.length;
-    };
-  }, [postTypes]);
+  const tabs = useMemo(() => {
+    return customPostTypes
+      .map((name, index) => ({
+        index,
+        name: String(index),
+        title: name,
+        icon: <TabTitle name={name} />,
+      }))
+      .concat([
+        {
+          index: -1,
+          name: "new",
+          title: __("Add a CPT", "posts-bridge"),
+          icon: (
+            <div style={{ marginBottom: "-2px" }}>
+              <AddIcon width="15" height="15" />
+            </div>
+          ),
+        },
+      ]);
+  });
 
   const register = useRegisterCustomPostType();
   const unregister = useUnregisterCustomPostType();
@@ -81,21 +59,31 @@ export default function CustomPostTypes() {
     register(copy);
   };
 
+  const style = useRef(document.createElement("style"));
+  useEffect(() => {
+    style.current.appendChild(document.createTextNode(CSS));
+    document.head.appendChild(style.current);
+
+    return () => {
+      document.head.removeChild(style.current);
+    };
+  }, []);
+
   return (
     <div style={{ width: "100%" }}>
-      <TabPanel
-        tabs={tabs}
-        onSelect={setCurrentTab}
-        initialTabName={currentTab}
-      >
-        {(postType) => {
-          const name = postType.name >= 0 ? postType.title : "add";
+      <TabPanel tabs={tabs} className="cpts-tabs-panel">
+        {(tab) => {
+          const postType = customPostTypes[tab.index];
+
+          if (!postType) {
+            return <NewCustomPostType add={(config) => register(config)} />;
+          }
 
           return (
             <CustomPostType
-              name={name}
-              remove={() => unregister(name)}
-              update={(newPostType) => register(newPostType)}
+              name={postType}
+              remove={() => unregister(postType)}
+              update={(config) => register(config)}
             />
           );
         }}

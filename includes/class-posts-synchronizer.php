@@ -4,6 +4,7 @@ namespace POSTS_BRIDGE;
 
 use Error;
 use Exception;
+use PBAPI;
 use WPCT_PLUGIN\Singleton;
 use WP_Query;
 use WP_Post;
@@ -27,9 +28,11 @@ class Posts_Synchronizer extends Singleton
     /**
      * Handle synchronization ajax action name.
      *
-     * @var string ajax_action
+     * @var string
      */
-    private const ajax_action = 'posts_bridge_sync';
+    private const sync_action = 'posts_bridge_sync';
+
+    private const ping_action = 'posts_bridge_sync_ping';
 
     /**
      * Handles synchronization schedule hook name.
@@ -185,15 +188,14 @@ class Posts_Synchronizer extends Singleton
 
     private static function ajax_localization()
     {
-        wp_localize_script(
-            Posts_Bridge::slug() . '-admin',
-            'postsBridgeAjaxSync',
-            [
-                'url' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce(self::ajax_nonce),
-                'action' => self::ajax_action,
-            ]
-        );
+        wp_localize_script('posts-bridge', 'postsBridgeAjaxSync', [
+            'url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce(self::ajax_nonce),
+            'actions' => [
+                'sync' => self::sync_action,
+                'ping' => self::ping_action,
+            ],
+        ]);
     }
 
     /*
@@ -204,7 +206,7 @@ class Posts_Synchronizer extends Singleton
         add_action(
             'updated_option',
             static function ($option) {
-                if ($option === Posts_Bridge::slug() . '_general') {
+                if ($option === 'posts-bridge_general') {
                     self::schedule();
                 }
             },
@@ -215,7 +217,7 @@ class Posts_Synchronizer extends Singleton
         add_action(
             'admin_enqueue_scripts',
             static function ($admin_page) {
-                if ('settings_page_' . Posts_Bridge::slug() !== $admin_page) {
+                if ('settings_page_posts-bridge' !== $admin_page) {
                     return;
                 }
 
@@ -224,8 +226,12 @@ class Posts_Synchronizer extends Singleton
             11
         );
 
-        add_action('wp_ajax_' . self::ajax_action, static function () {
+        add_action('wp_ajax_' . self::sync_action, static function () {
             self::ajax_callback();
+        });
+
+        add_action('wp_ajax_' . self::ping_action, static function () {
+            self::ping_callback();
         });
 
         add_filter('cron_schedules', static function ($schedules) {
@@ -233,8 +239,25 @@ class Posts_Synchronizer extends Singleton
         });
 
         add_action(self::schedule_hook, static function () {
-            $bridges = apply_filters('posts_bridge_bridges', []);
+            $bridges = PBAPI::get_bridges();
+
             foreach ($bridges as $bridge) {
+                if (!$bridge->is_valid) {
+                    Logger::log(
+                        'Skip synchronization for invalid bridge ' .
+                            $bridge->name
+                    );
+                    continue;
+                }
+
+                if (!$bridge->enabled) {
+                    Logger::log(
+                        'Skip synchronization for disabled bridge ' .
+                            $bridge->name
+                    );
+                    continue;
+                }
+
                 try {
                     self::sync($bridge);
                 } catch (Error | Exception $e) {
@@ -245,6 +268,17 @@ class Posts_Synchronizer extends Singleton
                 }
             }
         });
+    }
+
+    private static function ping_callback()
+    {
+        check_ajax_referer(self::ajax_nonce);
+
+        if (is_file(POSTS_BRIDGE_DIR . '/sync-lock')) {
+            wp_send_json(['success' => false, 'error' => 'ajax_lock'], 409);
+        }
+
+        wp_send_json(['success' => true], 200);
     }
 
     /**
@@ -259,6 +293,10 @@ class Posts_Synchronizer extends Singleton
                 throw new Exception('ajax_unauthorized', 401);
             }
 
+            if (is_file(POSTS_BRIDGE_DIR . '/sync-lock')) {
+                wp_send_json(['success' => false, 'error' => 'ajax_lock'], 409);
+            }
+
             $mode = isset($_POST['mode'])
                 ? sanitize_text_field(wp_unslash($_POST['mode']))
                 : null;
@@ -271,32 +309,57 @@ class Posts_Synchronizer extends Singleton
                 throw new Exception('bad_request', 400);
             }
 
+            touch(POSTS_BRIDGE_DIR . '/sync-lock');
+
             self::$sync_mode = $mode;
             if ($post_type) {
-                $bridges = array_filter([
-                    apply_filters('posts_bridge_bridge', null, $post_type),
-                ]);
+                $bridge = PBAPI::get_bridge($post_type);
+                $bridges = array_filter([$bridge]);
             } else {
-                $bridges = apply_filters('posts_bridge_bridges', []);
+                $bridges = PBAPI::get_bridges();
             }
 
             foreach ($bridges as $bridge) {
+                if (!$bridge->is_valid) {
+                    Logger::log(
+                        'Skip synchronization for invalid bridge ' .
+                            $bridge->name
+                    );
+                    continue;
+                }
+
+                if (!$bridge->enabled) {
+                    Logger::log(
+                        'Skip synchronization for disabled bridge ' .
+                            $bridge->name
+                    );
+                    continue;
+                }
+
                 self::sync($bridge);
             }
-
-            wp_send_json(['success' => true], 200);
-        } catch (Exception $e) {
+        } catch (Error | Exception $e) {
             Logger::log(
                 'Ajax synchronization error: ' . $e->getMessage(),
                 Logger::ERROR
             );
 
-            wp_send_json(
-                ['success' => false, 'error' => $e->getMessage()],
-                $e->getCode()
-            );
+            $error = $e;
         } finally {
-            self::$sync_mode = 'light';
+            Logger::log('Ajax synschronization completed');
+
+            if (is_file(POSTS_BRIDGE_DIR . '/sync-lock')) {
+                unlink(POSTS_BRIDGE_DIR . '/sync-lock');
+            }
+
+            if (isset($error)) {
+                wp_send_json(
+                    ['success' => false, 'error' => $error->getMessage()],
+                    $error->getCode()
+                );
+            }
+
+            wp_send_json(['success' => true], 200);
         }
     }
 
@@ -309,28 +372,25 @@ class Posts_Synchronizer extends Singleton
      */
     private static function sync($bridge)
     {
-        $foreign_ids = apply_filters(
-            'posts_bridge_foreign_ids',
-            $bridge->foreign_ids(),
-            $bridge
-        );
+        $foreign_ids = $bridge->foreign_ids();
 
-        $remote_pairs = array_reduce(
-            $foreign_ids,
-            function ($carry, $id) {
-                $carry[$id] = 0;
-                return $carry;
-            },
-            []
-        );
+        $remote_pairs = [];
+        foreach ($foreign_ids as $id) {
+            $remote_pairs[$id] = 0;
+        }
+
+        $post_type = $bridge->post_type;
 
         $query = new WP_Query([
-            'post_type' => $bridge->post_type,
+            'post_type' => $post_type,
             'posts_per_page' => -1,
             'post_status' => 'any',
         ]);
 
-        Logger::log('Starts synchronization clean up', Logger::DEBUG);
+        Logger::log(
+            "Starts synchronization clean up for post type {$post_type}",
+            Logger::DEBUG
+        );
 
         global $posts_bridge_remote_cpt;
         while ($query->have_posts()) {
@@ -356,11 +416,17 @@ class Posts_Synchronizer extends Singleton
             }
         }
 
-        Logger::log('Ends synchronization clean up', Logger::DEBUG);
+        Logger::log(
+            "Ends synchronization clean up for post type {$post_type}",
+            Logger::DEBUG
+        );
 
         wp_reset_postdata();
 
-        Logger::log('Starts remote posts synchronization', Logger::DEBUG);
+        Logger::log(
+            "Starts remote posts synchronization for post type {$post_type}",
+            Logger::DEBUG
+        );
 
         foreach ($remote_pairs as $foreign_id => $post) {
             // if is a new remote model, mock a post as its local counterpart
@@ -368,7 +434,7 @@ class Posts_Synchronizer extends Singleton
                 $post = new WP_Post(
                     (object) [
                         'ID' => $post,
-                        'post_type' => $bridge->post_type,
+                        'post_type' => $post_type,
                     ]
                 );
             }
@@ -407,7 +473,7 @@ class Posts_Synchronizer extends Singleton
 
             $data = $bridge->map_remote_fields($data);
 
-            $data['post_type'] = $rcpt->post_type;
+            $data['post_type'] = $post_type;
 
             if ($rcpt->ID !== 0) {
                 $data['ID'] = $rcpt->ID;
@@ -448,7 +514,10 @@ class Posts_Synchronizer extends Singleton
             do_action('posts_bridge_synchronization', $rcpt, $data);
         }
 
-        Logger::log('Ends remote posts synchronization', Logger::DEBUG);
+        Logger::log(
+            "Ends remote posts synchronization for post type {$post_type}",
+            Logger::DEBUG
+        );
     }
 }
 

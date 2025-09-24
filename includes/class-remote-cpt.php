@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
     exit();
 }
 
+use PBAPI;
 use WP_Post;
 
 /**
@@ -92,21 +93,21 @@ class Remote_CPT
             99
         );
 
-        $data = $this->bridge()->fetch($this->foreign_id());
+        $response = $this->bridge()->fetch($this->foreign_id());
 
-        if (is_wp_error($data)) {
+        if (is_wp_error($response)) {
             Logger::log(
                 'Remote CPT remote data fetch error: ' .
-                    $data->get_error_message(),
+                    $response->get_error_message(),
                 Logger::ERROR
             );
-            $this->remote_data = $data;
+            $this->remote_data = $response;
             return [];
         }
 
         $this->remote_data = (array) apply_filters(
             'posts_bridge_remote_data',
-            $data,
+            $response['data'],
             $this
         );
 
@@ -163,7 +164,7 @@ class Remote_CPT
      */
     private function bridge()
     {
-        return apply_filters('posts_bridge_bridge', null, $this->post_type);
+        return PBAPI::get_bridge($this->post_type);
     }
 
     /**

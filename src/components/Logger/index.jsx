@@ -1,0 +1,97 @@
+// source
+import { useDebug } from "../../hooks/useGeneral";
+import useLogs from "../../hooks/useLogs";
+
+const { useEffect, useRef } = wp.element;
+const {
+  __experimentalSpacer: Spacer,
+  ToggleControl,
+  PanelBody,
+  PanelRow,
+} = wp.components;
+const { __ } = wp.i18n;
+
+export default function Logger() {
+  const [debug, setDebug] = useDebug();
+  const { logs, loading, error } = useLogs({ debug });
+
+  const console = useRef(null);
+
+  useEffect(() => {
+    if (!console.current || console.current.scrollTop > 0) return;
+    console.current.scrollTo(0, console.current.scrollHeight);
+  }, [logs]);
+
+  return (
+    <PanelBody title={__("Debug", "posts-bridge")} initialOpen={!!debug}>
+      <p>
+        {__(
+          "Activate the debug mode and open the loggin console to see bridged form submissions' logs",
+          "posts-bridge"
+        )}
+      </p>
+      <Spacer paddingBottom="5px" />
+      <PanelRow>
+        <ToggleControl
+          label={__("Logging", "posts-bridge")}
+          help={__(
+            "When debug mode is activated, logs will be write to the log file and readed from there. Make sure to deactivate the debug mode once you've done to erase this file contents.",
+            "posts-bridge"
+          )}
+          checked={!!debug}
+          onChange={() => setDebug(!debug)}
+          __nextHasNoMarginBottom
+        />
+      </PanelRow>
+      {debug && (
+        <>
+          <Spacer paddingY="calc(8px)" />
+          <PanelRow>
+            <div
+              ref={console}
+              style={{
+                height: "500px",
+                width: "100%",
+                background: "black",
+                color: error ? "red" : "white",
+                overflowY: "auto",
+                fontFamily: "monospace",
+              }}
+            >
+              <LogLines logs={logs} error={error} loading={loading} />
+            </div>
+          </PanelRow>
+        </>
+      )}
+    </PanelBody>
+  );
+}
+
+function LogLines({ loading, error, logs }) {
+  if (error) {
+    return <p style={{ textAlign: "center" }}>{error}</p>;
+  }
+
+  if (loading && !logs.length) {
+    return (
+      <p style={{ textAlign: "center" }}>{__("Loading...", "posts-bridge")}</p>
+    );
+  }
+
+  return (
+    <pre
+      style={{
+        width: "max-content",
+        paddingLeft: "1.5em",
+        paddingRight: "1em",
+        margin: 0,
+      }}
+    >
+      {logs.map((line, i) => (
+        <p key={i} style={{ margin: 0, fontSize: "12px" }}>
+          {line}
+        </p>
+      ))}
+    </pre>
+  );
+}

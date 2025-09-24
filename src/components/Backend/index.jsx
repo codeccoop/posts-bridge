@@ -7,6 +7,7 @@ import useResponsive from "../../hooks/useResponsive";
 import CopyIcon from "../icons/Copy";
 import ArrowDownIcon from "../icons/ArrowDown";
 import diff from "../../lib/diff";
+import { useLoading } from "../../providers/Loading";
 import BackendFields from "./Fields";
 
 const { Button } = wp.components;
@@ -14,6 +15,7 @@ const { useState, useEffect, useMemo, useRef } = wp.element;
 const { __ } = wp.i18n;
 
 export default function Backend({ update, remove, data, copy }) {
+  const [loading] = useLoading();
   const isResponsive = useResponsive();
 
   const name = useRef(data.name);
@@ -41,13 +43,14 @@ export default function Backend({ update, remove, data, copy }) {
     clearTimeout(timeout.current);
 
     if (isValid) {
-      timeout.current = setTimeout(
-        () => {
+      if (state.name !== data.name) {
+        timeout.current = setTimeout(() => {
           name.current = state.name;
           update(state);
-        },
-        (data.name !== state.name && 1e3) || 0
-      );
+        }, 1e3);
+      } else if (diff(state, data)) {
+        update(state);
+      }
     }
   }, [isValid, state]);
 
@@ -57,6 +60,17 @@ export default function Backend({ update, remove, data, copy }) {
       setState(data);
     }
   }, [data.name]);
+
+  const reloaded = useRef(false);
+  useEffect(() => {
+    if (!loading && reloaded.current && diff(data, state)) {
+      setState(data);
+    }
+
+    return () => {
+      reloaded.current = loading;
+    };
+  }, [loading, data, state]);
 
   function exportConfig() {
     const backendData = { ...data };

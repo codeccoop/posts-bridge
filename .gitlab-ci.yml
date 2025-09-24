@@ -36,39 +36,29 @@ build:
   stage: build
   image: node:latest
   script:
+    - find src -exec sed -i "s/http-bridge/posts-bridge/g" {} \;
     - npm install && npm run build
     - find . -name node_modules -type d | xargs rm -rf
   artifacts:
     paths:
       - assets/plugin.bundle.js
-      - addons/**/*/addon.bundle.js
       - custom-blocks
-
-vendor:
-  stage: build
-  image: composer:latest
-  script:
-    - cd addons/google-sheets && composer install
-  artifacts:
-    paths:
-      - addons/google-sheets/vendor
 
 package:
   image: codeccoop/wp-cli:latest
   stage: package
   script:
-    - find common -name '*.php' -exec sed -i "s/'wpct-plugin'/'posts-bridge'/g" {} \;
-    - find . -name "*.php" -exec sed -i 's/wpct_plugin_/posts_bridge_/g' {} \;
+    - find common -name '*.php' -exec sed -i "s/wpct-plugin/posts-bridge/g" {} \;
+    - find . -name "*.php" -exec sed -i 's/wpct_plugin_/posts_bridge_plugin_/g' {} \;
     - find . -name "*.php" -exec sed -i 's/WPCT_PLUGIN/POSTS_BRIDGE\\Common/g' {} \;
-    - find deps/http -name '*.php' -exec sed -i "s/'http-bridge'/'posts-bridge'/g" {} \;
-    - find . -name "*.php" -exec sed -i 's/http_bridge_/posts_bridge_/g' {} \;
-    - find . -name "*.php" -exec sed -i 's/HTTP_BRIDGE_/POSTS_BRIDGE_/g' {} \;
+    - find deps/http -name '*.php' -exec sed -i "s/http-bridge/posts-bridge/g" {} \;
+    - find . -name "*.php" -exec sed -i 's/http_bridge_/posts_bridge_http_/g' {} \;
+    - find . -name "*.php" -exec sed -i 's/HTTP_BRIDGE_/POSTS_BRIDGE_HTTP_/g' {} \;
     - find . -name '*.php' -exec sed -i 's/HTTP_BRIDGE/POSTS_BRIDGE\\Http/g' {} \;
-    - find deps/i18n -name '*.php' -exec sed -i "s/'wpct-i18n'/'posts-bridge'/g" {} \;
-    - find . -name '*.php' -exec sed -i 's/wpct_i18n_/posts_bridge_/g' {} \;
+    - find deps/i18n -name '*.php' -exec sed -i "s/wpct-i18n/posts-bridge/g" {} \;
+    - find . -name '*.php' -exec sed -i 's/wpct_i18n_/posts_bridge_i18n_/g' {} \;
     - find . -name '*.php' -exec sed -i 's/WPCT_I18N/POSTS_BRIDGE\\I18n/g' {} \;
     - wp dist-archive . ./$ZIP
-    - mkdir posts-bridge && mv addons posts-bridge && zip -r $ZIP posts-bridge/addons/**/vendor -x "*.sh" -x "*.asc" -x "*.phar*" -x "*.cnf" -x "*.pubkey"
   artifacts:
     paths:
       - $ZIP

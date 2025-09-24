@@ -254,7 +254,7 @@ class Custom_Post_Type
         ];
     }
 
-    public static function load()
+    public static function load_custom_post_types()
     {
         add_action(
             'add_option_' . self::option_name,
@@ -310,15 +310,6 @@ class Custom_Post_Type
             },
             10,
             2
-        );
-
-        add_action(
-            'posts_bridge_template_post_type',
-            function () {
-                flush_rewrite_rules();
-            },
-            10,
-            0
         );
     }
 
