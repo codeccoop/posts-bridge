@@ -17,6 +17,7 @@
 
 namespace POSTS_BRIDGE;
 
+use PBAPI;
 use WPCT_PLUGIN\Plugin as Base_Plugin;
 
 if (!defined('ABSPATH')) {

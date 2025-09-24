@@ -116,8 +116,6 @@ class Post_Bridge
                             'name' => [
                                 'type' => 'string',
                                 'minLength' => 1,
-                                'validate_callback' =>
-                                    '\FORMS_BRIDGE\JSON_Finger::validate',
                             ],
                             'foreign' => [
                                 'type' => 'string',
