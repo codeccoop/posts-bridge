@@ -1,9 +1,9 @@
 // source
 import useAjaxSync from "../../hooks/useAjaxSync";
+import ToggleControl from "../Toggle";
 
 const {
   __experimentalSpacer: Spacer,
-  ToggleControl,
   PanelRow,
   SelectControl,
   Button,
