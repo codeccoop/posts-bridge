@@ -41,16 +41,15 @@ class PBAPI
     /**
      * Gets a bridge by name and addon.
      *
-     * @param string $name Bridge name.
-     * @param string $addon Addon name.
+     * @param string $post_type Bridge post type.
      *
      * @return Post_Bridge|null
      */
-    public static function get_bridge($name, $addon)
+    public static function get_bridge($post_type)
     {
-        $bridges = self::get_addon_bridges($addon);
+        $bridges = self::get_bridges();
         foreach ($bridges as $bridge) {
-            if ($bridge->name === $name) {
+            if ($bridge->post_type === $post_type) {
                 return $bridge;
             }
         }

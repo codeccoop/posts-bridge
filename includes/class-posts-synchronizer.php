@@ -4,6 +4,7 @@ namespace POSTS_BRIDGE;
 
 use Error;
 use Exception;
+use PBAPI;
 use WPCT_PLUGIN\Singleton;
 use WP_Query;
 use WP_Post;
@@ -185,15 +186,11 @@ class Posts_Synchronizer extends Singleton
 
     private static function ajax_localization()
     {
-        wp_localize_script(
-            Posts_Bridge::slug() . '-admin',
-            'postsBridgeAjaxSync',
-            [
-                'url' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce(self::ajax_nonce),
-                'action' => self::ajax_action,
-            ]
-        );
+        wp_localize_script('posts-bridge', 'postsBridgeAjaxSync', [
+            'url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce(self::ajax_nonce),
+            'action' => self::ajax_action,
+        ]);
     }
 
     /*
@@ -233,7 +230,8 @@ class Posts_Synchronizer extends Singleton
         });
 
         add_action(self::schedule_hook, static function () {
-            $bridges = apply_filters('posts_bridge_bridges', []);
+            $bridges = PBAPI::get_bridges();
+
             foreach ($bridges as $bridge) {
                 try {
                     self::sync($bridge);
@@ -273,11 +271,10 @@ class Posts_Synchronizer extends Singleton
 
             self::$sync_mode = $mode;
             if ($post_type) {
-                $bridges = array_filter([
-                    apply_filters('posts_bridge_bridge', null, $post_type),
-                ]);
+                $bridge = PBAPI::get_bridge($post_type);
+                $bridges = array_filter([$bridge]);
             } else {
-                $bridges = apply_filters('posts_bridge_bridges', []);
+                $bridges = PBAPI::get_bridges();
             }
 
             foreach ($bridges as $bridge) {
@@ -309,20 +306,12 @@ class Posts_Synchronizer extends Singleton
      */
     private static function sync($bridge)
     {
-        $foreign_ids = apply_filters(
-            'posts_bridge_foreign_ids',
-            $bridge->foreign_ids(),
-            $bridge
-        );
+        $foreign_ids = $bridge->foreign_ids();
 
-        $remote_pairs = array_reduce(
-            $foreign_ids,
-            function ($carry, $id) {
-                $carry[$id] = 0;
-                return $carry;
-            },
-            []
-        );
+        $remote_pairs = [];
+        foreach ($foreign_ids as $id) {
+            $remote_pairs[$id] = 0;
+        }
 
         $query = new WP_Query([
             'post_type' => $bridge->post_type,

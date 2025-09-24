@@ -23,7 +23,7 @@ class WP_Post_Bridge extends Post_Bridge
         }
     }
 
-    private function endpoint($foreign_id = null)
+    protected function endpoint($foreign_id = null)
     {
         $post_type = get_post_type_object($this->post_type);
         $rest_base = $post_type->rest_base ?? $post_type;

@@ -1,8 +1,16 @@
+// source
+import { useError } from "../providers/Error";
+import { useLoading } from "../providers/Loading";
+
 const { __ } = wp.i18n;
 
 export default function useAjaxSync({ fullMode, postType }) {
+  const [loading, setLoading] = useLoading();
+  const [error, setError] = useError();
+
   const sync = () => {
-    wppb.emit("loading", true);
+    if (loading || error) return;
+    setLoading(true);
 
     const body = new URLSearchParams();
     body.set("_ajax_nonce", postsBridgeAjaxSync.nonce);
@@ -43,10 +51,8 @@ export default function useAjaxSync({ fullMode, postType }) {
 
       ajax.send(body.toString());
     })
-      .catch(() =>
-        wppb.emit("error", __("AJAX synchronization error", "posts-bridge"))
-      )
-      .finally(() => wppb.emit("loading", false));
+      .catch(() => setError(__("AJAX synchronization error", "posts-bridge")))
+      .finally(() => setLoading(false));
   };
 
   return sync;
