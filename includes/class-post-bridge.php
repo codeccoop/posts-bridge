@@ -21,7 +21,6 @@ class Post_Bridge
      * @var string[]
      */
     public const post_model = [
-        'ID',
         'post_title',
         'post_name',
         'post_excerpt',
@@ -278,10 +277,12 @@ class Post_Bridge
      * Fetches remote data for a given foreign id.
      *
      * @param int|string|null $foreign_id Foreig key value.
+     * @param array $params Request query params.
+     * @param array $headers Request headers.
      *
-     * @return array|WP_Error Remote data for the given id.
+     * @return array|WP_Error
      */
-    final public function fetch($foreign_id = null)
+    public function fetch($foreign_id = null, $params = [], $headers = [])
     {
         if (!$this->is_valid) {
             return new WP_Error('invalid_bridge');
@@ -309,10 +310,9 @@ class Post_Bridge
 
         $backend = $this->backend();
         $method = $this->method;
-
         $endpoint = $this->endpoint($foreign_id);
 
-        return $backend->$method($endpoint);
+        return $backend->$method($endpoint, $params, $headers);
     }
 
     protected function endpoint($foreign_id = null)
@@ -358,13 +358,6 @@ class Post_Bridge
 
         return $ids;
     }
-
-    // /**
-    //  * Retrives the bridge's remote key values.
-    //  *
-    //  * @return array List of foreign ids.
-    //  */
-    // abstract public function foreign_ids();
 
     /**
      * Bridge's remote fields getter.
@@ -503,21 +496,26 @@ class Post_Bridge
             $categories = $this->get_post_tags($categories);
         }
 
-        $terms = get_terms(['taxonomy' => 'category', 'hide_empty' => false]);
+        return $this->get_post_terms($categories, 'category');
+    }
+
+    private function get_post_terms($names, $taxonomy = 'category')
+    {
+        $terms = get_terms(['taxonomy' => $taxonomy, 'hide_empty' => false]);
         $term_names = [];
         foreach ($terms as $term) {
             $term_names[$term->name] = $term->term_id;
         }
 
         $ids = [];
-        foreach ($categories as $cat) {
-            if (is_int($cat)) {
-                $ids[] = (int) $cat;
-            } elseif (is_string($cat)) {
-                if (isset($term_names[$cat])) {
-                    $ids[] = $term_names[$cat];
+        foreach ($names as $name) {
+            if (is_int($name)) {
+                $ids[] = (int) $name;
+            } elseif (is_string($name)) {
+                if (isset($term_names[$name])) {
+                    $ids[] = $term_names[$name];
                 } else {
-                    $term = wp_insert_term($cat, 'category');
+                    $term = wp_insert_term($name, $taxonomy);
                     if (!is_wp_error($term)) {
                         $ids[] = $term['term_id'];
                     }
@@ -545,11 +543,15 @@ class Post_Bridge
             $tags = explode(',', $tags);
         }
 
-        return array_filter(
-            array_map(function ($tag) {
-                return trim((string) $tag);
-            }, $tags)
-        );
+        $output = [];
+        foreach ($tags as $tag) {
+            $tag = trim($tag);
+            if ($tag) {
+                $output[] = $tag;
+            }
+        }
+
+        return $output;
     }
 
     /**

@@ -3,7 +3,6 @@ const { useMemo } = wp.element;
 const { __ } = wp.i18n;
 
 const MODEL = {
-  ID: "ID",
   post_title: __("Title", "posts-bridge"),
   post_name: __("Slug", "posts-bridge"),
   post_excerpt: __("Excerpt", "posts-bridge"),

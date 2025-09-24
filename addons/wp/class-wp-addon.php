@@ -7,6 +7,7 @@ if (!defined('ABSPATH')) {
 }
 
 require_once 'class-wp-post-bridge.php';
+require_once 'hooks.php';
 
 /**
  * WP Addon class.
@@ -16,7 +17,7 @@ class WP_Addon extends Addon
     /**
      * Handles the addon name.
      */
-    public const title = 'WP REST-API';
+    public const title = 'WP';
 
     /**
      * Handles the addon's API name.
@@ -26,73 +27,7 @@ class WP_Addon extends Addon
     /**
      * Handles the addon's custom bridge class.
      */
-    protected static $bridge_class = '\POSTS_BRIDGE\WP_Post_Bridge';
-
-    /**
-     * Addon settings configuration getter.
-     *
-     * @return array Addon's settings configuration.
-     */
-    protected static function setting_config()
-    {
-        return [
-            self::$api,
-            [
-                'bridges' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'additionalProperties' => false,
-                        'properties' => [
-                            'post_type' => ['type' => 'string'],
-                            'backend' => ['type' => 'string'],
-                            'remote_type' => ['type' => 'string'],
-                            'fields' => [
-                                'type' => 'array',
-                                'items' => [
-                                    'type' => 'object',
-                                    'additionalProperties' => false,
-                                    'properties' => [
-                                        'name' => [
-                                            'type' => 'string',
-                                            'minLength' => 1,
-                                        ],
-                                        'foreign' => [
-                                            'type' => 'string',
-                                            'minLength' => 1,
-                                        ],
-                                    ],
-                                ],
-                            ],
-                            'template' => ['type' => 'string'],
-                        ],
-                        'required' => [
-                            'post_type',
-                            'backend',
-                            'remote_type',
-                            'fields',
-                        ],
-                    ],
-                ],
-                'credentials' => [
-                    'type' => 'object',
-                    'additionalProperties' => false,
-                    'properties' => [
-                        'username' => ['type' => 'string'],
-                        'password' => ['type' => 'string'],
-                    ],
-                    'required' => ['username', 'password'],
-                ],
-            ],
-            [
-                'bridges' => [],
-                'credentials' => [
-                    'username' => '',
-                    'password' => '',
-                ],
-            ],
-        ];
-    }
+    public const bridge_class = '\POSTS_BRIDGE\WP_Post_Bridge';
 }
 
 WP_Addon::setup();

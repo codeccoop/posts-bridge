@@ -387,7 +387,7 @@ class Addon extends Singleton
                     $post_types = [];
                 }
 
-                if ($addon && $addon !== static::$name) {
+                if ($addon && $addon !== static::name) {
                     return $post_types;
                 }
 
@@ -448,15 +448,15 @@ class Addon extends Singleton
         return Posts_Bridge::setting(static::name);
     }
 
-    /**
-     * Registers remote cpts remote fields as post meta to make it visibles
-     * on the REST API.
-     */
-    private static function register_meta()
-    {
-        $bridges = static::bridges();
-        foreach ($bridges as $bridge) {
-            $bridge->register_meta();
-        }
-    }
+    // /**
+    //  * Registers remote cpts remote fields as post meta to make it visibles
+    //  * on the REST API.
+    //  */
+    // private static function register_meta()
+    // {
+    //     $bridges = static::bridges();
+    //     foreach ($bridges as $bridge) {
+    //         $bridge->register_meta();
+    //     }
+    // }
 }
