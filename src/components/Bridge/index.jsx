@@ -6,21 +6,14 @@ import ToggleControl from "../Toggle";
 import useResponsive from "../../hooks/useResponsive";
 import CopyIcon from "../icons/Copy";
 import ArrowDownIcon from "../icons/ArrowDown";
-import { useLoading } from "../../providers/Loading";
-import { useError } from "../../providers/Error";
-import useTab from "../../hooks/useTab";
 import useAjaxSync from "../../hooks/useAjaxSync";
 import Mappers from "../Mappers";
 
 const { Button } = wp.components;
-const { useState, useEffect, useMemo, useCallback } = wp.element;
+const { useState, useMemo, useCallback } = wp.element;
 const { __ } = wp.i18n;
 
 export default function Bridge({ data, update, remove, schema, copy }) {
-  const [addon] = useTab();
-
-  const [loading, setLoading] = useLoading();
-  const [error, setError] = useError();
   const isResponsive = useResponsive();
 
   const [fullMode, setFullMode] = useState(false);
@@ -159,7 +152,7 @@ export default function Bridge({ data, update, remove, schema, copy }) {
             borderTop: "1px solid",
           }}
         >
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
             <Button
               variant="primary"
               onClick={triggerSync}
@@ -169,7 +162,7 @@ export default function Bridge({ data, update, remove, schema, copy }) {
               {__("Syncrhonize", "posts-bridge")}
             </Button>
             <ToggleControl
-              label={__("Full synchronization mode", "posts-bridge")}
+              label={__("Full sync", "posts-bridge")}
               checked={fullMode}
               onChange={() => setFullMode(!fullMode)}
               __nextHasNoMarginBottom

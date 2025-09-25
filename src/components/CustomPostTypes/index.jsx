@@ -7,11 +7,10 @@ import {
 import TabTitle from "../TabTitle";
 import CustomPostType from "../CustomPostType";
 import AddIcon from "../icons/Add";
-import { usePostTypes } from "../../hooks/useGeneral";
 import NewCustomPostType from "../CustomPostType/NewCPT";
 
 const { TabPanel } = wp.components;
-const { useState, useEffect, useMemo, useRef } = wp.element;
+const { useEffect, useMemo, useRef } = wp.element;
 const { __ } = wp.i18n;
 
 const CSS = `.cpts-tabs-panel .components-tab-panel__tabs{overflow-x:auto;}

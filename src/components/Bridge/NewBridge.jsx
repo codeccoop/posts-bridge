@@ -1,16 +1,17 @@
 // source
 import { useError } from "../../providers/Error";
 import BridgeFields, { INTERNALS } from "./Fields";
+import Templates from "../Templates";
 import { isset, uploadJson } from "../../lib/utils";
 import useResponsive from "../../hooks/useResponsive";
-import ArrowUpIcon from "../icons/ArrowUp";
 import Mappers from "../Mappers";
+import ArrowUpIcon from "../icons/ArrowUp";
 
 const { Button } = wp.components;
 const { useState, useMemo } = wp.element;
 const { __ } = wp.i18n;
 
-export default function NewBridge({ add, schema, names }) {
+export default function NewBridge({ add, schema, rcpts }) {
   const isResponsive = useResponsive();
 
   const [data, setData] = useState({});
@@ -58,8 +59,8 @@ export default function NewBridge({ add, schema, names }) {
         }
 
         let i = 1;
-        while (names.has(data.name)) {
-          data.name = data.name.replace(/ \([0-9]+\)/, "") + ` (${i})`;
+        while (rcpts.has(data.post_type)) {
+          data.post_type = data.name.replace(/ \([0-9]+\)/, "") + ` (${i})`;
           i++;
         }
 
@@ -155,13 +156,22 @@ export default function NewBridge({ add, schema, names }) {
         >
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <Button
-              variant="primary"
+              variant="secondary"
               style={{ width: "150px", justifyContent: "center" }}
               __next40pxDefaultSize
               disabled
             >
               {__("Syncrhonize", "posts-bridge")}
             </Button>
+            <div
+              style={{
+                marginLeft: isResponsive ? 0 : "auto",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <Templates />
+            </div>
           </div>
         </div>
       </div>

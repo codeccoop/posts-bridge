@@ -354,6 +354,27 @@ class Addon extends Singleton
     public function load()
     {
         add_filter(
+            'posts_bridge_templates',
+            static function ($templates, $addon = null) {
+                if (!wp_is_numeric_array($templates)) {
+                    $templates = [];
+                }
+
+                if ($addon && $addon !== static::name) {
+                    return $templates;
+                }
+
+                foreach (static::load_templates() as $template) {
+                    $templates[] = $template;
+                }
+
+                return $templates;
+            },
+            10,
+            2
+        );
+
+        add_filter(
             'posts_bridge_bridges',
             static function ($bridges, $addon = null) {
                 if (!wp_is_numeric_array($bridges)) {
@@ -416,9 +437,23 @@ class Addon extends Singleton
         });
 
         Settings_Store::ready(static function ($store) {
+            $store::use_getter(static::name, static function ($data) {
+                $templates = PBAPI::get_addon_templates(static::name);
+
+                $data['templates'] = array_map(function ($template) {
+                    return [
+                        'title' => $template->title,
+                        'name' => $template->name,
+                    ];
+                }, $templates);
+
+                return $data;
+            });
+
             $store::use_setter(
                 static::name,
                 static function ($data) {
+                    unset($data['templates']);
                     return static::sanitize_setting($data);
                 },
                 9
@@ -446,6 +481,186 @@ class Addon extends Singleton
     final protected static function setting()
     {
         return Posts_Bridge::setting(static::name);
+    }
+
+    /**
+     * Performs a request against the backend to check the connexion status.
+     *
+     * @param string $backend Target backend name.
+     *
+     * @return boolean|WP_Error
+     */
+    public function ping($backend)
+    {
+        return true;
+    }
+
+    /**
+     * Performs a GET request against the backend endpoint and retrive the response data.
+     *
+     * @param string $endpoint Target endpoint name.
+     * @param string $backend Target backend name.
+     *
+     * @return array|WP_Error
+     */
+    public function fetch($endpoint, $backend)
+    {
+        return [
+            'headers' => [],
+            'cookies' => [],
+            'filename' => null,
+            'body' => '',
+            'response' => [
+                'status' => 202,
+                'message' => 'Accepted',
+            ],
+            'http_response' => [
+                'data' => null,
+                'headers' => null,
+                'status' => null,
+            ],
+            'data' => [],
+        ];
+    }
+
+    /**
+     * Performs an introspection of the backend endpoint and returns API fields
+     * and accepted content type.
+     *
+     * @param string $endpoint Target endpoint name.
+     * @param string $backend Target backend name.
+     *
+     * @return array|WP_Error
+     */
+    public function get_endpoint_schema($endpoint, $backend)
+    {
+        return [];
+    }
+
+    /**
+     * Autoload config files from a given addon's directory. Used to load
+     * template and job config files.
+     *
+     * @param string $dir Path of the target directory.
+     *
+     * @return array Array with data from files.
+     */
+    private static function autoload_dir($dir, $extensions = ['php', 'json'])
+    {
+        if (!is_readable($dir) || !is_dir($dir)) {
+            return [];
+        }
+
+        static $load_cache;
+
+        $files = [];
+        foreach (array_diff(scandir($dir), ['.', '..']) as $file) {
+            $file_path = $dir . '/' . $file;
+
+            if (is_file($file_path) && is_readable($file_path)) {
+                $files[] = $file_path;
+            }
+        }
+
+        $loaded = [];
+        foreach ($files as $file_path) {
+            $file = basename($file_path);
+            $name = pathinfo($file)['filename'];
+            $ext = pathinfo($file)['extension'] ?? null;
+
+            if (!in_array($ext, $extensions)) {
+                continue;
+            }
+
+            if (isset($load_cache[$file_path])) {
+                $loaded[] = $load_cache[$file_path];
+                continue;
+            }
+
+            $data = null;
+            if ($ext === 'php') {
+                $data = include_once $file_path;
+            } elseif ($ext === 'json') {
+                try {
+                    $content = file_get_contents($file_path);
+                    $data = json_decode($content, true, JSON_THROW_ON_ERROR);
+                } catch (TypeError) {
+                    // pass
+                } catch (Error) {
+                    // pass
+                }
+            }
+
+            if (is_array($data)) {
+                $data['name'] = $name;
+                $loaded[] = $data;
+                $load_cache[$file_path] = $data;
+            }
+        }
+
+        return $loaded;
+    }
+
+    /**
+     * Loads addon's bridge templates.
+     *
+     * @return Post_Bridge_Template[].
+     */
+    private static function load_templates()
+    {
+        $dir = POSTS_BRIDGE_ADDONS_DIR . '/' . static::name . '/templates';
+
+        $directories = apply_filters(
+            'posts_bridge_template_directories',
+            [
+                $dir,
+                Posts_Bridge::path() . 'includes/templates',
+                get_stylesheet_directory() .
+                '/posts-bridge/templates/' .
+                static::name,
+            ],
+            static::name
+        );
+
+        $templates = [];
+        foreach ($directories as $dir) {
+            if (!is_dir($dir)) {
+                continue;
+            }
+
+            foreach (self::autoload_dir($dir) as $template) {
+                $template['name'] = sanitize_title($template['name']);
+                $templates[$template['name']] = $template;
+            }
+        }
+
+        $templates = array_values($templates);
+
+        $templates = apply_filters(
+            'posts_bridge_load_templates',
+            $templates,
+            static::name
+        );
+
+        $loaded = [];
+        foreach ($templates as $template) {
+            if (
+                is_array($template) &&
+                isset($template['data'], $template['name'])
+            ) {
+                $template = array_merge($template['data'], [
+                    'name' => $template['name'],
+                ]);
+            }
+
+            $template = new Post_Bridge_Template($template, static::name);
+
+            if ($template->is_valid) {
+                $loaded[] = $template;
+            }
+        }
+
+        return $loaded;
     }
 
     // /**

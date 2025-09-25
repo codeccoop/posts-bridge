@@ -301,16 +301,6 @@ class Custom_Post_Type
             10,
             0
         );
-
-        add_filter(
-            'posts_bridge_custom_post_type',
-            static function ($value, $key) {
-                $registry = self::registry();
-                return $registry[$key] ?? $value;
-            },
-            10,
-            2
-        );
     }
 
     public static function register($data)

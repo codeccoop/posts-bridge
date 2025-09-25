@@ -33,6 +33,11 @@ class PBAPI
         return apply_filters('posts_bridge_custom_post_types', []);
     }
 
+    public static function get_custom_post_type($name)
+    {
+        return self::get_custom_post_types()[$name] ?? null;
+    }
+
     public static function get_remote_cpts()
     {
         return apply_filters('posts_bridge_remote_cpts', []);
@@ -285,5 +290,46 @@ class PBAPI
     public static function get_credential_schema()
     {
         return Credential::schema();
+    }
+
+    /**
+     * Gets the collection of available templates.
+     *
+     * @return Post_Bridge_Template[]
+     */
+    public static function get_templates()
+    {
+        return apply_filters('posts_bridge_templates', []);
+    }
+
+    /**
+     * Gets the collection of available templates filtered by addon name.
+     *
+     * @param string $addon Addon name.
+     *
+     * @return Post_Bridge_Template[]
+     */
+    public static function get_addon_templates($addon)
+    {
+        return apply_filters('posts_bridge_templates', [], $addon);
+    }
+
+    /**
+     * Gets a template instance by name and addon.
+     *
+     * @param string $name Template name.
+     * @param string $addon Addon name.
+     *
+     * @return Post_Bridge_Template|null
+     */
+    public static function get_template($name, $addon)
+    {
+        $templates = self::get_addon_templates($addon);
+
+        foreach ($templates as $template) {
+            if ($template->name === $name) {
+                return $template;
+            }
+        }
     }
 }
