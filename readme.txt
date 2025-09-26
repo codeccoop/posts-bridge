@@ -1,24 +1,81 @@
 === Posts Bridge ===
 Contributors: codeccoop
-Tags: posts, bridge, http, api, backend
+Tags: posts, synchronization, http, api, backend
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Stable Tag: 4.0.0
 Tested up to: 6.7
 
-Bridge any backend or service data to posts collections.
+Bridge your posts collections with your backend over HTTP API, enabling remote and automated web content management.
 
 == How it works ==
 
-Posts Bridge handles posts collections as indexes that represents your backend data and allows the use of Gutenberg, the powerful page builder of WordPress, as your backend frontend builder.
+Posts Bridge treats post collections as indexes that represents your backend data and allow you to use Gutenberg, WordPress' powerful page builder, as the frontend editor of your backend. Whether through manual or automatic synchronization —using ahead-of-time or live fetches— Posts Bridge fully integrates your backend data into the WordPress CMS system.
+
+== Bridges ==
+
+Think of a bridge as a pipeline through which WordPress
 
 == Addons ==
 
-Posts Bridge has core support for REST API connexions and addons for [Odoo](https://www.odoo.com/), [WordPress REST API](https://developer.wordpress.org/rest-api/) and [Google Spreadsheets](https://workspace.google.com/products/sheets/).
+Posts Bridge comes with free addons. Each addon adds to the plugin new bridges to work with specific APIs and bridge templates.
+
+Posts Bridge has the following addons:
+
+* [REST API](https://en.wikipedia.org/wiki/REST)
+* [Dolibarr](https://wiki.dolibarr.org/index.php/Module_Web_Services_API_REST_(developer))
+* [Google Sheets](https://workspace.google.com/products/sheets/)
+* [Nextcloud](https://docs.nextcloud.com/server/20/user_manual/en/files/access_webdav.html)
+* [Odoo](https://www.odoo.com/)
+* [WP](https://developer.wordpress.org/rest-api/)
+
+== Backends ==
+
+In Posts Bridge, a backend is a set of configurations that handles the information required to get your posts synchronized over HTTP requests with remote systems.
+
+To register a new backend you only have to set 3 fields:
+
+1. A unique name for the new connection
+2. The URL of your backend
+3. An array of HTTP headers with connection metadata and credentials
+4. Optional, an HTTP authentication credential (Basic, Bearer, etc)
+
+Once registered, you can reuse your backend connection on your post bridges.
+
+== Remote Mappers ==
+
+Remote mappers allow you to mutate your backend's API responses to match the WordPress post model (e.g., `post_title`, `post_content`, `post_name`). This enable automatic conversion of backend data into WordPress posts on each synchronization loop (ahead-of-time).
+
+With mappers you can map backend data to post fields, custom fields and into taxonomy terms (such as categories and tags).
+
+== Remote Field ==
+
+If you want your backend data loaded dynamically on each render, you can use the **Remote Field** custom block. This block lets you designate parts of your post templates as remote content. On render time, this blocks will be replaced with the data fetched from the backend.
+
+== Templates ==
+
+To streamline the bridge setup process, Posts Bridge comes packed with templates. Templates are blueprints of bridges you can use to set up your integrations in a matter of minutes.
 
 == Docs ==
 
-See the official plugin's documentation on our [gitlab repository](https://git.coopdevs.org/codeccoop/wp/plugins/posts-bridge/).
+Browse the plugin's documentation on [postsbridge.codeccoop.org](https://postsbridge.codeccoop.org/documentation/).
+
+== Links ==
+
+* [Official website](https://postsbridge.codeccoop.org/)
+* [Gitlab](https://gitlab.com/codeccoop/wp/plugins/posts-bridge/)
+* [Còdec](https://www.codeccoop.org)
+* [Other plugins](https://profiles.wordpress.org/codeccoop/#content-plugins)
+
+== Screenshots ==
+
+1. Settings page
+2. Backends
+3. Bridges
+4. Remote mappers
+5. Remote fields
+6. Template Wizard
+7. Debug console
 
 == Changelog ==
 
