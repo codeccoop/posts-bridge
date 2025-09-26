@@ -72,10 +72,8 @@ Browse the plugin's documentation on [postsbridge.codeccoop.org](https://postsbr
 1. Settings page
 2. Backends
 3. Bridges
-4. Remote mappers
-5. Remote fields
-6. Template Wizard
-7. Debug console
+4. Template Wizard
+5. Debug console
 
 == Changelog ==
 
