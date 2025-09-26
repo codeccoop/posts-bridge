@@ -17,6 +17,11 @@ class GSheets_Post_Bridge extends Post_Bridge
      */
     private static $rows = [];
 
+    public function __construct($data)
+    {
+        parent::__construct($data, 'gsheets');
+    }
+
     private function value_range($values)
     {
         $range = rawurlencode($this->tab);

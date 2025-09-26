@@ -1,5 +1,15 @@
-const { TextControl, Button, __experimentalSpacer: Spacer } = wp.components;
-const { useMemo } = wp.element;
+// source
+import JsonFinger from "../../lib/JsonFinger";
+import { useApiFields } from "../../providers/ApiSchema";
+import DropdownSelect from "../DropdownSelect";
+
+const {
+  BaseControl,
+  TextControl,
+  Button,
+  __experimentalSpacer: Spacer,
+} = wp.components;
+const { useState, useMemo } = wp.element;
 const { __ } = wp.i18n;
 
 const MODEL = {
@@ -14,7 +24,44 @@ const MODEL = {
   tags_input: __("Tags", "posts-bridge"),
 };
 
+const INVALID_TO_STYLE = {
+  "--wp-components-color-accent": "#cc1818",
+  "color":
+    "var(--wp-components-color-accent, var(--wp-admin-theme-color, #3858e9))",
+  "borderColor":
+    "var(--wp-components-color-accent, var(--wp-admin-theme-color, #3858e9))",
+};
+
+function useInputStyle(name = "") {
+  const inputStyle = {
+    height: "40px",
+    paddingLeft: "12px",
+    paddingRight: "12px",
+    fontSize: "13px",
+    borderRadius: "2px",
+    width: "100%",
+    display: "block",
+  };
+
+  if (name.length && (!JsonFinger.validate(name) || /\[\]/.test(name))) {
+    return { ...inputStyle, ...INVALID_TO_STYLE };
+  }
+
+  return inputStyle;
+}
+
 export default function Mappers({ mappers, setMappers }) {
+  const apiFields = useApiFields();
+
+  const apiFieldOptions = useMemo(() => {
+    return apiFields.map((field) => ({
+      value: field.name,
+      label: `${field.name} | ${field.schema.type}`,
+    }));
+  }, [apiFields]);
+
+  const [fieldSelector, setFieldSelector] = useState(-1);
+
   const fields = useMemo(() => {
     return mappers.map((m, index) => ({ ...m, index }));
   }, [mappers]);
@@ -60,6 +107,10 @@ export default function Mappers({ mappers, setMappers }) {
       return { ...mapper };
     });
 
+    if (index >= newMappers.length) {
+      newMappers.push({ name: "", foreign: "", [attr]: value });
+    }
+
     setMappers(newMappers);
   };
 
@@ -82,6 +133,8 @@ export default function Mappers({ mappers, setMappers }) {
   };
 
   if (fields.length === 0) addMapper(0);
+
+  console.log({ postFields, customFields });
 
   return (
     <div>
@@ -110,19 +163,53 @@ export default function Mappers({ mappers, setMappers }) {
           <col span="1" style={{ width: "85px" }} />
         </colgroup>
         <tbody>
-          {postFields.map(({ name, foreign, index }) => (
+          {postFields.map(({ name, foreign, index }, i) => (
             <tr key={name}>
               <td>
                 <b>{MODEL[name]}</b>
               </td>
               <td>
-                <TextControl
-                  placeholder={__("Foreign field name", "posts-bridge")}
-                  value={foreign || ""}
-                  onChange={(value) => setPostField(name, index, value)}
-                  __nextHasNoMarginBottom
-                  __next40pxDefaultSize
-                />
+                <div style={{ display: "flex" }}>
+                  <div style={{ flex: 1 }}>
+                    <BaseControl __nextHasNoMarginBottom __next40pxDefaultSize>
+                      <input
+                        type="text"
+                        placeholder={__("Foreign field name", "posts-bridge")}
+                        value={foreign || ""}
+                        onChange={(ev) =>
+                          setPostField(name, index, ev.target.value)
+                        }
+                        style={useInputStyle(foreign)}
+                      />
+                    </BaseControl>
+                  </div>
+                  <Button
+                    style={{
+                      height: "40px",
+                      width: "40px",
+                      justifyContent: "center",
+                      marginLeft: "2px",
+                    }}
+                    disabled={apiFieldOptions.length === 0}
+                    size="compact"
+                    variant="secondary"
+                    onClick={() => setFieldSelector(i)}
+                    __next40pxDefaultSize
+                  >
+                    {"{...}"}
+                    {fieldSelector === i && (
+                      <DropdownSelect
+                        title={__("Fields", "forms-bridge")}
+                        tags={apiFieldOptions}
+                        onChange={(fieldName) => {
+                          setFieldSelector(-1);
+                          setPostField(name, index, fieldName);
+                        }}
+                        onFocusOutside={() => setFieldSelector(-1)}
+                      />
+                    )}
+                  </Button>
+                </div>
               </td>
             </tr>
           ))}
@@ -156,7 +243,7 @@ export default function Mappers({ mappers, setMappers }) {
           <col span="1" style={{ width: "85px" }} />
         </colgroup>
         <tbody>
-          {customFields.map(({ foreign, name, index }) => (
+          {customFields.map(({ foreign, name, index }, i) => (
             <tr key={index}>
               <td>
                 <TextControl
@@ -168,13 +255,49 @@ export default function Mappers({ mappers, setMappers }) {
                 />
               </td>
               <td>
-                <TextControl
-                  placeholder={__("Foreign field name", "posts-bridge")}
-                  value={foreign}
-                  onChange={(value) => setMapper("foreign", index, value)}
-                  __nextHasNoMarginBottom
-                  __next40pxDefaultSize
-                />
+                <div style={{ display: "flex" }}>
+                  <div style={{ flex: 1 }}>
+                    <BaseControl __nextHasNoMarginBottom __next40pxDefaultSize>
+                      <input
+                        type="text"
+                        placeholder={__("Foreign field name", "posts-bridge")}
+                        value={foreign || ""}
+                        onChange={(ev) =>
+                          setMapper("foreign", index, ev.target.value)
+                        }
+                        style={useInputStyle(foreign)}
+                      />
+                    </BaseControl>
+                  </div>
+                  <Button
+                    style={{
+                      height: "40px",
+                      width: "40px",
+                      justifyContent: "center",
+                      marginLeft: "2px",
+                    }}
+                    disabled={!name || apiFieldOptions.length === 0}
+                    size="compact"
+                    variant="secondary"
+                    onClick={() =>
+                      setFieldSelector(i + Object.keys(MODEL).length)
+                    }
+                    __next40pxDefaultSize
+                  >
+                    {"{...}"}
+                    {fieldSelector === i + Object.keys(MODEL).length && (
+                      <DropdownSelect
+                        title={__("Fields", "forms-bridge")}
+                        tags={apiFieldOptions}
+                        onChange={(fieldName) => {
+                          setFieldSelector(-1);
+                          setMapper("foreign", index, fieldName);
+                        }}
+                        onFocusOutside={() => setFieldSelector(-1)}
+                      />
+                    )}
+                  </Button>
+                </div>
               </td>
               <td>
                 <div
@@ -199,7 +322,7 @@ export default function Mappers({ mappers, setMappers }) {
                     +
                   </Button>
                   <Button
-                    disabled={index === 0 && customFields.length === 1}
+                    disabled={customFields.length === 1}
                     variant="secondary"
                     onClick={() => dropMapper(index)}
                     style={{

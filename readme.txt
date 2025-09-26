@@ -25,7 +25,6 @@ Posts Bridge has the following addons:
 * [REST API](https://en.wikipedia.org/wiki/REST)
 * [Dolibarr](https://wiki.dolibarr.org/index.php/Module_Web_Services_API_REST_(developer))
 * [Google Sheets](https://workspace.google.com/products/sheets/)
-* [Nextcloud](https://docs.nextcloud.com/server/20/user_manual/en/files/access_webdav.html)
 * [Odoo](https://www.odoo.com/)
 * [WP](https://developer.wordpress.org/rest-api/)
 

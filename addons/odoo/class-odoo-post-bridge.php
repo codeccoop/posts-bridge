@@ -152,9 +152,9 @@ class Odoo_Post_Bridge extends Post_Bridge
         return self::$session;
     }
 
-    public function __construct($data, $addon)
+    public function __construct($data)
     {
-        parent::__construct($data, $addon);
+        parent::__construct($data, 'odoo');
 
         if ($this->is_valid && isset($data['method'])) {
             $this->data['method'] = $data['method'];

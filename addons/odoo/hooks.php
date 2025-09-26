@@ -23,6 +23,7 @@ add_filter(
             'search',
             'read',
             'search_read',
+            'fields_get',
         ];
 
         $schema['properties']['method']['const'] = 'read';

@@ -1,6 +1,7 @@
 // source
 import { usePostTypes } from "../../hooks/useGeneral";
 import { useBridges, useRemoteCPTs } from "../../hooks/useAddon";
+import ApiSchemaProvider from "../../providers/ApiSchema";
 import { useSchemas } from "../../providers/Schemas";
 import Bridge from "../Bridge";
 import NewBridge from "../Bridge/NewBridge";
@@ -99,23 +100,23 @@ export default function Bridges() {
         {(tab) => {
           const bridge = bridges[tab.index];
 
-          if (!bridge) {
-            return (
-              <NewBridge
-                add={(data) => updateBridge(tab.index, data)}
-                schema={schema}
-              />
-            );
-          }
-
           return (
-            <Bridge
-              data={bridge}
-              schema={schema}
-              remove={removeBridge}
-              update={(data) => updateBridge(tab.index, data)}
-              copy={() => copyBridge(bridge.post_type)}
-            />
+            <ApiSchemaProvider bridge={bridge}>
+              {(!bridge && (
+                <NewBridge
+                  add={(data) => updateBridge(tab.index, data)}
+                  schema={schema}
+                />
+              )) || (
+                <Bridge
+                  data={bridge}
+                  schema={schema}
+                  remove={removeBridge}
+                  update={(data) => updateBridge(tab.index, data)}
+                  copy={() => copyBridge(bridge.post_type)}
+                />
+              )}
+            </ApiSchemaProvider>
           );
         }}
       </TabPanel>

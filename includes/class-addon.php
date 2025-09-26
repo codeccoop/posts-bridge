@@ -505,22 +505,19 @@ class Addon extends Singleton
      */
     public function fetch($endpoint, $backend)
     {
-        return [
-            'headers' => [],
-            'cookies' => [],
-            'filename' => null,
-            'body' => '',
-            'response' => [
-                'status' => 202,
-                'message' => 'Accepted',
+        $bridge_class = self::bridge_class;
+        $bridge = new $bridge_class(
+            [
+                'post_type' => '_',
+                'foreign_key' => 'id',
+                'endpoint' => $endpoint,
+                'backend' => $backend,
+                'method' => 'GET',
             ],
-            'http_response' => [
-                'data' => null,
-                'headers' => null,
-                'status' => null,
-            ],
-            'data' => [],
-        ];
+            self::name
+        );
+
+        return $bridge->fetch();
     }
 
     /**

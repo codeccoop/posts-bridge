@@ -10,6 +10,11 @@ if (!defined('ABSPATH')) {
 
 class WP_Post_Bridge extends Post_Bridge
 {
+    public function __construct($data)
+    {
+        parent::__construct($data, 'wp');
+    }
+
     public function __get($name)
     {
         switch ($name) {
@@ -31,6 +36,10 @@ class WP_Post_Bridge extends Post_Bridge
      */
     public function fetch($foreign_id = null, $params = [], $headers = [])
     {
+        if (!$this->is_valid) {
+            return new WP_Error('invalid_bridge');
+        }
+
         if ($foreign_id) {
             $params = ['context' => 'edit'];
         }
@@ -41,13 +50,16 @@ class WP_Post_Bridge extends Post_Bridge
             return $response;
         }
 
-        $response['data'] = $this->remote_data($response['data']);
+        if ($foreign_id) {
+            $response['data'] = $this->remote_data($response['data']);
+        }
+
         return $response;
     }
 
     public function foreign_ids()
     {
-        $posts = $this->get_paged();
+        $posts = $this->get_paged_ids();
 
         $ids = [];
         foreach ($posts as $post_data) {
@@ -57,7 +69,7 @@ class WP_Post_Bridge extends Post_Bridge
         return $ids;
     }
 
-    private function get_paged($page = 1)
+    private function get_paged_ids($page = 1)
     {
         $pages = 1e10;
         $endpoint = $this->endpoint();
