@@ -361,7 +361,7 @@ class Custom_Post_Type
         }
     }
 
-    private static function post_types()
+    public static function post_types()
     {
         $post_types = array_keys(get_post_types());
 

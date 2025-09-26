@@ -4,6 +4,7 @@ use POSTS_BRIDGE\Addon;
 use POSTS_BRIDGE\Post_Bridge;
 use HTTP_BRIDGE\Backend;
 use HTTP_BRIDGE\Credential;
+use POSTS_BRIDGE\Custom_Post_Type;
 
 if (!defined('ABSPATH')) {
     exit();
@@ -25,7 +26,7 @@ class PBAPI
 
     public static function get_post_types()
     {
-        return array_keys(get_post_types());
+        return Custom_Post_Type::post_types();
     }
 
     public static function get_custom_post_types()
