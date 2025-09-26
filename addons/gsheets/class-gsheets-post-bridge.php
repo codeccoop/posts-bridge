@@ -15,7 +15,7 @@ class GSheets_Post_Bridge extends Post_Bridge
      *
      * @var array
      */
-    private static $rows = [];
+    private static $rows = null;
 
     public function __construct($data)
     {
@@ -63,6 +63,23 @@ class GSheets_Post_Bridge extends Post_Bridge
         return $range;
     }
 
+    private function values_to_rows($values)
+    {
+        $headers = $values[0] ?? [];
+
+        $rows = [];
+        for ($i = 1; $i <= count($values); $i++) {
+            $row = [];
+            for ($j = 0; $j < count($headers); $j++) {
+                $row[$headers[$j]] = $values[$i][$j] ?? '';
+            }
+
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
     public function get_headers($backend = null)
     {
         if (!$this->is_valid) {
@@ -81,7 +98,10 @@ class GSheets_Post_Bridge extends Post_Bridge
             return $response;
         }
 
-        return $response['data']['values'][0] ?? [];
+        $values = $response['data']['values'];
+
+        self::$rows = $this->values_to_rows($values);
+        return $values[0] ?? [];
     }
 
     private function add_sheet($index, $title, $backend)
@@ -142,7 +162,22 @@ class GSheets_Post_Bridge extends Post_Bridge
 
         foreach ($rows as $row) {
             if ($row[$this->foreign_key] === $foreign_id) {
-                return $row;
+                return [
+                    'headers' => [],
+                    'cookies' => [],
+                    'filename' => null,
+                    'body' => json_encode($row),
+                    'response' => [
+                        'status' => 200,
+                        'message' => 'Success',
+                    ],
+                    'http_response' => [
+                        'data' => null,
+                        'headers' => null,
+                        'status' => null,
+                    ],
+                    'data' => $row,
+                ];
             }
         }
 
@@ -151,7 +186,7 @@ class GSheets_Post_Bridge extends Post_Bridge
 
     private function get_rows()
     {
-        if (self::$rows) {
+        if (self::$rows !== null) {
             return self::$rows;
         }
 
@@ -169,14 +204,15 @@ class GSheets_Post_Bridge extends Post_Bridge
             }
         }
 
-        $endpoint = $this->endpoint . '/values';
+        $endpoint = $this->endpoint . '/values/' . rawurldecode($this->tab); // . '!A1:Z';
 
         $response = $this->backend->get($endpoint);
         if (is_wp_error($response)) {
             return $response;
         }
 
-        self::$rows = $response['data'];
+        self::$rows = $this->values_to_rows($response['data']['values']);
+        return self::$rows;
     }
 
     public function foreign_ids()
