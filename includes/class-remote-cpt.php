@@ -22,13 +22,6 @@ class Remote_CPT
     public const _foreign_key_handle = '_posts_bridge_foreign_key';
 
     /**
-     * Handles remote cpt locale.
-     *
-     * @var string $locale
-     */
-    private $locale;
-
-    /**
      * Handle value of the remote model foreign key.
      *
      * @var string $foreign_id Foreign key value.
@@ -65,13 +58,6 @@ class Remote_CPT
         $this->post = $post;
         $this->foreign_id = $foreign_id;
         $this->remote_data = $remote_data;
-
-        $this->locale = apply_filters(
-            'wpct_i18n_post_language',
-            null,
-            $this->ID,
-            'locale'
-        );
     }
 
     /**
@@ -86,12 +72,6 @@ class Remote_CPT
         } elseif ($this->remote_data) {
             return $this->remote_data;
         }
-
-        add_filter(
-            'wpct_i18n_current_language',
-            [$this, 'language_interceptor'],
-            99
-        );
 
         $response = $this->bridge()->fetch($this->foreign_id());
 
@@ -210,25 +190,5 @@ class Remote_CPT
     public function meta($field, $single = true)
     {
         return get_post_meta($this->ID, $field, $single);
-    }
-
-    /**
-     * I18n current language interceptor.
-     *
-     * @param string $lang API language locale.
-     */
-    public function language_interceptor($locale)
-    {
-        if ($this->locale) {
-            $locale = $this->locale;
-        }
-
-        remove_filter(
-            'wpct_i18n_current_language',
-            [$this, 'language_interceptor'],
-            99
-        );
-
-        return $locale;
     }
 }

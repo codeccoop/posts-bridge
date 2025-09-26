@@ -38,7 +38,6 @@ require_once 'deps/http/http-bridge.php';
 // Classes
 require_once 'includes/class-api.php';
 require_once 'includes/class-custom-post-type.php';
-require_once 'includes/class-i18n.php';
 require_once 'includes/class-json-finger.php';
 require_once 'includes/class-settings-store.php';
 require_once 'includes/class-logger.php';
