@@ -1,4 +1,4 @@
-=== Posts Bridge ===
+=== Posts Bridge - Remote CMS ===
 Contributors: codeccoop
 Tags: posts, synchronization, http, api, backend
 License: GPLv2 or later
@@ -6,7 +6,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Stable Tag: 4.0.0
 Tested up to: 6.7
 
-Bridge your posts collections with your backend over HTTP API, enabling remote and automated web content management.
+Bridge your posts collections with your backend over HTTP APIs, enabling remote and automated web content management.
 
 == How it works ==
 

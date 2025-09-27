@@ -2,8 +2,8 @@
 
 /**
  * Plugin Name:         Posts Bridge
- * Plugin URI:          https://git.coopdevs.org/codeccoop/wp/plugins/bridges/posts-bridge
- * Description:         Bridge backend data to WP posts collections
+ * Plugin URI:          https://postsbridge.codeccoop.org
+ * Description:         Bridge your posts collections with your backend over HTTP APIs, enabling remote and automated web content management
  * Author:              codeccoop
  * Author URI:          https://www.codeccoop.org
  * License:             GPLv2 or later
