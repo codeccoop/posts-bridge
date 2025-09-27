@@ -1,4 +1,5 @@
 // source
+import useAllRCPTs from "../../hooks/useRemoteCPTs";
 import { usePostTypes } from "../../hooks/useGeneral";
 import { useBridges, useRemoteCPTs } from "../../hooks/useAddon";
 import ApiSchemaProvider from "../../providers/ApiSchema";
@@ -25,8 +26,13 @@ const DEFAULTS = {
 export default function Bridges() {
   const { bridge: schema } = useSchemas();
   const [bridges, setBridges] = useBridges();
+  const allRcpts = useAllRCPTs();
   const rcpts = useRemoteCPTs();
   const postTypes = usePostTypes();
+
+  const freePostTypes = useMemo(() => {
+    return postTypes.filter((p) => !allRcpts.has(p));
+  }, [postTypes, allRcpts]);
 
   const tabs = useMemo(() => {
     return Array.from(rcpts)
@@ -68,12 +74,14 @@ export default function Bridges() {
   };
 
   const copyBridge = (post_type) => {
+    if (!freePostTypes.length) return;
+
     const i = bridges.findIndex((b) => b.post_type === post_type);
     const bridge = bridges[i];
 
     const copy = {
       ...bridge,
-      post_type: postTypes.find((p) => !rcpts.has(p)),
+      post_type: freePostTypes.find((p) => !allRcpts.has(p)),
       field_mappers: JSON.parse(JSON.stringify(bridge.field_mappers || [])),
       tax_mappers: JSON.parse(JSON.stringify(bridge.tax_mappers || [])),
     };

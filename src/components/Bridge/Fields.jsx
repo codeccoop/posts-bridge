@@ -32,7 +32,7 @@ export default function BridgeFields({ data, setData, schema, errors = {} }) {
         label: postType,
         value: postType,
       }));
-  }, [postTypes]);
+  }, [data.post_type, postTypes, rcpts]);
 
   const [backends] = useBackends();
   const backendOptions = useMemo(() => {
@@ -82,7 +82,7 @@ export default function BridgeFields({ data, setData, schema, errors = {} }) {
 
         return field;
       });
-  }, [schema, backendOptions]);
+  }, [schema, backendOptions, postTypeOptions]);
 
   useEffect(() => {
     const defaults = fields.reduce((defaults, field) => {
