@@ -1,15 +1,8 @@
 // source
-import JsonFinger from "../../lib/JsonFinger";
-import { useApiFields } from "../../providers/ApiSchema";
-import DropdownSelect from "../DropdownSelect";
+import MappersTable from "./Table";
 
-const {
-  BaseControl,
-  TextControl,
-  Button,
-  __experimentalSpacer: Spacer,
-} = wp.components;
-const { useState, useMemo } = wp.element;
+const { __experimentalSpacer: Spacer } = wp.components;
+const { useMemo } = wp.element;
 const { __ } = wp.i18n;
 
 const MODEL = {
@@ -20,325 +13,98 @@ const MODEL = {
   post_status: __("Status", "posts-bridge"),
   featured_media: __("Featured media", "posts-bridge"),
   post_date: __("Date", "posts-bridge"),
+};
+
+const TAXONOMIES = {
   post_category: __("Categories", "posts-bridge"),
   tags_input: __("Tags", "posts-bridge"),
 };
 
-const INVALID_TO_STYLE = {
-  "--wp-components-color-accent": "#cc1818",
-  "color":
-    "var(--wp-components-color-accent, var(--wp-admin-theme-color, #3858e9))",
-  "borderColor":
-    "var(--wp-components-color-accent, var(--wp-admin-theme-color, #3858e9))",
-};
-
-function useInputStyle(name = "") {
-  const inputStyle = {
-    height: "40px",
-    paddingLeft: "12px",
-    paddingRight: "12px",
-    fontSize: "13px",
-    borderRadius: "2px",
-    width: "100%",
-    display: "block",
-  };
-
-  if (name.length && (!JsonFinger.validate(name) || /\[\]/.test(name))) {
-    return { ...inputStyle, ...INVALID_TO_STYLE };
-  }
-
-  return inputStyle;
-}
-
-export default function Mappers({ mappers, setMappers }) {
-  const apiFields = useApiFields();
-
-  const apiFieldOptions = useMemo(() => {
-    return apiFields.map((field) => ({
-      value: field.name,
-      label: `${field.name} | ${field.schema.type}`,
-    }));
-  }, [apiFields]);
-
-  const [fieldSelector, setFieldSelector] = useState(-1);
-
+export default function Mappers({
+  fieldMappers,
+  setFieldMappers,
+  taxMappers,
+  setTaxMappers,
+}) {
   const fields = useMemo(() => {
-    return mappers.map((m, index) => ({ ...m, index }));
-  }, [mappers]);
+    return Object.keys(MODEL)
+      .map((name) => {
+        return (
+          fieldMappers.find((m) => m.name === name) || { name, foreign: "" }
+        );
+      })
+      .map((m) => ({ ...m, isCustom: false, label: MODEL[m.name] }))
+      .concat(
+        fieldMappers
+          .filter((m) => !MODEL[m.name])
+          .map((m) => ({ ...m, isCustom: true }))
+      );
+  }, [fieldMappers]);
 
   const postFields = useMemo(() => {
-    return Object.keys(MODEL).map((key) => {
-      const field = fields.find(({ name }) => name === key);
-      return field || { name: key, value: "", index: null };
-    });
+    return fields.slice(0, Object.keys(MODEL).length);
   }, [fields]);
 
   const customFields = useMemo(() => {
-    const customs = fields.filter(
-      ({ name }) => !Object.hasOwnProperty.call(MODEL, name)
-    );
-
-    if (!customs.length) {
-      return [{ name: "", foreign: "", index: fields.length }];
-    }
-
-    return customs;
+    return fields.slice(Object.keys(MODEL).length);
   }, [fields]);
 
-  const addMapper = (index) => {
-    const newMappers = mappers
-      .slice(0, index)
-      .concat([{ name: "", foreign: "" }])
-      .concat(mappers.slice(index, mappers.length));
+  const taxonomies = useMemo(() => {
+    return Object.keys(TAXONOMIES)
+      .map((name) => {
+        return taxMappers.find((m) => m.name === name) || { name, foreign: "" };
+      })
+      .map((m) => ({ ...m, isCustom: false, label: TAXONOMIES[m.name] }))
+      .concat(
+        taxMappers
+          .filter((m) => !TAXONOMIES[m.name])
+          .map((m) => ({ ...m, isCustom: true }))
+      );
+  }, [taxMappers]);
 
-    setMappers(newMappers);
-  };
+  if (!customFields.length) {
+    setFieldMappers(fieldMappers.concat({ name: "", foreign: "" }));
+  }
 
-  const setMapper = (attr, index, value) => {
-    const newMappers = mappers.map((mapper, i) => {
-      if (index === i) {
-        mapper[attr] = value;
-
-        if (attr === "name" && mapper.foreign !== value) {
-          mapper.name = value;
-        }
-      }
-
-      return { ...mapper };
-    });
-
-    if (index >= newMappers.length) {
-      newMappers.push({ name: "", foreign: "", [attr]: value });
-    }
-
-    setMappers(newMappers);
-  };
-
-  const setPostField = (name, index, foreign) => {
-    if (index !== null) {
-      setMapper("foreign", index, foreign);
-    } else {
-      const newMappers = mappers.concat({
-        name,
-        foreign,
-      });
-
-      setMappers(newMappers);
-    }
-  };
-
-  const dropMapper = (index) => {
-    const newMappers = mappers.slice(0, index).concat(mappers.slice(index + 1));
-    setMappers(newMappers);
-  };
-
-  if (fields.length === 0) addMapper(0);
+  if (!taxonomies.slice(2).length) {
+    setTaxMappers(taxMappers.concat({ name: "", foreign: "" }));
+  }
 
   return (
     <div>
-      <label
-        className="components-base-control__label"
-        style={{
-          fontSize: "11px",
-          textTransform: "uppercase",
-          fontWeight: 500,
-          marginBottom: "calc(8px)",
-        }}
-      >
-        {__("Post fields", "posts-bridge")}
-      </label>
-      <table
-        style={{
-          width: "calc(100% + 10px)",
-          minWidth: "500px",
-          borderSpacing: "5px",
-          margin: "0 -5px",
-        }}
-      >
-        <colgroup>
-          <col span="1" style={{ width: "clamp(150px, 15vw, 300px)" }} />
-          <col span="1" style={{ width: "auto" }} />
-          <col span="1" style={{ width: "85px" }} />
-        </colgroup>
-        <tbody>
-          {postFields.map(({ name, foreign, index }, i) => (
-            <tr key={name}>
-              <td>
-                <b>{MODEL[name]}</b>
-              </td>
-              <td>
-                <div style={{ display: "flex" }}>
-                  <div style={{ flex: 1 }}>
-                    <BaseControl __nextHasNoMarginBottom __next40pxDefaultSize>
-                      <input
-                        type="text"
-                        placeholder={__("Foreign field name", "posts-bridge")}
-                        value={foreign || ""}
-                        onChange={(ev) =>
-                          setPostField(name, index, ev.target.value)
-                        }
-                        style={useInputStyle(foreign)}
-                      />
-                    </BaseControl>
-                  </div>
-                  <Button
-                    style={{
-                      height: "40px",
-                      width: "40px",
-                      justifyContent: "center",
-                      marginLeft: "2px",
-                    }}
-                    disabled={apiFieldOptions.length === 0}
-                    size="compact"
-                    variant="secondary"
-                    onClick={() => setFieldSelector(i)}
-                    __next40pxDefaultSize
-                  >
-                    {"{...}"}
-                    {fieldSelector === i && (
-                      <DropdownSelect
-                        title={__("Fields", "forms-bridge")}
-                        tags={apiFieldOptions}
-                        onChange={(fieldName) => {
-                          setFieldSelector(-1);
-                          setPostField(name, index, fieldName);
-                        }}
-                        onFocusOutside={() => setFieldSelector(-1)}
-                      />
-                    )}
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <MappersTable
+        title={__("Post fields", "posts-bridge")}
+        mappers={postFields}
+        setMappers={(postFields) =>
+          setFieldMappers(
+            postFields
+              .concat(customFields)
+              .map(({ name, foreign }) => ({ name, foreign }))
+          )
+        }
+      />
       <Spacer paddingY="calc(3px)" />
-      <div style={{ display: "flex" }}>
-        <label
-          className="components-base-control__label"
-          style={{
-            fontSize: "11px",
-            textTransform: "uppercase",
-            fontWeight: 500,
-            lineHeight: "32px",
-          }}
-        >
-          {__("Custom fields", "posts-bridge")}
-        </label>
-      </div>
-      <table
-        style={{
-          width: "calc(100% + 10px)",
-          minWidth: "500px",
-          borderSpacing: "5px",
-          margin: "0 -5px",
-        }}
-      >
-        <colgroup>
-          <col span="1" style={{ width: "clamp(150px, 15vw, 300px)" }} />
-          <col span="1" style={{ width: "auto" }} />
-          <col span="1" style={{ width: "85px" }} />
-        </colgroup>
-        <tbody>
-          {customFields.map(({ foreign, name, index }, i) => (
-            <tr key={index}>
-              <td>
-                <TextControl
-                  placeholder={__("Custom field name", "posts-bridge")}
-                  value={name}
-                  onChange={(value) => setMapper("name", index, value)}
-                  __nextHasNoMarginBottom
-                  __next40pxDefaultSize
-                />
-              </td>
-              <td>
-                <div style={{ display: "flex" }}>
-                  <div style={{ flex: 1 }}>
-                    <BaseControl __nextHasNoMarginBottom __next40pxDefaultSize>
-                      <input
-                        type="text"
-                        placeholder={__("Foreign field name", "posts-bridge")}
-                        value={foreign || ""}
-                        onChange={(ev) =>
-                          setMapper("foreign", index, ev.target.value)
-                        }
-                        style={useInputStyle(foreign)}
-                      />
-                    </BaseControl>
-                  </div>
-                  <Button
-                    style={{
-                      height: "40px",
-                      width: "40px",
-                      justifyContent: "center",
-                      marginLeft: "2px",
-                    }}
-                    disabled={!name || apiFieldOptions.length === 0}
-                    size="compact"
-                    variant="secondary"
-                    onClick={() =>
-                      setFieldSelector(i + Object.keys(MODEL).length)
-                    }
-                    __next40pxDefaultSize
-                  >
-                    {"{...}"}
-                    {fieldSelector === i + Object.keys(MODEL).length && (
-                      <DropdownSelect
-                        title={__("Fields", "forms-bridge")}
-                        tags={apiFieldOptions}
-                        onChange={(fieldName) => {
-                          setFieldSelector(-1);
-                          setMapper("foreign", index, fieldName);
-                        }}
-                        onFocusOutside={() => setFieldSelector(-1)}
-                      />
-                    )}
-                  </Button>
-                </div>
-              </td>
-              <td>
-                <div
-                  style={{
-                    display: "flex",
-                    marginLeft: "0.45em",
-                    gap: "0.45em",
-                  }}
-                >
-                  <Button
-                    size="compact"
-                    variant="secondary"
-                    disabled={!name || !foreign}
-                    onClick={() => addMapper(index + 1)}
-                    style={{
-                      width: "40px",
-                      height: "40px",
-                      justifyContent: "center",
-                    }}
-                    __next40pxDefaultSize
-                  >
-                    +
-                  </Button>
-                  <Button
-                    disabled={customFields.length === 1}
-                    variant="secondary"
-                    onClick={() => dropMapper(index)}
-                    style={{
-                      width: "40px",
-                      height: "40px",
-                      justifyContent: "center",
-                    }}
-                    isDestructive
-                    __next40pxDefaultSize
-                  >
-                    -
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <MappersTable
+        title={__("Taxonomies", "posts-bridge")}
+        mappers={taxonomies}
+        setMappers={(taxonomies) =>
+          setTaxMappers(
+            taxonomies.map(({ name, foreign }) => ({ name, foreign }))
+          )
+        }
+      />
+      <Spacer paddingY="calc(3px)" />
+      <MappersTable
+        title={__("Custom fields", "posts-bridge")}
+        mappers={customFields}
+        setMappers={(customFields) =>
+          setFieldMappers(
+            postFields
+              .concat(customFields)
+              .map(({ name, foreign }) => ({ name, foreign }))
+          )
+        }
+      />
     </div>
   );
 }

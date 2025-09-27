@@ -48,6 +48,11 @@ add_filter(
                         'name' => 'method',
                         'value' => 'GET',
                     ],
+                    [
+                        'ref' => '#bridge',
+                        'name' => 'foreign_key',
+                        'value' => 'id',
+                    ],
                 ],
                 'backend' => [
                     'name' => 'Dolibarr',

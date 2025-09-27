@@ -8,7 +8,7 @@ return [
     'title' => __('Sample', 'posts-bridge'),
     'fielfs' => [],
     'bridge' => [
-        'mappers' => [
+        'field_mappers' => [
             [
                 'name' => 'post_title',
                 'foreign' => 'title',

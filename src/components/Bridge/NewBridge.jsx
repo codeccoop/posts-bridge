@@ -141,8 +141,12 @@ export default function NewBridge({ add, schema, rcpts }) {
         }
       >
         <Mappers
-          mappers={data.mappers || []}
-          setMappers={(mappers) => setData({ ...data, mappers })}
+          fieldMappers={data.field_mappers || []}
+          setFieldMappers={(field_mappers) =>
+            setData({ ...data, field_mappers })
+          }
+          taxMappers={data.tax_mappers || []}
+          setTaxMappers={(tax_mappers) => setData({ ...data, tax_mappers })}
         />
         <div
           style={{

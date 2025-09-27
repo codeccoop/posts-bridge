@@ -15,7 +15,7 @@ return [
     ],
     'bridge' => [
         'endpoint' => 'product.variant',
-        'mappers' => [
+        'field_mappers' => [
             [
                 'name' => 'post_title',
                 'foreign' => 'display_name',

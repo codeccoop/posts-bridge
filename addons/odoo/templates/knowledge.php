@@ -15,7 +15,7 @@ return [
     ],
     'bridge' => [
         'endpoint' => 'document.page',
-        'mappers' => [
+        'field_mappers' => [
             [
                 'name' => 'post_title',
                 'foreign' => 'name',

@@ -8,7 +8,12 @@ import FieldWrapper from "../FieldWrapper";
 const { TextControl, SelectControl } = wp.components;
 const { useEffect, useMemo } = wp.element;
 
-export const INTERNALS = ["enabled", "is_valid", "mappers"];
+export const INTERNALS = [
+  "enabled",
+  "is_valid",
+  "field_mappers",
+  "tax_mappers",
+];
 
 const ORDER = ["name", "backend", "endpoint", "method"];
 

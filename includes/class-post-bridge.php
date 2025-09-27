@@ -71,6 +71,7 @@ class Post_Bridge
                     ),
                     'type' => 'string',
                     'minLength' => 1,
+                    'default' => 'post',
                 ],
                 'foreign_key' => [
                     'title' => _x(
@@ -83,12 +84,13 @@ class Post_Bridge
                         'posts-birdge'
                     ),
                     'type' => 'string',
+                    'default' => 'id',
                 ],
                 'backend' => [
                     'title' => _x('Backend', 'Bridge schema', 'posts-bridge'),
                     'description' => __('Backend name', 'posts-bridge'),
                     'type' => 'string',
-                    // 'default' => '',
+                    'default' => '',
                 ],
                 'endpoint' => [
                     'title' => _x('Endpoint', 'Bridge schema', 'posts-bridge'),
@@ -103,7 +105,32 @@ class Post_Bridge
                     'enum' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
                     'default' => 'GET',
                 ],
-                'mappers' => [
+                'tax_mappers' => [
+                    'description' => __(
+                        'Array of bridge remote taxonomy mappings',
+                        'posts-bridge'
+                    ),
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'name' => [
+                                'type' => 'string',
+                                'minLength' => 1,
+                            ],
+                            'foreign' => [
+                                'type' => 'string',
+                                'minLength' => 1,
+                                'validate_callback' =>
+                                    '\POSTS_BRIDGE\JSON_Finger::validate',
+                            ],
+                        ],
+                        'additionalProperties' => false,
+                        'required' => ['name', 'foreign'],
+                    ],
+                    'default' => [],
+                ],
+                'field_mappers' => [
                     'description' => __(
                         'Array of bridge\'s remote field mappings',
                         'posts-bridge'
@@ -151,7 +178,8 @@ class Post_Bridge
                 'backend',
                 'method',
                 'endpoint',
-                'mappers',
+                'tax_mappers',
+                'field_mappers',
                 'is_valid',
                 'enabled',
             ],
@@ -359,6 +387,20 @@ class Post_Bridge
         return $ids;
     }
 
+    final public function remote_taxonomies()
+    {
+        $taxonomies = [];
+        foreach ($this->tax_mappers as $mapper) {
+            if (empty($mapper['foreign']) || empty($mapper['name'])) {
+                continue;
+            }
+
+            $taxonomies[$mapper['foreign']] = $mapper['name'];
+        }
+
+        return $taxonomies;
+    }
+
     /**
      * Bridge's remote fields getter.
      *
@@ -380,7 +422,7 @@ class Post_Bridge
     final public function remote_post_fields()
     {
         $fields = [];
-        foreach ($this->mappers as $mapper) {
+        foreach ($this->field_mappers as $mapper) {
             if (empty($mapper['name']) || empty($mapper['foreign'])) {
                 continue;
             }
@@ -401,7 +443,7 @@ class Post_Bridge
     final public function remote_custom_fields()
     {
         $fields = [];
-        foreach ($this->mappers as $mapper) {
+        foreach ($this->field_mappers as $mapper) {
             if (empty($mapper['foreign']) || empty($mapper['name'])) {
                 continue;
             }
@@ -421,11 +463,12 @@ class Post_Bridge
      *
      * @return array Data with remote fields mappeds.
      */
-    final public function map_remote_fields($data)
+    final public function apply_mappers($data)
     {
         $finger = new JSON_Finger($data);
         $post_fields = $this->remote_post_fields();
         $custom_fields = $this->remote_custom_fields();
+        $taxonomies = $this->remote_taxonomies();
 
         foreach ($post_fields as $foreign => $name) {
             if ($foreign === $name) {
@@ -456,18 +499,37 @@ class Post_Bridge
             $finger->unset($foreign);
         }
 
-        $data = $finger->data();
+        $tax_input = [];
+        foreach ($taxonomies as $foreign => $name) {
+            if ($terms = $finger->get($foreign)) {
+                if ($name === 'tags_input') {
+                    $terms = $this->get_post_tags($terms);
 
-        // Prepare tags value for post insert
-        if (isset($data['tags_input'])) {
-            $data['tags_input'] = $this->get_post_tags($data['tags_input']);
+                    if (count($terms)) {
+                        $finger->set('tags_input', $terms);
+                    }
+                } elseif ($name === 'post_category') {
+                    $terms = $this->get_post_terms($terms);
+
+                    if (count($terms)) {
+                        $finger->set('post_category', $terms);
+                    }
+                } else {
+                    $terms = $this->get_post_terms($terms);
+
+                    if (count($terms)) {
+                        $tax_input[$name] = $terms;
+                    }
+                }
+            }
+
+            $finger->unset($foreign);
         }
 
-        // Prepare categories value for post insert
-        if (isset($data['post_category'])) {
-            $data['post_category'] = $this->get_post_categories(
-                $data['post_category']
-            );
+        $data = $finger->data();
+
+        if (count($tax_input)) {
+            $data['tax_input'] = $tax_input;
         }
 
         // post type should not be user declarable
@@ -490,17 +552,12 @@ class Post_Bridge
      *
      * @return array Array with valid categories ids.
      */
-    private function get_post_categories($categories)
-    {
-        if (!wp_is_numeric_array($categories)) {
-            $categories = $this->get_post_tags($categories);
-        }
-
-        return $this->get_post_terms($categories, 'category');
-    }
-
     private function get_post_terms($names, $taxonomy = 'category')
     {
+        if (!wp_is_numeric_array($names)) {
+            $names = $this->get_post_tags($names);
+        }
+
         $terms = get_terms(['taxonomy' => $taxonomy, 'hide_empty' => false]);
         $term_names = [];
         foreach ($terms as $term) {

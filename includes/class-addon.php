@@ -315,14 +315,37 @@ class Addon extends Singleton
             $bridge['backend'] = '';
         }
 
+        $uniques = [];
         $mappers = [];
-        foreach ($bridge['mappers'] ?? [] as $mapper) {
-            if (!empty($mapper['name']) && !empty(['foreign'])) {
-                $mappers[] = $mapper;
+        foreach ($bridge['field_mappers'] ?? [] as $mapper) {
+            if (
+                empty($mapper['name']) ||
+                in_array($mapper['name'], $uniques, true)
+            ) {
+                continue;
             }
+
+            $uniques[] = $mapper['name'];
+            $mappers[] = $mapper;
         }
 
-        $bridge['mappers'] = $mappers;
+        $bridge['field_mappers'] = $mappers;
+
+        $uniques = [];
+        $mappers = [];
+        foreach ($bridge['tax_mappers'] ?? [] as $mapper) {
+            if (
+                empty($mapper['name']) ||
+                in_array($mapper['name'], $uniques, true)
+            ) {
+                continue;
+            }
+
+            $uniques[] = $mapper['name'];
+            $mappers[] = $mapper;
+        }
+
+        $bridge['tax_mappers'] = $mappers;
 
         $bridge['is_valid'] =
             $bridge['backend'] && $bridge['method'] && $bridge['endpoint'];

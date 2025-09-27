@@ -471,7 +471,7 @@ class Posts_Synchronizer extends Singleton
                 continue;
             }
 
-            $data = $bridge->map_remote_fields($data);
+            $data = $bridge->apply_mappers($data);
 
             $data['post_type'] = $post_type;
 

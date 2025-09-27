@@ -15,7 +15,7 @@ return [
     ],
     'bridge' => [
         'endpoint' => '/api/index.php/products',
-        'mappers' => [
+        'field_mappers' => [
             [
                 'name' => 'post_title',
                 'foreign' => 'label',

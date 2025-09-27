@@ -18,7 +18,8 @@ const CSS = `.bridges-tabs-panel .components-tab-panel__tabs{overflow-x:auto;}
 const DEFAULTS = {
   enabled: true,
   is_valid: true,
-  mappers: [],
+  field_mappers: [],
+  tax_mappers: [],
 };
 
 export default function Bridges() {
@@ -73,7 +74,8 @@ export default function Bridges() {
     const copy = {
       ...bridge,
       post_type: postTypes.find((p) => !rcpts.has(p)),
-      mappers: JSON.parse(JSON.stringify(bridge.mappers || [])),
+      field_mappers: JSON.parse(JSON.stringify(bridge.field_mappers || [])),
+      tax_mappers: JSON.parse(JSON.stringify(bridge.tax_mappers || [])),
     };
 
     setBridges(bridges.concat(copy));

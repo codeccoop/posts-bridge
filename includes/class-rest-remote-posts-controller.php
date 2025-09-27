@@ -131,7 +131,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             }
         }
 
-        $prepared_data = wp_slash($bridge->map_remote_fields($payload));
+        $prepared_data = wp_slash($bridge->apply_mappers($payload));
         $prepared_post = array_merge((array) $prepared_post, $prepared_data);
 
         return (object) $prepared_post;

@@ -211,10 +211,18 @@ class Odoo_Post_Bridge extends Post_Bridge
         [$sid, $uid] = $session;
         $login[1] = $uid;
 
-        $fields = [];
         $foreigns = array_keys($this->remote_fields());
+        $foreigns = array_merge(
+            $foreigns,
+            array_keys($this->remote_taxonomies())
+        );
+
+        $fields = [];
         foreach ($foreigns as $foreign) {
-            $fields[] = preg_replace('/(\[|\.).*$/', '', $foreign);
+            $parts = JSON_Finger::parse($foreign);
+            if (count($parts)) {
+                $fields[] = $parts[0];
+            }
         }
 
         $args = array_merge($login, [$this->endpoint, $this->method]);
@@ -239,12 +247,16 @@ class Odoo_Post_Bridge extends Post_Bridge
     public function foreign_ids()
     {
         $bridge = $this->patch([
-            'name' => '__odoo-search',
             'method' => 'search',
-            'mappers' => [],
+            'field_mappers' => [],
+            'tax_mappers' => [],
         ]);
 
         $response = $bridge->fetch();
+        if (is_wp_error($response)) {
+            return [];
+        }
+
         return $response['data']['result'];
     }
 }

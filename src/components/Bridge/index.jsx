@@ -139,8 +139,12 @@ export default function Bridge({ data, update, remove, schema, copy }) {
         }
       >
         <Mappers
-          mappers={data.mappers || []}
-          setMappers={(mappers) => update({ ...data, mappers })}
+          fieldMappers={data.field_mappers || []}
+          setFieldMappers={(field_mappers) =>
+            update({ ...data, field_mappers })
+          }
+          taxMappers={data.tax_mappers || []}
+          setTaxMappers={(tax_mappers) => update({ ...data, tax_mappers })}
         />
         <div
           style={{
@@ -154,6 +158,7 @@ export default function Bridge({ data, update, remove, schema, copy }) {
         >
           <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
             <Button
+              disabled={!isValid || !data.enabled}
               variant="primary"
               onClick={triggerSync}
               style={{ width: "150px", justifyContent: "center" }}
@@ -162,6 +167,7 @@ export default function Bridge({ data, update, remove, schema, copy }) {
               {__("Syncrhonize", "posts-bridge")}
             </Button>
             <ToggleControl
+              disabled={!isValid || !data.enabled}
               label={__("Full sync", "posts-bridge")}
               checked={fullMode}
               onChange={() => setFullMode(!fullMode)}

@@ -20,7 +20,7 @@ return [
     ],
     'bridge' => [
         'endpoint' => '/wp-json/wp/v2/pages',
-        'mappers' => [
+        'field_mappers' => [
             [
                 'name' => 'post_title',
                 'foreign' => 'title.raw',

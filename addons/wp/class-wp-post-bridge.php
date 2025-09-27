@@ -139,6 +139,7 @@ class WP_Post_Bridge extends Post_Bridge
             $res = $backend->get(
                 $data['_links']['wp:featuredmedia'][0]['href']
             );
+
             if (!is_wp_error($res)) {
                 $attachment = $res['data'];
                 $data['featured_media'] = $attachment['source_url'];
@@ -149,7 +150,7 @@ class WP_Post_Bridge extends Post_Bridge
         $known_taxonomies = array_keys(get_taxonomies());
 
         foreach ($taxonomies as $tax) {
-            if (!in_array($tax['taxonomy'], $known_taxonomies)) {
+            if (!in_array($tax['taxonomy'], $known_taxonomies, true)) {
                 continue;
             }
 
@@ -172,48 +173,18 @@ class WP_Post_Bridge extends Post_Bridge
                         ? 'categories'
                         : $tax['taxonomy']);
 
-            $pk = $tax['taxonomy'] === 'post_tag' ? 'name' : 'term_id';
-
             $res = $backend->get($tax['href']);
             if (is_wp_error($res)) {
                 continue;
             }
 
+            $names = [];
             $terms = $res['data'];
             foreach ($terms as $term) {
-                $ids = [];
-                foreach ($data[$field] as $term_id) {
-                    if ($term_id == $term['id']) {
-                        $wp_terms = get_terms([
-                            'taxonomy' => $tax['taxonomy'],
-                            'hide_empty' => false,
-                        ]);
-
-                        $exists = false;
-                        foreach ($wp_terms as $wp_term) {
-                            if ($wp_term->name === $term['name']) {
-                                $exists = true;
-                                break;
-                            }
-                        }
-
-                        if (!$exists) {
-                            $term = wp_insert_term(
-                                $term['name'],
-                                $tax['taxonomy']
-                            );
-
-                            if (!is_wp_error($term)) {
-                                $ids[] = $term[$pk];
-                            }
-                        } else {
-                            $ids[] = $wp_term->$pk;
-                        }
-                    }
-                }
-
-                $data[$field] = $ids;
+                $names[] = $term['name'];
             }
+
+            $data[$field] = $names;
         }
 
         return $data;
