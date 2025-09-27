@@ -3,6 +3,7 @@
 namespace POSTS_BRIDGE;
 
 use Error;
+use PBAPI;
 use WP_Error;
 use WP_REST_Posts_Controller;
 use WP_REST_Post_Meta_Fields;
@@ -102,11 +103,9 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
      */
     private function is_own_route($request)
     {
-        $own_routes = $this->namespace . '/' . $this->rest_base;
-        return preg_match(
-            '/' . preg_quote($own_routes, '/') . '/',
-            $request->get_route()
-        );
+        $ns =
+            $this->namespace . '/' . $this->rest_base . '/' . $this->post_type;
+        return strstr($request->get_route(), $ns) !== false;
     }
 
     /**
@@ -123,7 +122,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             return $prepared_post;
         }
 
-        $bridge = apply_filters('posts_bridge_bridge', null, $this->post_type);
+        $bridge = PBAPI::get_bridge($this->post_type);
         $payload = $request->get_json_params();
         foreach ($payload as $field => $value) {
             if ($this->is_alias($field)) {
@@ -152,7 +151,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             return;
         }
 
-        $bridge = apply_filters('posts_bridge_bridge', null, $this->post_type);
+        $bridge = PBAPI::get_bridge($this->post_type);
 
         // Map custom featured media to the request before media handler execution
         foreach ($bridge->remote_post_fields() as $foreign => $name) {
@@ -253,7 +252,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             return $result;
         }
 
-        $bridge = apply_filters('posts_bridge_bridge', null, $this->post_type);
+        $bridge = PBAPI::get_bridge($this->post_type);
 
         // Use json fingers to get foreign key value from the request
         $foreign_key = $bridge->foreign_key;
