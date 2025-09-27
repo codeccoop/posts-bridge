@@ -134,8 +134,6 @@ export default function Mappers({ mappers, setMappers }) {
 
   if (fields.length === 0) addMapper(0);
 
-  console.log({ postFields, customFields });
-
   return (
     <div>
       <label
