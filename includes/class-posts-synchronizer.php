@@ -250,9 +250,10 @@ class Posts_Synchronizer extends Singleton
             Logger::log('Start scheduled synchronization');
 
             touch(POSTS_BRIDGE_DIR . '/sync-lock');
-            set_error_handler(function ($error) {
+            set_error_handler(function ($errno, $errstr) {
+                Logger::log($errstr, Logger::ERROR);
                 unlink(POSTS_BRIDGE_DIR . '/sync-lock');
-                wp_die($error->getMessage());
+                wp_die($errstr);
             });
 
             try {
@@ -336,9 +337,10 @@ class Posts_Synchronizer extends Singleton
             Logger::log('Start ajax synchronization');
 
             touch(POSTS_BRIDGE_DIR . '/sync-lock');
-            set_error_handler(function ($error) {
+            set_error_handler(function ($errno, $errstr) {
+                Logger::log($errstr, Logger::ERROR);
                 unlink(POSTS_BRIDGE_DIR . '/sync-lock');
-                wp_die($error->getMessage());
+                wp_die($errstr);
             });
 
             self::$sync_mode = $mode;
