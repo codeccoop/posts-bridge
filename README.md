@@ -8,7 +8,7 @@ Posts Bridge treats post collections as indexes that represents your backend dat
 
 ## Bridges
 
-Think of a bridge as a pipeline through which WordPress
+Think of a bridge as a mapping that bounds your backend data with a post type collection on your WordPress web page. Each item on your backend database can be converted to a post, and each field on your backend tables can be mapped to a post field or taxonomy. Once a bridge is configured, you can trigger manual synchronizations, or let Posts Bridge automatically synchronize content between the two sides on the background.
 
 ## Addons
 
@@ -51,11 +51,11 @@ To streamline the bridge setup process, Posts Bridge comes packed with templates
 
 ## Docs
 
-Browse the plugin's documentation on [postsbridge.codeccoop.org](https://postsbridge.codeccoop.org/documentation/).
+Browse the plugin's documentation on [postsbridge.codeccoop.org](https://postsbridge.codeccoop.org).
 
 ## Links
 
-* [Official website](https://postsbridge.codeccoop.org/)
+* [Official website](https://postsbridge.codeccoop.org)
 * [Gitlab](https://gitlab.com/codeccoop/wp/plugins/posts-bridge/)
 * [Còdec](https://www.codeccoop.org)
 * [Other plugins](https://profiles.wordpress.org/codeccoop/#content-plugins)
