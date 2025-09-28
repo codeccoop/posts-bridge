@@ -250,10 +250,19 @@ class Posts_Synchronizer extends Singleton
             Logger::log('Start scheduled synchronization');
 
             touch(POSTS_BRIDGE_DIR . '/sync-lock');
-            set_error_handler(function ($errno, $errstr) {
-                Logger::log($errstr, Logger::ERROR);
+            set_error_handler(function ($code, $message, $file, $line) {
+                Logger::log(
+                    [
+                        'code' => $code,
+                        'message' => $message,
+                        'file' => $file,
+                        'line' => $line,
+                    ],
+                    Logger::ERROR
+                );
+
                 unlink(POSTS_BRIDGE_DIR . '/sync-lock');
-                wp_die($errstr);
+                wp_die($message);
             });
 
             try {
@@ -337,10 +346,19 @@ class Posts_Synchronizer extends Singleton
             Logger::log('Start ajax synchronization');
 
             touch(POSTS_BRIDGE_DIR . '/sync-lock');
-            set_error_handler(function ($errno, $errstr) {
-                Logger::log($errstr, Logger::ERROR);
+            set_error_handler(function ($code, $message, $file, $line) {
+                Logger::log(
+                    [
+                        'code' => $code,
+                        'message' => $message,
+                        'file' => $file,
+                        'line' => $line,
+                    ],
+                    Logger::ERROR
+                );
+
                 unlink(POSTS_BRIDGE_DIR . '/sync-lock');
-                wp_die($errstr);
+                wp_die($message);
             });
 
             self::$sync_mode = $mode;
