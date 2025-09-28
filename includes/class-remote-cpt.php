@@ -77,10 +77,12 @@ class Remote_CPT
 
         if (is_wp_error($response)) {
             Logger::log(
-                'Remote CPT remote data fetch error: ' .
-                    $response->get_error_message(),
+                "Remote CPT({$this->post_type}) #{$this->ID} fetch error",
                 Logger::ERROR
             );
+
+            Logger::log($response, Logger::ERROR);
+
             $this->remote_data = $response;
             return [];
         }
@@ -90,6 +92,9 @@ class Remote_CPT
             $response['data'],
             $this
         );
+
+        Logger::log("Remote CPT({$this->post_type}) #{$this->ID} remote data");
+        Logger::log($this->remote_data);
 
         return $this->remote_data;
     }

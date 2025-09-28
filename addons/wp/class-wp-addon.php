@@ -39,14 +39,12 @@ class WP_Addon extends Addon
     public function ping($backend)
     {
         $bridge = new WP_Post_Bridge([
-            'post_type' => '_',
-            'foreign_key' => 'id',
             'method' => 'GET',
             'endpoint' => '/wp-json/wp/v2/posts',
             'backend' => $backend,
         ]);
 
-        $response = $bridge->fetch(null, ['context' => 'edit']);
+        $response = $bridge->fetch(['context' => 'edit']);
         return !is_wp_error($response);
     }
 

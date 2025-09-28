@@ -68,14 +68,12 @@ class Dolibarr_Addon extends Addon
     public function get_endpoint_schema($endpoint, $backend)
     {
         $bridge = new Dolibarr_Post_Bridge([
-            'post_type' => '_',
-            'foreign_key' => 'id',
             'endpoint' => $endpoint,
             'backend' => $backend,
             'method' => 'GET',
         ]);
 
-        $response = $bridge->fetch(null, ['limit' => 1]);
+        $response = $bridge->fetch(['limit' => 1]);
 
         if (is_wp_error($response)) {
             return [];

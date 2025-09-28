@@ -57,16 +57,9 @@ class WP_Post_Bridge extends Post_Bridge
         return $response;
     }
 
-    public function foreign_ids()
+    protected function list_remotes()
     {
-        $posts = $this->get_paged_ids();
-
-        $ids = [];
-        foreach ($posts as $post_data) {
-            $ids[] = $post_data['id'];
-        }
-
-        return $ids;
+        return $this->get_paged_ids();
     }
 
     private function get_paged_ids($page = 1)
@@ -90,7 +83,11 @@ class WP_Post_Bridge extends Post_Bridge
                 ]
             );
 
-            if (is_wp_error($res) || empty($res['data'])) {
+            if (is_wp_error($res)) {
+                return $res;
+            }
+
+            if (empty($res['data'])) {
                 break;
             }
 

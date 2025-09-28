@@ -23,19 +23,14 @@ class Dolibarr_Post_Bridge extends Post_Bridge
         }
     }
 
-    public function foreign_ids()
+    protected function list_remotes()
     {
-        $response = $this->fetch(null, ['properties' => 'id']);
+        $response = $this->fetch(['properties' => 'id']);
 
         if (is_wp_error($response)) {
-            return [];
+            return $response;
         }
 
-        $ids = [];
-        foreach ($response['data'] as $item_data) {
-            $ids[] = $item_data['id'];
-        }
-
-        return $ids;
+        return $response['data'];
     }
 }

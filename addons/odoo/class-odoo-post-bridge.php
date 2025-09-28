@@ -244,7 +244,7 @@ class Odoo_Post_Bridge extends Post_Bridge
         return $response;
     }
 
-    public function foreign_ids()
+    protected function list_remotes()
     {
         $bridge = $this->patch([
             'method' => 'search',
@@ -253,10 +253,13 @@ class Odoo_Post_Bridge extends Post_Bridge
         ]);
 
         $response = $bridge->fetch();
+
         if (is_wp_error($response)) {
-            return [];
+            return $response;
         }
 
-        return $response['data']['result'];
+        return array_map(function ($id) {
+            return ['id' => $id];
+        }, $response['data']['result']);
     }
 }

@@ -134,6 +134,9 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
         $prepared_data = wp_slash($bridge->apply_mappers($payload));
         $prepared_post = array_merge((array) $prepared_post, $prepared_data);
 
+        Logger::log("Remote CPT({$this->post_type}) REST API prepared post");
+        Logger::log($prepared_post);
+
         return (object) $prepared_post;
     }
 
@@ -283,7 +286,8 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller
             $request->set_param('id', (int) $wp_id);
         }
 
-        return $result;
+        Logger::log("Dispatch REST request for {$this->post_type} bridge");
+        Logger::log($request);
     }
 
     /**

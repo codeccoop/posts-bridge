@@ -316,6 +316,13 @@ class Post_Bridge
             return new WP_Error('invalid_bridge');
         }
 
+        // Function overload to allow calls without foreign_id
+        if (is_array($foreign_id)) {
+            $foreign_id = null;
+            $headers = $params;
+            $params = $foreign_id;
+        }
+
         $schema = $this->schema();
 
         if (
@@ -366,7 +373,7 @@ class Post_Bridge
         );
     }
 
-    public function foreign_ids()
+    protected function list_remotes()
     {
         $response = $this->fetch();
 
@@ -374,15 +381,45 @@ class Post_Bridge
             return $response;
         }
 
+        return $response['data'];
+    }
+
+    public function foreign_ids()
+    {
+        $items = $this->list_remotes();
+
+        if (is_wp_error($items)) {
+            Logger::log(
+                "Index fetch response error on the {$this->post_type} bridge",
+                Logger::ERROR
+            );
+
+            Logger::log($items, Logger::ERROR);
+
+            return [];
+        }
+
+        $items = apply_filters('posts_bridge_remote_items', $items, $this);
+
+        Logger::log(
+            "Found {count($items)} foreign items for the {$this->post_type} bridge",
+            Logger::DEBUG
+        );
+
         $ids = [];
-        foreach ($response['data'] as $item_data) {
-            $finger = new JSON_Finger($item_data);
+        foreach ($items as $item) {
+            $finger = new JSON_Finger($item);
             $id = $finger->get($this->foreign_key);
 
             if ($id) {
                 $ids[] = $id;
             }
         }
+
+        Logger::log(
+            "Found {count($ids)} foreign ids for the {$this->post_type} bridge",
+            Logger::DEBUG
+        );
 
         return $ids;
     }

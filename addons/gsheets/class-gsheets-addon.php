@@ -45,8 +45,6 @@ class GSheets_Addon extends Addon
     public function ping($backend)
     {
         $bridge = new GSheets_Post_Bridge([
-            'post_type' => '_',
-            'foreign_key' => 'id',
             'backend' => $backend,
             'endpoint' => '/',
             'method' => 'GET',

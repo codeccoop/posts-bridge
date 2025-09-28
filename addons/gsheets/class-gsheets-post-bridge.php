@@ -215,24 +215,14 @@ class GSheets_Post_Bridge extends Post_Bridge
         return self::$rows;
     }
 
-    public function foreign_ids()
+    protected function list_remotes()
     {
-        if (!$this->is_valid) {
-            return new WP_Error('invalid_bridge');
-        }
-
         $rows = $this->get_rows();
+
         if (is_wp_error($rows)) {
-            return [];
+            return $rows;
         }
 
-        $ids = [];
-        foreach ($rows as $row) {
-            if ($id = $row[$this->foreign_key] ?? null) {
-                $ids[] = $id;
-            }
-        }
-
-        return $ids;
+        return $rows;
     }
 }

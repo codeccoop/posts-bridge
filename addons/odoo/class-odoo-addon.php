@@ -45,8 +45,6 @@ class Odoo_Addon extends Addon
     public function ping($backend)
     {
         $bridge = new Odoo_Post_Bridge([
-            'post_type' => '_',
-            'foreign_key' => 'id',
             'method' => 'search',
             'endpoint' => 'res.users',
             'backend' => $backend,
@@ -67,13 +65,16 @@ class Odoo_Addon extends Addon
     public function fetch($endpoint, $backend)
     {
         $bridge = new Odoo_Post_Bridge([
-            'post_type' => '_',
             'method' => 'search_read',
             'endpoint' => $endpoint,
             'backend' => $backend,
+            'field_mappers' => [
+                ['name' => 'id', 'foreign' => 'id'],
+                ['name' => 'name', 'foreign' => 'name'],
+            ],
         ]);
 
-        return $bridge->fetch([], ['id', 'name']);
+        return $bridge->fetch();
     }
 
     /**
@@ -88,8 +89,6 @@ class Odoo_Addon extends Addon
     public function get_endpoint_schema($model, $backend)
     {
         $bridge = new Odoo_Post_Bridge([
-            'post_type' => '_',
-            'foreign_key' => 'id',
             'method' => 'fields_get',
             'endpoint' => $model,
             'backend' => $backend,
