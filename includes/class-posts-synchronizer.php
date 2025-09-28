@@ -248,7 +248,12 @@ class Posts_Synchronizer extends Singleton
             }
 
             Logger::log('Start scheduled synchronization');
+
             touch(POSTS_BRIDGE_DIR . '/sync-lock');
+            set_error_handler(function ($error) {
+                unlink(POSTS_BRIDGE_DIR . '/sync-lock');
+                wp_die($error->getMessage());
+            });
 
             try {
                 $bridges = PBAPI::get_bridges();
@@ -281,6 +286,7 @@ class Posts_Synchronizer extends Singleton
             } finally {
                 Logger::log('End scheduled synchronization');
 
+                restore_error_handler();
                 if (is_file(POSTS_BRIDGE_DIR . '/sync-lock')) {
                     unlink(POSTS_BRIDGE_DIR . '/sync-lock');
                 }
@@ -328,7 +334,12 @@ class Posts_Synchronizer extends Singleton
             }
 
             Logger::log('Start ajax synchronization');
+
             touch(POSTS_BRIDGE_DIR . '/sync-lock');
+            set_error_handler(function ($error) {
+                unlink(POSTS_BRIDGE_DIR . '/sync-lock');
+                wp_die($error->getMessage());
+            });
 
             self::$sync_mode = $mode;
             if ($post_type) {
@@ -365,8 +376,9 @@ class Posts_Synchronizer extends Singleton
 
             $error = $e;
         } finally {
-            Logger::log('Ajax synschronization completed');
+            Logger::log('Ajax synchronization completed');
 
+            restore_error_handler();
             if (is_file(POSTS_BRIDGE_DIR . '/sync-lock')) {
                 unlink(POSTS_BRIDGE_DIR . '/sync-lock');
             }
