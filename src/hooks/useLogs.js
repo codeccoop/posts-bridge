@@ -12,9 +12,13 @@ export default function useLogs({ debug }) {
     setLoading(true);
     return apiFetch({
       path: "posts-bridge/v1/logs?lines=1000",
+      signal: AbortSignal.timeout(3000),
     })
       .then((logs) => setLogs(logs))
-      .catch(() => setError(true))
+      .catch((err) => {
+        if (err.code === "fetch_error") return;
+        setError(true);
+      })
       .finally(() => setLoading(false));
   };
 

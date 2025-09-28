@@ -418,7 +418,7 @@ class Posts_Synchronizer extends Singleton
         }
 
         Logger::log("Ends synchronization clean up for post type {$post_type}");
-        Logger::log("Remote pairs count: {count($remote_pairs)}");
+        Logger::log(sprintf('Remote pairs count: %s', count($remote_pairs)));
 
         wp_reset_postdata();
 

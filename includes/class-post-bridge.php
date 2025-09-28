@@ -220,7 +220,7 @@ class Post_Bridge
         $this->addon = $addon;
 
         if ($this->is_valid) {
-            $this->id = $addon . '-' . $data['post_type'];
+            $this->id = $addon . '-' . $this->data['post_type'];
         }
     }
 
@@ -402,7 +402,11 @@ class Post_Bridge
         $items = apply_filters('posts_bridge_remote_items', $items, $this);
 
         Logger::log(
-            "Found {count($items)} foreign items for the {$this->post_type} bridge",
+            sprintf(
+                'Found %s foreign items for the %s bridge',
+                count($items),
+                $this->post_type
+            ),
             Logger::DEBUG
         );
 
@@ -417,7 +421,11 @@ class Post_Bridge
         }
 
         Logger::log(
-            "Found {count($ids)} foreign ids for the {$this->post_type} bridge",
+            sprintf(
+                'Found %s foreign ids for the %s bridge',
+                count($ids),
+                $this->post_type
+            ),
             Logger::DEBUG
         );
 
