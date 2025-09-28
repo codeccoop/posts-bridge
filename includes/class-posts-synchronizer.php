@@ -239,38 +239,52 @@ class Posts_Synchronizer extends Singleton
         });
 
         add_action(self::schedule_hook, static function () {
-            Logger::log('Start scheduled synchronization');
-
-            $bridges = PBAPI::get_bridges();
-
-            foreach ($bridges as $bridge) {
-                if (!$bridge->is_valid) {
-                    Logger::log(
-                        "Skip synchronization for invalid {$bridge->post_type} bridge"
-                    );
-                    continue;
-                }
-
-                if (!$bridge->enabled) {
-                    Logger::log(
-                        "Skip synchronization for invalid {$bridge->post_type} bridge"
-                    );
-                    continue;
-                }
-
-                try {
-                    self::sync($bridge);
-                } catch (Error | Exception $e) {
-                    Logger::log(
-                        "Scheduled synchronization error on {$bridge->post_type} bridge",
-                        Logger::ERROR
-                    );
-
-                    Logger::log($e, Logger::ERROR);
-                }
+            if (is_file(POSTS_BRIDGE_DIR . '/sync-lock')) {
+                Logger::log(
+                    'Skip scheduled synchronization due to sync lock conflicts',
+                    Logger::ERROR
+                );
+                return;
             }
 
-            Logger::log('End scheduled synchronization');
+            Logger::log('Start scheduled synchronization');
+            touch(POSTS_BRIDGE_DIR . '/sync-lock');
+
+            try {
+                $bridges = PBAPI::get_bridges();
+                foreach ($bridges as $bridge) {
+                    if (!$bridge->is_valid) {
+                        Logger::log(
+                            "Skip synchronization for invalid {$bridge->post_type} bridge"
+                        );
+                        continue;
+                    }
+
+                    if (!$bridge->enabled) {
+                        Logger::log(
+                            "Skip synchronization for invalid {$bridge->post_type} bridge"
+                        );
+                        continue;
+                    }
+
+                    try {
+                        self::sync($bridge);
+                    } catch (Error | Exception $e) {
+                        Logger::log(
+                            "Scheduled synchronization error on {$bridge->post_type} bridge",
+                            Logger::ERROR
+                        );
+
+                        Logger::log($e, Logger::ERROR);
+                    }
+                }
+            } finally {
+                Logger::log('End scheduled synchronization');
+
+                if (is_file(POSTS_BRIDGE_DIR . '/sync-lock')) {
+                    unlink(POSTS_BRIDGE_DIR . '/sync-lock');
+                }
+            }
         });
     }
 
@@ -314,7 +328,6 @@ class Posts_Synchronizer extends Singleton
             }
 
             Logger::log('Start ajax synchronization');
-
             touch(POSTS_BRIDGE_DIR . '/sync-lock');
 
             self::$sync_mode = $mode;
