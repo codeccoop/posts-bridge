@@ -20,6 +20,16 @@ return [
     ],
     'bridge' => [
         'endpoint' => '/wp-json/wp/v2/pages',
+        'tax_mappers' => [
+            [
+                'name' => 'post_category',
+                'foreign' => 'categories',
+            ],
+            [
+                'name' => 'tags_input',
+                'foreign' => 'tags',
+            ],
+        ],
         'field_mappers' => [
             [
                 'name' => 'post_title',
@@ -44,14 +54,6 @@ return [
             [
                 'name' => 'featured_media',
                 'foreign' => 'featured_media',
-            ],
-            [
-                'name' => 'post_category',
-                'foreign' => 'categories',
-            ],
-            [
-                'name' => 'tags_input',
-                'foreign' => 'tags',
             ],
             [
                 'name' => 'post_status',

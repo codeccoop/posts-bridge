@@ -15,6 +15,12 @@ return [
     ],
     'bridge' => [
         'endpoint' => 'document.page',
+        'tax_mappers' => [
+            [
+                'name' => 'post_category',
+                'foreign' => 'parent_id[1]',
+            ],
+        ],
         'field_mappers' => [
             [
                 'name' => 'post_title',
@@ -27,10 +33,6 @@ return [
             [
                 'name' => 'post_content',
                 'foreign' => 'content',
-            ],
-            [
-                'name' => 'post_category',
-                'foreign' => 'parent_id[1]',
             ],
         ],
     ],

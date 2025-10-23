@@ -15,6 +15,12 @@ return [
     ],
     'bridge' => [
         'endpoint' => 'product.variant',
+        'tax_mappers' => [
+            [
+                'name' => 'post_category',
+                'foreign' => 'categ_id[1]',
+            ],
+        ],
         'field_mappers' => [
             [
                 'name' => 'post_title',
@@ -23,10 +29,6 @@ return [
             [
                 'name' => 'post_date',
                 'foreign' => 'create_date',
-            ],
-            [
-                'name' => 'post_category',
-                'foreign' => 'categ_id[1]',
             ],
             [
                 'name' => 'currency',

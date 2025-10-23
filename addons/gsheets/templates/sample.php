@@ -8,6 +8,12 @@ return [
     'title' => __('Sample', 'posts-bridge'),
     'fielfs' => [],
     'bridge' => [
+        'tax_mappers' => [
+            [
+                'name' => 'tags_input',
+                'foreign' => 'tags',
+            ],
+        ],
         'field_mappers' => [
             [
                 'name' => 'post_title',
@@ -20,10 +26,6 @@ return [
             [
                 'name' => 'post_content',
                 'foreign' => 'content',
-            ],
-            [
-                'name' => 'tags_input',
-                'foreign' => 'tags',
             ],
         ],
     ],
