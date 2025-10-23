@@ -147,10 +147,9 @@ class Posts_Synchronizer extends Singleton
      */
     public static function schedule()
     {
-        [
-            'enabled' => $enabled,
-            'recurrence' => $recurrence,
-        ] = Posts_Bridge::setting('general')->synchronize;
+        $general = Posts_Bridge::setting('general');
+        $enabled = $general->synchronize['enabled'] ?? false;
+        $recurrence = $general->synchronize['recurrence'] ?? null;
 
         if (empty($enabled) || empty($recurrence)) {
             self::unschedule();
