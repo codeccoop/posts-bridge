@@ -3,14 +3,14 @@ Contributors: codeccoop
 Tags: posts, synchronization, http, api, backend
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable Tag: 4.0.0
+Stable Tag: 4.0.1
 Tested up to: 6.7
 
 Bridge your posts collections with your backend over HTTP APIs, enabling remote and automated web content management.
 
 == How it works ==
 
-Posts Bridge treats post collections as indexes that represents your backend data and allow you to use Gutenberg, WordPress' powerful page builder, as the frontend editor of your backend. Whether through manual or automatic synchronization —using ahead-of-time or live fetches— Posts Bridge fully integrates your backend data into the WordPress CMS system. 
+Posts Bridge treats post collections as indexes that represents your backend data and allow you to use Gutenberg, WordPress' powerful page builder, as the frontend editor of your backend. Whether through manual or automatic synchronization —using ahead-of-time or live fetches— Posts Bridge fully integrates your backend data into the WordPress CMS system.
 
 == Bridges ==
 
