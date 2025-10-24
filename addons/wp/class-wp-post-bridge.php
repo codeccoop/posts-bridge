@@ -109,7 +109,7 @@ class WP_Post_Bridge extends Post_Bridge
 
         $aliases = ['date_gmt', 'modified', 'modified_gmt', 'password'];
         foreach ($aliases as $alias) {
-            $data['post_' . $alias] = $data[$alias];
+            $data['post_' . $alias] = $data[$alias] ?? null;
             unset($data[$alias]);
         }
 
