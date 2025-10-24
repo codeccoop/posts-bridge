@@ -103,6 +103,17 @@ class Posts_Bridge extends Base_Plugin
      */
     public static function activate()
     {
+        if (!self::upload_dir()) {
+            wp_die(
+                esc_html(
+                    __(
+                        'Posts Bridge requires the uploads directory to be writable',
+                        'posts-bridge'
+                    )
+                )
+            );
+        }
+
         Remote_Featured_Media::setup_default_thumbnail();
         Posts_Synchronizer::schedule();
 
@@ -317,12 +328,18 @@ class Posts_Bridge extends Base_Plugin
         update_option(self::db_version, $to);
     }
 
+    /**
+     * Returns the plugin's uploads directory. If the directory does not
+     * exists, it creates it on the fly.
+     *
+     * @return string|null Full path to the directory. Null if upload dir is not writable.
+     */
     public static function upload_dir()
     {
         $dir = wp_upload_dir()['basedir'] . '/posts-bridge';
 
         if (!is_dir($dir)) {
-            if (!mkdir($dir, 755)) {
+            if (!wp_mkdir_p($dir)) {
                 return;
             }
         }

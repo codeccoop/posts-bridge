@@ -201,15 +201,18 @@ class Remote_Featured_Media
         if (file_exists($filepath)) {
             $_filepath = dirname($filepath) . '/' . time();
             $pathinfo = pathinfo($filepath);
+
             if (isset($pathinfo['extension'])) {
                 $_filepath .= '.' . $pathinfo['extension'];
             }
+
             $filepath = $_filepath;
         }
 
-        $success = file_put_contents($filepath, $content);
+        $success =
+            is_writable($filepath) && file_put_contents($filepath, $content);
         if (!$success) {
-            return null;
+            return;
         }
 
         $filetype = self::file_type($filepath);
@@ -217,13 +220,13 @@ class Remote_Featured_Media
         // exits if unkown file type
         if (!$filetype['type']) {
             wp_delete_file($filepath);
-            return null;
+            return;
         }
 
         // exits if file is not an image
         if (!preg_match('/image\/(.*)$/', $filetype['type'])) {
             wp_delete_file($filepath);
-            return null;
+            return;
         }
 
         // Creates new attachment
@@ -310,6 +313,8 @@ class Remote_Featured_Media
             file_get_contents($static_path),
             false
         );
+
+        $attachment_id = $attachment_id ?: 0;
 
         add_option(
             Remote_Featured_Media::_default_thumbnail_handle,

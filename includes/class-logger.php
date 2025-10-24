@@ -51,7 +51,7 @@ class Logger extends Singleton
         $dir = wp_upload_dir()['basedir'] . '/posts-bridge';
 
         if (!is_dir($dir)) {
-            if (!mkdir($dir, 755)) {
+            if (!wp_mkdir_p($dir)) {
                 return;
             }
         }
@@ -152,7 +152,7 @@ class Logger extends Singleton
      */
     public static function is_active()
     {
-        $log_path = self::log_path();
+        $log_path = self::log_path() ?: '/null';
         return is_file($log_path);
     }
 
@@ -162,7 +162,7 @@ class Logger extends Singleton
     public static function activate()
     {
         if (!self::is_active()) {
-            $log_path = self::log_path();
+            $log_path = self::log_path() ?: '/null';
             if (!is_file($log_path)) {
                 touch($log_path);
             }
