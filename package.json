@@ -1,5 +1,5 @@
 {
-  "name": "posts-bridge-admin-client",
+  "name": "posts-bridge",
   "version": "4.0.1",
   "author": "Còdec",
   "license": "GPL-2.0-or-later",
@@ -7,15 +7,16 @@
     "start": "npm run dev",
     "dev": "node esbuild/dev.cjs",
     "build": "node esbuild/build.cjs",
-    "postbuild": "sh ./.postbuild",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "echo 'no tests'",
+    "lint": "eslint"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
-    "@prettier/plugin-php": "^0.22.4",
     "esbuild": "^0.24.2",
     "eslint": "^9.19.0",
-    "eslint-config-prettier": "^10.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
     "globals": "^15.14.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.2",

@@ -1,6 +1,6 @@
 [submodule "deps/plugin"]
-	path = deps/plugin
+	path = posts-bridge/deps/plugin
 	url = git@github.com:codeccoop/wpct-plugin.git
 [submodule "deps/http"]
-	path = deps/http
+	path = posts-bridge/deps/http
 	url = git@github.com:codeccoop/http-bridge.git

@@ -5,7 +5,7 @@ const esbuild = require("esbuild");
     entryPoints: ["src/index.jsx"],
     bundle: true,
     minify: true,
-    outfile: "assets/plugin.bundle.js",
+    outfile: "posts-bridge/assets/plugin.bundle.js",
     loader: { ".png": "base64" },
     plugins: [
       {
