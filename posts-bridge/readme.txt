@@ -1,80 +1,110 @@
 === Posts Bridge - Remote CMS ===
+
 Contributors: codeccoop
-Tags: posts, synchronization, http, api, backend
+Tags: posts integration, remote cms, synchronization, http api, automation
+Donate link: https://buymeacoffee.com/codeccoo
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Stable Tag: 4.0.1
-Tested up to: 6.7
+Tested up to: 6.9
 
-Bridge your posts collections with your backend over HTTP APIs, enabling remote and automated web content management.
+Synchronize backend data with WordPress post collections over HTTP APIs, enabling remote and automated web content management.
+
+== Description ==
+
+Synchronize backend data with WordPress post collections over HTTP APIs, enabling remote and automated web content management.
 
 == How it works ==
 
-Posts Bridge treats post collections as indexes that represents your backend data and allow you to use Gutenberg, WordPress' powerful page builder, as the frontend editor of your backend. Whether through manual or automatic synchronization —using ahead-of-time or live fetches— Posts Bridge fully integrates your backend data into the WordPress CMS system.
+Posts Bridge treats post collections as indexes that represents your backend data and allows you to use Gutenberg, WordPress' powerful page builder, as the frontend editor of your backend. Whether through manual or automatic synchronization —using ahead-of-time or live fetches— Posts Bridge fully integrates your backend data into the WordPress CMS system.
 
-== Bridges ==
+== Add-ons ==
 
-Think of a bridge as a mapping that bounds your backend data with a post type collection on your WordPress web page. Each item on your backend database can be converted to a post, and each field on your backend tables can be mapped to a post field or taxonomy. Once a bridge is configured, you can trigger manual synchronizations, or let Posts Bridge automatically synchronize content between the two sides on the background.
+Posts Bridge comes with free add-ons. Each add-on add to the plugin new bridges to work with specific APIs, and bridge templates.
 
-== Addons ==
+Posts Bridge has the following add-ons:
 
-Posts Bridge comes with free addons. Each addon adds to the plugin new bridges to work with specific APIs and bridge templates.
-
-Posts Bridge has the following addons:
-
-* [REST API](https://en.wikipedia.org/wiki/REST)
 * [Dolibarr](https://wiki.dolibarr.org/index.php/Module_Web_Services_API_REST_(developer))
 * [Google Sheets](https://workspace.google.com/products/sheets/)
 * [Odoo](https://www.odoo.com/)
 * [WP](https://developer.wordpress.org/rest-api/)
 
-== Backends ==
+**Need a custom integration?**
 
-In Posts Bridge, a backend is a set of configurations that handles the information required to get your posts synchronized over HTTP requests with remote systems.
+Connect to any custom API using standard HTTP methods and authentication using the abstract **REST API** add-on. Perfect for integrating with proprietary or less common systems.
 
-To register a new backend you only have to set 3 fields:
+== Features ==
 
-1. A unique name for the new connection
-2. The URL of your backend
-3. An array of HTTP headers with connection metadata and credentials
-4. Optional, an HTTP authentication credential (Basic, Bearer, etc)
+**Bridges**
+Think of a bridge as a mapping that links your backend or service data with a post type collection from your WordPress web page.
 
-Once registered, you can reuse your backend connection on your post bridges.
+**Backends**
+Think of it as a "connection profile" for your API. Save your API URL, headers, and credentials once, then reuse them across all your bridges. No need to re-enter details every time!
 
-== Remote Mappers ==
+**Credentials**
+Authenticate your HTTP requests using API keys, Basic Auth, Bearer Tokens, OAuth, RPC credentials and Digest Auth.
 
-Remote mappers allow you to mutate your backend's API responses to match the WordPress post model (e.g., `post_title`, `post_content`, `post_name`). This enable automatic conversion of backend data into WordPress posts on each synchronization loop (ahead-of-time).
+**Field mappers**
+Rename and mutate your backend API responses to match the WordPress post model (e.g., `post_title`, `post_content`, `post_name`, etc.) and taxonomies.
 
-With mappers you can map backend data to post fields, custom fields and into taxonomy terms (such as categories and tags).
+**Remote fields**
+Dynamically load backend data on render time and replace the post HTML with remote data.
 
-== Remote Field ==
+**Templates**
+Use pre-built templates to integrate well known backends with post type collections in minutes.
 
-If you want your backend data loaded dynamically on each render, you can use the **Remote Field** custom block. This block lets you designate parts of your post templates as remote content. On render time, this blocks will be replaced with the data fetched from the backend.
-
-== Templates ==
-
-To streamline the bridge setup process, Posts Bridge comes packed with templates. Templates are blueprints of bridges you can use to set up your integrations in a matter of minutes.
-
-== Docs ==
-
-Browse the plugin's documentation on [postsbridge.codeccoop.org](https://postsbridge.codeccoop.org).
+**Debugging console**
+Monitor requests, responses, and errors in real time.
 
 == Links ==
 
-* [Official website](https://postsbridge.codeccoop.org)
-* [Gitlab](https://gitlab.com/codeccoop/wp/plugins/posts-bridge/)
-* [Còdec](https://www.codeccoop.org)
-* [Other plugins](https://profiles.wordpress.org/codeccoop/#content-plugins)
+* [🌐 Official website](https://postsbridge.codeccoop.org/)
+* [📚 Documentation](https://postsbridge.codeccoop.org/documentation/)
+* [💻 GitHub](https://github.com/codeccoop/posts-bridge/)
+* [🏢 Còdec](https://www.codeccoop.org)
+* [⭐ Rate Posts Bridge](https://wordpress.org/plugins/posts-bridge/#reviews)
+
+== Frequently Asked Questions ==
+
+= Do I need to know how to code? =
+
+Nope! Posts Bridge is designed to set up complex HTTP configurations and pipelines of data transformation without the need to write code.
+
+In addition, you can extend Posts Bridge with code using its hooks and PHP APIs.
+
+= Can I connect to my custom API? =
+
+Absolutely! Posts Bridge supports any HTTP API, whether it’s a cloud service or a self-hosted solution (like a Dockerized API on your VPS). If your API uses standard HTTP methods (GET, POST, PUT, etc.), Posts Bridge can connect to it.
+
+Maybe a little understanding about how HTTP and HTTP-like APIs works will be required to set up your custom integrations.
+
+= What if my API requires authentication? =
+
+Posts Bridge supports API keys, Basic Auth, Bearer Tokens, OAuth, RPC credentials, Digest Auth and custom headers.
+
+= Is there a free trial? =
+
+Posts Bridge, including all its add-ons, is free to use.
+
+= How can I get support? =
+
+You can get support from Còdec using the [Posts Bridge support forum](https://wordpress.org/support/plugin/posts-bridge/) for free. We aim to respond to all inquiries within 24-48 hours.
 
 == Screenshots ==
 
-1. Settings page
-2. Backends
-3. Bridges
-4. Template Wizard
-5. Debug console
+1. Settings page – Configure global plugin options
+2. Backends – Save and reuse API connection details
+3. Bridges – Create synchronization pipelines for your post collections
+4. Template wizard – Set up integrations in minutes.
+5. Debug console – Monitor and troubleshoot requests.
 
 == Changelog ==
+
+= 4.0.1 =
+* feat: odoo add-on jobs template
+* feat: disable plugin activation if uploads dir is not writable
+* fix: avoid warnings with coalescing
+* fix: template tax mappers
 
 = 4.0.0 =
 * feat: schemas refactor
