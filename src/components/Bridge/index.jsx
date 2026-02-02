@@ -8,15 +8,29 @@ import CopyIcon from "../icons/Copy";
 import ArrowDownIcon from "../icons/ArrowDown";
 import useAjaxSync from "../../hooks/useAjaxSync";
 import Mappers from "../Mappers";
+import useTab from "../../hooks/useTab";
+import { useLoading } from "../../providers/Loading";
+import { useError } from "../../providers/Error";
+import { useBackends } from "../../hooks/useHttp";
 
 const { Button } = wp.components;
-const { useState, useMemo, useCallback } = wp.element;
+const { useState, useEffect, useMemo, useCallback } = wp.element;
+const apiFetch = wp.apiFetch;
 const { __ } = wp.i18n;
 
 export default function Bridge({ data, update, remove, schema, copy }) {
+  const [addon] = useTab();
+
+  const [loading, setLoading] = useLoading();
+  const [error, setError] = useError();
   const isResponsive = useResponsive();
 
   const [fullMode, setFullMode] = useState(false);
+
+  const [backends] = useBackends();
+  const backend = useMemo(() => {
+    return backends.find(({ name }) => name === data.backend);
+  }, [backends, data.backend]);
 
   const validate = useCallback(
     (data) => {
@@ -57,6 +71,35 @@ export default function Bridge({ data, update, remove, schema, copy }) {
 
   const sync = useAjaxSync({ fullMode, postType: data.post_type });
   const triggerSync = () => sync().finally(() => setFullMode(false));
+
+  const [ping, setPing] = useState(false);
+
+  useEffect(() => {
+    if (ping) {
+      setPing(false);
+    }
+  }, [data.backend]);
+
+  const doPing = useCallback(() => {
+    if (!backend) return;
+
+    setLoading(true);
+
+    apiFetch({
+      path: `posts-bridge/v1/${addon}/backend/ping`,
+      method: "POST",
+      data: { backend },
+    })
+      .then(({ success }) => {
+        if (success) setPing(true);
+        else setError(__("Backend is unreachable", "posts-bridge"));
+      })
+      .catch(() => {
+        setPing(false);
+        setError(__("Backend is unreachable", "posts-bridge"));
+      })
+      .finally(() => setLoading(false));
+  }, [addon, backend]);
 
   const enabled = isValid && data.enabled;
 
@@ -122,6 +165,23 @@ export default function Bridge({ data, update, remove, schema, copy }) {
             showTooltip
           >
             <ArrowDownIcon width="12" height="20" color="gray" />
+          </Button>
+          <Button
+            disabled={!!error || loading || ping}
+            size="compact"
+            variant="primary"
+            onClick={doPing}
+            style={{
+              background: ping
+                ? "#4ab866"
+                : "var(--wp-components-color-accent,var(--wp-admin-theme-color,#3858e9))",
+              marginLeft: "auto",
+              height: "40px",
+              justifyContent: "center",
+            }}
+            __next40pxDefaultSize
+          >
+            ping
           </Button>
         </div>
       </div>

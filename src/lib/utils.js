@@ -18,7 +18,7 @@ export function validateUrl(url, base = false) {
     return false;
   }
 
-  if (/[^-a-zA-Z0-9\._\+]+/.test(url.hostname)) {
+  if (/[^-a-zA-Z0-9._+]+/.test(url.hostname)) {
     return false;
   }
 
@@ -37,14 +37,6 @@ export function validateBackend(data) {
 
   if (!contentType) {
     return false;
-  }
-
-  if (data.authentication?.type) {
-    isValid = isValid && data.authentication.client_secret;
-
-    if (data.authentication.type !== "Bearer") {
-      isValid = isValid && data.authentication.client_id;
-    }
   }
 
   return isValid;
@@ -147,14 +139,14 @@ export function isset(obj, attr) {
 }
 
 export function adminUrl(path = "", query = {}) {
-  const url = new URL(wpApiSettings.root.replace(/wp-json/, "wp-admin"));
+  const url = new URL(window.wpApiSettings.root.replace(/wp-json/, "wp-admin"));
   url.pathname += path.replace(/^\/+/, "");
   url.search = new URLSearchParams(query).toString();
   return url.toString();
 }
 
 export function restUrl(path = "", query = {}) {
-  const url = new URL(wpApiSettings.root);
+  const url = new URL(window.wpApiSettings.root);
   url.pathname += path.replace(/^\/+/, "");
   url.search = new URLSearchParams(query).toString();
   return url.toString();

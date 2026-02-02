@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class WP_Post_Bridge
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -8,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
 
+/**
+ * WordPress Post Bridge
+ */
 class WP_Post_Bridge extends Post_Bridge {
 
 	public function __construct( $data ) {
@@ -88,7 +96,7 @@ class WP_Post_Bridge extends Post_Bridge {
 
 			$posts = array_merge( $posts, (array) $res['data'] );
 			$pages = (int) $res['headers']['x-wp-totalpages'];
-			$page += 1;
+			++$page;
 		}
 
 		return $posts;
@@ -145,11 +153,11 @@ class WP_Post_Bridge extends Post_Bridge {
 				continue;
 			}
 
-			if ( $tax['taxonomy'] === 'category' ) {
+			if ( 'category' === $tax['taxonomy'] ) {
 				if ( empty( $data['categories'] ) ) {
 					continue;
 				}
-			} elseif ( $tax['taxonomy'] === 'post_tag' ) {
+			} elseif ( 'post_tag' === $tax['taxonomy'] ) {
 				if ( empty( $data['tags'] ) ) {
 					continue;
 				}
@@ -158,9 +166,9 @@ class WP_Post_Bridge extends Post_Bridge {
 			}
 
 			$field =
-				$tax['taxonomy'] === 'post_tag'
+				'post_tag' === $tax['taxonomy']
 					? 'tags'
-					: ( $tax['taxonomy'] === 'category'
+					: ( 'category' === $tax['taxonomy']
 						? 'categories'
 						: $tax['taxonomy'] );
 

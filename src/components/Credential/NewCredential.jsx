@@ -43,7 +43,7 @@ export default function NewCredential({ add, schema: schemas }) {
       }
     });
 
-    window.__wpfbInvalidated = true;
+    window.__wppbInvalidated = true;
 
     setData({});
     add(credential);

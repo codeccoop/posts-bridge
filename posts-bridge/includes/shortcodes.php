@@ -1,11 +1,16 @@
 <?php
+/**
+ * Plugin shortcodes
+ *
+ * @package postsbridge
+ */
 
 use Posts_Bridge\Logger;
 
 add_action(
 	'init',
 	function () {
-		// Skip registration if on admin
+		// Skip registration if on admin.
 		if ( is_admin() ) {
 			return;
 		}
@@ -26,6 +31,7 @@ add_action(
 /**
  * Do the `posts_bridge_remote_fields` shortcode fetching remote data of the current Remote CPT
  *
+ * @param array  $atts Shortcode attributes.
  * @param string $content Shortcode content.
  *
  * @return string $html Rendered output.
@@ -33,7 +39,7 @@ add_action(
 function posts_bridge_remote_fields( $atts, $content = '' ) {
 	global $posts_bridge_remote_cpt;
 
-	// Exit if global post is not Remote CPT
+	// Exit if global post is not Remote CPT.
 	if ( empty( $posts_bridge_remote_cpt ) ) {
 		Logger::log(
 			'Skip remote fields render for non remote post types',
@@ -42,7 +48,7 @@ function posts_bridge_remote_fields( $atts, $content = '' ) {
 		return $content;
 	}
 
-	// Gets replacement marks and exit if not found
+	// Gets replacement marks and exit if not found.
 	preg_match_all( '/{{([^}]+)}}/', $content, $matches );
 	if ( empty( $matches ) ) {
 		Logger::log(
@@ -52,7 +58,7 @@ function posts_bridge_remote_fields( $atts, $content = '' ) {
 		return $content;
 	}
 
-	// Filters empty replace marks and trim its content
+	// Filters empty replace marks and trim its content.
 	$fields = array_values(
 		array_filter(
 			array_map(
@@ -67,7 +73,7 @@ function posts_bridge_remote_fields( $atts, $content = '' ) {
 		)
 	);
 
-	// Exit if no fields is defined
+	// Exit if no fields is defined.
 	if ( empty( $fields ) ) {
 		Logger::log(
 			'Replace marks not matches any remote field',
@@ -76,7 +82,7 @@ function posts_bridge_remote_fields( $atts, $content = '' ) {
 		return $content;
 	}
 
-	// Checks if there are values for the fields and exits if it isn't
+	// Checks if there are values for the fields and exits if it isn't.
 	$is_empty = array_reduce(
 		$fields,
 		static function ( $handle, $field ) {
@@ -89,7 +95,7 @@ function posts_bridge_remote_fields( $atts, $content = '' ) {
 		return $content;
 	}
 
-	// Get remote field values
+	// Get remote field values.
 	$values = array_map(
 		static function ( $field ) {
 			global $posts_bridge_remote_cpt;
@@ -99,8 +105,9 @@ function posts_bridge_remote_fields( $atts, $content = '' ) {
 	);
 
 	try {
-		// Replace anchors on the shortcode content with values
-		for ( $i = 0; $i < count( $fields ); $i++ ) {
+		// Replace anchors on the shortcode content with values.
+		$l = count( $fields );
+		for ( $i = 0; $i < $l; $i++ ) {
 			$field   = $fields[ $i ];
 			$value   = (string) $values[ $i ];
 			$content = preg_replace(
@@ -132,7 +139,7 @@ function posts_bridge_remote_fields( $atts, $content = '' ) {
 function posts_bridge_remote_callback( $atts, $content = '' ) {
 	global $posts_bridge_remote_cpt;
 
-	// Exit if global post is not Remote CPT
+	// Exit if global post is not Remote CPT.
 	if ( empty( $posts_bridge_remote_cpt ) ) {
 		Logger::log(
 			'Skip remote callback for non remote post types',

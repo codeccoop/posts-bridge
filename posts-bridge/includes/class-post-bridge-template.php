@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class Post_Bridge_Template
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -229,6 +234,7 @@ class Post_Bridge_Template {
 							'min'         => array( 'type' => 'integer' ),
 							'max'         => array( 'type' => 'integer' ),
 							'multiple'    => array( 'type' => 'boolean' ),
+							'pattern'     => array( 'type' => 'string' ),
 						),
 						'required'             => array( 'ref', 'name', 'type' ),
 						'additionalProperties' => true,
@@ -258,6 +264,15 @@ class Post_Bridge_Template {
 		return apply_filters( 'posts_bridge_template_schema', $schema, $addon );
 	}
 
+	/**
+	 * Decorates schemas of the template child objects (form, backend, credential) to scale down
+	 * schema requirements and to fit the templates schema.
+	 *
+	 * @param array  $schema Object json schema.
+	 * @param string $title Schema title.
+	 *
+	 * @return array Decorated schema.
+	 */
 	private static function child_schema_to_template( $schema, $title ) {
 		if ( isset( $schema['oneOf'] ) ) {
 			$schema['oneOf'] = array_map(
@@ -284,12 +299,12 @@ class Post_Bridge_Template {
 		}
 
 		foreach ( $schema['properties'] as &$prop_schema ) {
-			if ( $prop_schema['type'] === 'string' ) {
+			if ( 'string' === $prop_schema['type'] ) {
 				$prop_schema['default'] = '';
 				unset( $prop_schema['minLength'] );
 				unset( $prop_schema['pattern'] );
 				unset( $prop_schema['format'] );
-			} elseif ( $prop_schema['type'] === 'array' ) {
+			} elseif ( 'array' === $prop_schema['type'] ) {
 				$prop_schema['default'] = array();
 				unset( $prop_schema['minItems'] );
 			}
@@ -319,8 +334,7 @@ class Post_Bridge_Template {
 		return apply_filters(
 			'posts_bridge_template_defaults',
 			array(
-				'integrations' => array(),
-				'fields'       => array(
+				'fields'  => array(
 					array(
 						'ref'      => '#backend',
 						'name'     => 'name',
@@ -401,13 +415,14 @@ class Post_Bridge_Template {
 						'default'  => 'POST',
 					),
 				),
-				'bridge'       => array(
-					'post_type' => 'post',
-					'endpoint'  => '',
-					'method'    => 'POST',
-					'mappers'   => array(),
+				'bridge'  => array(
+					'post_type'     => 'post',
+					'endpoint'      => '',
+					'method'        => 'POST',
+					'field_mappers' => array(),
+					'tax_mappers'   => array(),
 				),
-				'backend'      => array(
+				'backend' => array(
 					'headers' => array(
 						array(
 							'name'  => 'Content-Type',
@@ -425,8 +440,8 @@ class Post_Bridge_Template {
 	 * Store template attribute values, validates data and binds the
 	 * instance to custom posts bridge template hooks.
 	 *
-	 * @param string $name Template name.
 	 * @param array  $data Template data.
+	 * @param string $addon Addon name.
 	 */
 	public function __construct( $data, $addon ) {
 		$this->addon = $addon;
@@ -515,7 +530,7 @@ class Post_Bridge_Template {
 		$template = $this->data;
 		$schema   = static::schema( $this->addon );
 
-		// Add constants to the user fields
+		// Add constants to the user fields.
 		foreach ( $template['fields'] as $field ) {
 			if ( ! empty( $field['value'] ) ) {
 				$fields[] = $field;
@@ -559,11 +574,8 @@ class Post_Bridge_Template {
 				return new WP_Error(
 					'invalid_field',
 					sprintf(
-						__(
-							/* translators: %s: Field name */
-							'Field `%s` does not match the schema',
-							'posts-bridge'
-						),
+						/* translators: %s: Field name */
+						__( 'Field `%s` does not match the schema', 'posts-bridge' ),
 						$field['name']
 					)
 				);
@@ -577,11 +589,11 @@ class Post_Bridge_Template {
 				continue;
 			}
 
-			if ( $field['value'] === '' ) {
+			if ( '' === $field['value'] ) {
 				continue;
 			}
 
-			if ( $field['type'] === 'boolean' ) {
+			if ( 'boolean' === $field['type'] ) {
 				if ( ! isset( $field['value'][0] ) ) {
 					continue;
 				} else {
@@ -590,8 +602,8 @@ class Post_Bridge_Template {
 			}
 
 			if (
-				$field['ref'] === '#backend/headers[]' ||
-				$field['ref'] === '#bridge/custom_fields[]'
+				'#backend/headers[]' === $field['ref'] ||
+				'#bridge/custom_fields[]' === $field['ref']
 			) {
 				$field['value'] = array(
 					'name'  => $field['name'],
@@ -607,11 +619,8 @@ class Post_Bridge_Template {
 					return new WP_Error(
 						'invalid_ref',
 						sprintf(
-							__(
-								/* translators: %s: ref value */
-								'Invalid template field ref `%s`',
-								'posts-bridge'
-							),
+							/* translators: %s: ref value */
+							__( 'Invalid template field ref `%s`', 'posts-bridge' ),
 							$field['ref']
 						)
 					);
@@ -620,7 +629,7 @@ class Post_Bridge_Template {
 				$leaf = &$leaf[ $clean_key ];
 			}
 
-			if ( substr( $key, -2 ) === '[]' ) {
+			if ( '[]' === substr( $key, -2 ) ) {
 				if ( isset( $field['index'] ) ) {
 					$leaf[ $field['index'] ] = $field['value'];
 				} else {
@@ -663,11 +672,11 @@ class Post_Bridge_Template {
 							__(
 								'Posts Bridge can\'t create the credential',
 								'posts-bridge',
-								array(
-									'status' => 400,
-									'data'   => $data['credential'],
-								)
-							)
+							),
+							array(
+								'status' => 400,
+								'data'   => $data['credential'],
+							),
 						);
 					}
 				}
@@ -689,11 +698,11 @@ class Post_Bridge_Template {
 						__(
 							'Posts Bridge can\'t create the backend',
 							'posts-bridge',
-							array(
-								'status' => 400,
-								'data'   => $data['backend'],
-							)
-						)
+						),
+						array(
+							'status' => 400,
+							'data'   => $data['backend'],
+						),
 					);
 				}
 			}
@@ -716,11 +725,11 @@ class Post_Bridge_Template {
 					__(
 						'Posts Bridge can\'t create the post bridge',
 						'posts-bridge',
-						array(
-							'status' => 400,
-							'data'   => $data['bridge'],
-						)
-					)
+					),
+					array(
+						'status' => 400,
+						'data'   => $data['bridge'],
+					),
 				);
 			}
 		} catch ( Error | Exception $e ) {
@@ -756,7 +765,7 @@ class Post_Bridge_Template {
 	 * @return boolean
 	 */
 	final protected function backend_exists( $name ) {
-		$backends = Http_Store::setting( 'general' )->backends ?: array();
+		$backends = Settings_Store::setting( 'http' )->backends ?: array();
 		return array_search( $name, array_column( $backends, 'name' ) ) !== false;
 	}
 
@@ -768,7 +777,7 @@ class Post_Bridge_Template {
 	 * @return boolean Creation result.
 	 */
 	private function create_backend( $data ) {
-		$setting  = Http_Store::setting( 'general' );
+		$setting  = Settings_Store::setting( 'http' );
 		$backends = $setting->backends ?: array();
 
 		do_action_ref_array(
@@ -798,7 +807,7 @@ class Post_Bridge_Template {
 	 * @param string $name Backend name.
 	 */
 	private function remove_backend( $name ) {
-		$setting  = Http_Store::setting( 'general' );
+		$setting  = Settings_Store::setting( 'http' );
 		$backends = $setting->backends ?: array();
 
 		$setting->backends = array_filter(
@@ -820,8 +829,7 @@ class Post_Bridge_Template {
 	 */
 	private function bridge_exists( $post_type ) {
 		$bridges = Settings_Store::setting( $this->addon )->bridges ?: array();
-		return array_search( $post_type, array_column( $bridges, 'post_type' ) ) !==
-			false;
+		return false !== array_search( $post_type, array_column( $bridges, 'post_type' ), true );
 	}
 
 	/**
@@ -888,9 +896,8 @@ class Post_Bridge_Template {
 	 * @return boolean
 	 */
 	private function credential_exists( $name ) {
-		$credentials = Http_Store::setting( 'general' )->credentials ?: array();
-		return array_search( $name, array_column( $credentials, 'name' ) ) !==
-			false;
+		$credentials = Settings_Store::setting( 'http' )->credentials ?: array();
+		return false !== array_search( $name, array_column( $credentials, 'name' ), true );
 	}
 
 	/**
@@ -901,7 +908,7 @@ class Post_Bridge_Template {
 	 * @return boolean Creation result.
 	 */
 	private function create_credential( $data ) {
-		$setting     = Http_Store::setting( 'general' );
+		$setting     = Settings_Store::setting( 'http' );
 		$credentials = $setting->credentials ?: array();
 
 		if ( ! is_array( $credentials ) ) {
@@ -935,7 +942,7 @@ class Post_Bridge_Template {
 	 * @param string $name Credential name.
 	 */
 	private function remove_credential( $name ) {
-		$setting     = Http_Store::setting( 'general' );
+		$setting     = Settings_Store::setting( 'http' );
 		$credentials = $setting->credentials ?: array();
 
 		$setting->credentials = array_filter(

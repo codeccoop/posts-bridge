@@ -1,4 +1,9 @@
 <?php
+/**
+ * Dolibarr addon hooks
+ *
+ * @package postsbridge
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit();
@@ -7,11 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_filter(
 	'posts_bridge_bridge_schema',
 	function ( $schema, $addon ) {
-		if ( $addon !== 'dolibarr' ) {
+		if ( 'dolibarr' !== $addon ) {
 			return $schema;
 		}
 
-		$schema['properties']['endpoint']['default']  = '/api/index.php/users';
+		$schema['properties']['endpoint']['default']  = '/api/index.php/products';
 		$schema['properties']['foreign_key']['const'] = 'id';
 		$schema['properties']['method']['const']      = 'GET';
 
@@ -24,7 +29,7 @@ add_filter(
 add_filter(
 	'posts_bridge_template_defaults',
 	function ( $defaults, $addon, $schema ) {
-		if ( $addon !== 'dolibarr' ) {
+		if ( 'dolibar' !== $addon ) {
 			return $defaults;
 		}
 
@@ -39,7 +44,7 @@ add_filter(
 					array(
 						'ref'      => '#backend/headers[]',
 						'name'     => 'DOLAPIKEY',
-						'label'    => __( 'API key', 'forms-bridge' ),
+						'label'    => __( 'API key', 'posts-bridge' ),
 						'type'     => 'text',
 						'required' => true,
 					),

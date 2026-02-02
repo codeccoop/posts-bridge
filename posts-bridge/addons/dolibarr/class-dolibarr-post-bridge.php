@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class Dolibarr_Post_Bridge
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 

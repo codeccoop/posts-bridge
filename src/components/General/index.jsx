@@ -51,59 +51,57 @@ export default function GeneralSettings() {
       >
         <Exporter />
       </PanelBody>
-      {false && (
-        <PanelBody title={__("Credits", "posts-bridge")} initialOpen={false}>
-          <ul>
-            <li>
-              🏠{" "}
-              <a href="https://postsbridge.codeccoop.org" target="_blank">
-                {__("Website", "posts-bridge")}
-              </a>
-            </li>
-            <li>
-              📔{" "}
-              <a
-                href="https://postsbridge.codeccoop.org/documentation/"
-                target="_blank"
-              >
-                {__("Documentation", "posts-bridge")}
-              </a>
-            </li>
-            <li>
-              💬{" "}
-              <a
-                href="https://wordpress.org/support/plugin/posts-bridge/"
-                target="_blank"
-              >
-                {__("Support", "posts-bridge")}
-              </a>
-            </li>
-            <li>
-              💵{" "}
-              <a href="https://buymeacoffee.com/codeccoop" target="_blank">
-                {__("Donate", "posts-bridge")}
-              </a>
-            </li>
-          </ul>
-          <p>
-            <strong>Posts Bridge</strong> has been created by{" "}
-            <a href="https://www.codeccoop.org" target="_blank">
-              Còdec
+      <PanelBody title={__("Credits", "posts-bridge")} initialOpen={false}>
+        <ul>
+          <li>
+            🏠{" "}
+            <a href="https://postsbridge.codeccoop.org" target="_blank">
+              {__("Website", "posts-bridge")}
             </a>
-            , a cooperative web development studio based on Barcelona.
-          </p>
-          <p>
-            Please rate our plugin on{" "}
+          </li>
+          <li>
+            📔{" "}
             <a
-              href="https://wordpress.org/support/plugin/posts-bridge/reviews/?new-post"
+              href="https://postsbridge.codeccoop.org/documentation/"
               target="_blank"
             >
-              WordPress.org
-            </a>{" "}
-            and help us to maintain this plugin alive 💖
-          </p>
-        </PanelBody>
-      )}
+              {__("Documentation", "posts-bridge")}
+            </a>
+          </li>
+          <li>
+            💬{" "}
+            <a
+              href="https://wordpress.org/support/plugin/posts-bridge/"
+              target="_blank"
+            >
+              {__("Support", "posts-bridge")}
+            </a>
+          </li>
+          <li>
+            💵{" "}
+            <a href="https://buymeacoffee.com/codeccoop" target="_blank">
+              {__("Donate", "posts-bridge")}
+            </a>
+          </li>
+        </ul>
+        <p>
+          <strong>Posts Bridge</strong> has been created by{" "}
+          <a href="https://www.codeccoop.org" target="_blank">
+            Còdec
+          </a>
+          , a cooperative web development studio based on Barcelona.
+        </p>
+        <p>
+          Please rate our plugin on{" "}
+          <a
+            href="https://wordpress.org/support/plugin/posts-bridge/reviews/?new-post"
+            target="_blank"
+          >
+            WordPress.org
+          </a>{" "}
+          and help us to maintain this plugin alive 💖
+        </p>
+      </PanelBody>
     </>
   );
 }

@@ -52,7 +52,7 @@ export default function TemplatesProvider({ children }) {
   );
 
   const submit = useCallback(
-    ({ fields, integration }) => {
+    ({ fields }) => {
       if (!template) {
         return Promise.reject();
       }
@@ -62,10 +62,7 @@ export default function TemplatesProvider({ children }) {
       return apiFetch({
         path: `posts-bridge/v1/${addon}/templates/${template}/use`,
         method: "POST",
-        data: {
-          integration,
-          fields,
-        },
+        data: { fields },
       })
         .then(({ success }) => {
           if (success) fetchSettings();

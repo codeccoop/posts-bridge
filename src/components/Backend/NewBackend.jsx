@@ -40,7 +40,7 @@ export default function NewBackend({ add }) {
   }, [data.base_url]);
 
   const create = () => {
-    window.__wpfbInvalidated = true;
+    window.__wppbInvalidated = true;
 
     setData(TEMPLATE);
     add({ ...data });

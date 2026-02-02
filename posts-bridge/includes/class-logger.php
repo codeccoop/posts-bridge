@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class Logger
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -10,6 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
 
+// phpcs:disable WordPress.WP.AlternativeFunctions
+
 /**
  * Admin logger class.
  */
@@ -18,7 +25,7 @@ class Logger extends Singleton {
 	/**
 	 * Handles the log file name.
 	 */
-	private const log_file = 'debug.log';
+	private const FILE = 'debug.log';
 
 	/**
 	 * Error level constant.
@@ -55,11 +62,13 @@ class Logger extends Singleton {
 			}
 		}
 
-		return $dir . '/' . self::log_file;
+		return $dir . '/' . self::FILE;
 	}
 
 	/**
 	 * Gets the log file contents.
+	 *
+	 * @param integer $lines Amount of lines to read.
 	 *
 	 * @return string Logs.
 	 */
@@ -79,7 +88,7 @@ class Logger extends Singleton {
 		$cursor = -1;
 		fseek( $socket, $cursor, SEEK_END );
 
-		if ( fread( $socket, 1 ) != "\n" ) {
+		if ( "\n" !== fread( $socket, 1 ) ) {
 			--$lines;
 		}
 
@@ -91,7 +100,8 @@ class Logger extends Singleton {
 
 			fseek( $socket, -$seek, SEEK_CUR );
 
-			$output = ( $chunk = fread( $socket, $seek ) ) . $output;
+			$chunk  = fread( $socket, $seek );
+			$output = $chunk . $output;
 
 			fseek( $socket, -mb_strlen( $chunk, '8bit' ), SEEK_CUR );
 
@@ -130,12 +140,14 @@ class Logger extends Singleton {
 		if ( is_array( $data ) ) {
 			$data = json_encode(
 				$data,
-				JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
+				JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
 			);
 		}
 
+		// phpcs:disable WordPress.PHP.DevelopmentFunctions
 		$message = print_r( $data, true );
 		$line    = sprintf( "[%s] %s\n", $level, $message );
+		// phpcs:enable WordPress.PHP.DevelopmentFunctions
 
 		$socket = fopen( self::log_path(), 'a+' );
 		fwrite( $socket, $line, strlen( $line ) );
@@ -148,7 +160,7 @@ class Logger extends Singleton {
 	 * @return boolean
 	 */
 	public static function is_active() {
-		$log_path = self::log_path() ?: '/null';
+		$log_path = self::log_path();
 		return is_file( $log_path );
 	}
 
@@ -157,7 +169,7 @@ class Logger extends Singleton {
 	 */
 	public static function activate() {
 		if ( ! self::is_active() ) {
-			$log_path = self::log_path() ?: '/null';
+			$log_path = self::log_path();
 			if ( ! is_file( $log_path ) ) {
 				touch( $log_path );
 			}
@@ -183,10 +195,16 @@ class Logger extends Singleton {
 	 */
 	public static function setup() {
 		if ( self::is_active() ) {
+			// phpcs:disable WordPress.PHP.IniSet
+			// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions
+			// phpcs:disable WordPress.PHP.DevelopmentFunctions
 			error_reporting( E_ALL );
+			// phpcs:enable WordPress.PHP.DevelopmentFunctions
+			// phpcs:enable WordPress.PHP.DiscouragedPHPFunctions
 			ini_set( 'log_errors', 1 );
 			ini_set( 'display_errors', 0 );
 			ini_set( 'error_log', self::log_path() );
+			// phpcs:enable WordPress.PHP.IniSet
 		}
 
 		return self::get_instance();
@@ -194,6 +212,8 @@ class Logger extends Singleton {
 
 	/**
 	 * Logger singleton constructor. Binds the logger to wp and custom hooks
+	 *
+	 * @param mixed[] ...$args Array of constructor arguments.
 	 */
 	protected function construct( ...$args ) {
 		add_action(
@@ -222,7 +242,7 @@ class Logger extends Singleton {
 							return $data;
 						}
 
-						if ( $data['debug'] === true ) {
+						if ( true === $data['debug'] ) {
 							self::activate();
 						} else {
 							self::deactivate();
@@ -247,7 +267,7 @@ class Logger extends Singleton {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => static function () {
-					$lines = isset( $_GET['lines'] ) ? (int) $_GET['lines'] : 500;
+					$lines = isset( $_GET['lines'] ) ? intval( $_GET['lines'] ) : 500;
 					$logs  = self::logs( $lines );
 
 					if ( empty( $logs ) ) {

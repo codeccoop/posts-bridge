@@ -1,10 +1,9 @@
 #!/bin/bash
 
-cd custom-blocks
+cd posts-bridge/custom-blocks
 
 for block in *; do
 	if [ -d $block ]; then
 		cd $block && npm run build && cd -
 	fi
 done
-

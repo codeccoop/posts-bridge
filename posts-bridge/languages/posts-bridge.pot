@@ -3,7 +3,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Posts Bridge 4.0.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/forms-bridge\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/posts-bridge\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -12,29 +12,29 @@ msgstr ""
 "POT-Creation-Date: 2025-07-22T17:41:10+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
-"X-Domain: forms-bridge\n"
+"X-Domain: posts-bridge\n"
 
 #. Plugin Name of the plugin
-#: forms-bridge.php
+#: posts-bridge.php
 msgid "Posts Bridge"
 msgstr ""
 
 #. Plugin URI of the plugin
-#: forms-bridge.php
+#: posts-bridge.php
 msgid "https://postsbridge.codeccoop.org"
 msgstr ""
 
 #. Description of the plugin
-#: forms-bridge.php
+#: posts-bridge.php
 msgid "Bridge your posts collections with your backend over HTTP APIs, enabling remote and automated web content management"
 msgstr ""
 
 #. Author of the plugin
-#: forms-bridge.php
+#: posts-bridge.php
 msgid "codeccoop"
 msgstr ""
 
 #. Author URI of the plugin
-#: forms-bridge.php
+#: posts-bridge.php
 msgid "https://www.codeccoop.org"
 msgstr ""

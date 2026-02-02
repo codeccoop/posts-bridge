@@ -1,5 +1,12 @@
 <?php
+/**
+ * Class PBAPI
+ *
+ * @package postsbridge
+ */
 
+use POSTS_BRIDGE\Settings_Store;
+use POSTS_BRIDGE\Posts_Bridge;
 use POSTS_BRIDGE\Addon;
 use POSTS_BRIDGE\Post_Bridge;
 use HTTP_BRIDGE\Backend;
@@ -10,6 +17,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
 
+/**
+ * Public php API of the plugin.
+ */
 class PBAPI {
 
 	/**
@@ -23,18 +33,40 @@ class PBAPI {
 		return Addon::addon( $name );
 	}
 
+	/**
+	 * Gets the list of registered post types.
+	 *
+	 * @return array
+	 */
 	public static function get_post_types() {
 		return Custom_Post_Type::post_types();
 	}
 
+	/**
+	 * Gets the list of registered custom post types.
+	 *
+	 * @return array
+	 */
 	public static function get_custom_post_types() {
 		return apply_filters( 'posts_bridge_custom_post_types', array() );
 	}
 
+	/**
+	 * Gets a custom post type definition by name.
+	 *
+	 * @param string $name Post type name.
+	 *
+	 * @return array|null
+	 */
 	public static function get_custom_post_type( $name ) {
 		return self::get_custom_post_types()[ $name ] ?? null;
 	}
 
+	/**
+	 * Gets the list of bridged post types.
+	 *
+	 * @return array
+	 */
 	public static function get_remote_cpts() {
 		return apply_filters( 'posts_bridge_remote_cpts', array() );
 	}
@@ -89,7 +121,7 @@ class PBAPI {
 			return false;
 		}
 
-		$bridge_class = $addon::bridge_class;
+		$bridge_class = $addon::BRIDGE;
 		$bridge       = new $bridge_class( $data );
 
 		if ( ! $bridge->is_valid ) {
@@ -120,7 +152,7 @@ class PBAPI {
 	/**
 	 * Gets the bridge schema for a given addon.
 	 *
-	 * @param string $name Addon name.
+	 * @param string $addon Addon name.
 	 *
 	 * @return array|null
 	 */
@@ -131,7 +163,7 @@ class PBAPI {
 			return;
 		}
 
-		return Post_Bridge::schema( $addon::name );
+		return Post_Bridge::schema( $addon::NAME );
 	}
 
 	/**
@@ -163,7 +195,7 @@ class PBAPI {
 	/**
 	 * Inserts or updates the backend data on the database.
 	 *
-	 * @param array Backend data.
+	 * @param array $data Backend data.
 	 *
 	 * @return boolean
 	 */
@@ -174,7 +206,23 @@ class PBAPI {
 			return false;
 		}
 
-		return $backend->save();
+		$setting = Settings_Store::setting( 'http' );
+		if ( ! $setting ) {
+			return false;
+		}
+
+		$backends = $setting->backends ?: array();
+
+		$index = array_search( $backend->name, array_column( $backends, 'name' ), true );
+
+		if ( false === $index ) {
+			$backends[] = $data;
+		} else {
+			$backends[ $index ] = $data;
+		}
+
+		$setting->backends = $backends;
+		return true;
 	}
 
 	/**
@@ -191,7 +239,27 @@ class PBAPI {
 			return false;
 		}
 
-		return $backend->remove();
+		if ( ! $backend->is_valid ) {
+			return false;
+		}
+
+		$setting = Settings_Store::setting( 'http' );
+		if ( ! $setting ) {
+			return false;
+		}
+
+		$backends = $setting->backends ?: array();
+
+		$index = array_search( $backend->name, array_column( $backends, 'name' ), true );
+
+		if ( false === $index ) {
+			return false;
+		}
+
+		array_splice( $backends, $index );
+		$setting->backends = $backends;
+
+		return true;
 	}
 
 	/**
@@ -243,7 +311,23 @@ class PBAPI {
 			return false;
 		}
 
-		return $credential->save();
+		$setting = Settings_Store::setting( 'http' );
+		if ( ! $setting ) {
+			return false;
+		}
+
+		$credentials = $setting->credentials ?: array();
+
+		$index = array_search( $credential->name, array_column( $credentials, 'name' ), true );
+
+		if ( false === $index ) {
+			$credentials[] = $data;
+		} else {
+			$credentials[ $index ] = $data;
+		}
+
+		$setting->credentials = $credentials;
+		return true;
 	}
 
 	/**
@@ -260,7 +344,27 @@ class PBAPI {
 			return false;
 		}
 
-		return $credential->delete();
+		if ( ! $credential->is_valid ) {
+			return false;
+		}
+
+		$setting = Settings_Store::setting( 'http' );
+		if ( ! $setting ) {
+			return false;
+		}
+
+		$credentials = $setting->credentials ?: array();
+
+		$index = array_search( $credential->name, array_column( $credentials, 'name' ), true );
+
+		if ( false === $index ) {
+			return false;
+		}
+
+		array_splice( $credentials, $index );
+		$setting->credentials = $credentials;
+
+		return true;
 	}
 
 	/**

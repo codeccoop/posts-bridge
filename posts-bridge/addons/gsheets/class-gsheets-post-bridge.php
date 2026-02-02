@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class GSheets_Post_Bridge
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -8,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
 
+/**
+ * Google Sheets post bridge.
+ */
 class GSheets_Post_Bridge extends Post_Bridge {
 
 	/**
@@ -17,57 +25,25 @@ class GSheets_Post_Bridge extends Post_Bridge {
 	 */
 	private static $rows = null;
 
+	/**
+	 * Bridge constructor.
+	 *
+	 * @param array $data Bridge data.
+	 */
 	public function __construct( $data ) {
 		parent::__construct( $data, 'gsheets' );
-	}
-
-	private function value_range( $values ) {
-		$range = rawurlencode( $this->tab );
-
-		if ( empty( $values ) ) {
-			return $range;
-		}
-
-		$abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-		$len = strlen( $abc );
-
-		$columns = array();
-		for ( $row = 0; $row < count( $values ); $row++ ) {
-			$rowcols = array();
-			$i       = -1;
-
-			for ( $col = 0; $col < count( $values[ $row ] ); $col++ ) {
-				if ( $col > 0 && $col % $len === 0 ) {
-					++$i;
-				}
-
-				if ( $col >= $len ) {
-					$index     = $col % $len;
-					$rowcols[] = $abc[ $i ] . $abc[ $index ];
-				} else {
-					$rowcols[] = $abc[ $col ];
-				}
-			}
-
-			if ( count( $rowcols ) > count( $columns ) ) {
-				$columns = $rowcols;
-			}
-		}
-
-		$range .= '!' . $columns[0] . '1';
-		$range .= ':' . $columns[ count( $columns ) - 1 ] . $row;
-
-		return $range;
 	}
 
 	private function values_to_rows( $values ) {
 		$headers = $values[0] ?? array();
 
 		$rows = array();
-		for ( $i = 1; $i <= count( $values ); $i++ ) {
+
+		$l = count( $values );
+		for ( $i = 1; $i <= $l; $i++ ) {
 			$row = array();
-			for ( $j = 0; $j < count( $headers ); $j++ ) {
+			$m   = count( $headers );
+			for ( $j = 0; $j < $m; $j++ ) {
 				$row[ $headers[ $j ] ] = $values[ $i ][ $j ] ?? '';
 			}
 
@@ -162,7 +138,7 @@ class GSheets_Post_Bridge extends Post_Bridge {
 					'headers'       => array(),
 					'cookies'       => array(),
 					'filename'      => null,
-					'body'          => json_encode( $row ),
+					'body'          => wp_json_encode( $row ),
 					'response'      => array(
 						'status'  => 200,
 						'message' => 'Success',
@@ -181,7 +157,7 @@ class GSheets_Post_Bridge extends Post_Bridge {
 	}
 
 	private function get_rows() {
-		if ( self::$rows !== null ) {
+		if ( null !== self::$rows ) {
 			return self::$rows;
 		}
 

@@ -10,8 +10,8 @@ export default function useAjaxSync({ fullMode, postType }) {
 
   const ping = () => {
     const body = new URLSearchParams();
-    body.set("_ajax_nonce", postsBridgeAjaxSync.nonce);
-    body.set("action", postsBridgeAjaxSync.actions.ping);
+    body.set("_ajax_nonce", window.postsBridgeAjaxSync.nonce);
+    body.set("action", window.postsBridgeAjaxSync.actions.ping);
 
     return new Promise((res, rej) => {
       const ajax = new XMLHttpRequest();
@@ -37,7 +37,7 @@ export default function useAjaxSync({ fullMode, postType }) {
         }
       };
 
-      ajax.open("POST", postsBridgeAjaxSync.url, true);
+      ajax.open("POST", window.postsBridgeAjaxSync.url, true);
       ajax.setRequestHeader(
         "Content-Type",
         "application/x-www-form-urlencoded"
@@ -52,8 +52,8 @@ export default function useAjaxSync({ fullMode, postType }) {
     setLoading(true);
 
     const body = new URLSearchParams();
-    body.set("_ajax_nonce", postsBridgeAjaxSync.nonce);
-    body.set("action", postsBridgeAjaxSync.actions.sync);
+    body.set("_ajax_nonce", window.postsBridgeAjaxSync.nonce);
+    body.set("action", window.postsBridgeAjaxSync.actions.sync);
     body.set("mode", fullMode ? "full" : "light");
 
     if (postType) {
@@ -84,7 +84,7 @@ export default function useAjaxSync({ fullMode, postType }) {
         }
       };
 
-      ajax.open("POST", postsBridgeAjaxSync.url, true);
+      ajax.open("POST", window.postsBridgeAjaxSync.url, true);
       ajax.setRequestHeader(
         "Content-Type",
         "application/x-www-form-urlencoded"

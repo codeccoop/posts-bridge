@@ -1,10 +1,16 @@
 <?php
+/**
+ * Class Addon
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
+use Error;
+use TypeError;
 use PBAPI;
 use WPCT_PLUGIN\Singleton;
-use HTTP_BRIDGE\Settings_Store as Http_Store;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit();
@@ -27,28 +33,28 @@ class Addon extends Singleton {
 	 *
 	 * @var string registry
 	 */
-	private const registry = 'posts_bridge_addons';
+	private const REGISTRY = 'posts_bridge_addons';
 
 	/**
 	 * Handles addon public title.
 	 *
 	 * @var string
 	 */
-	public const title = '';
+	public const TITLE = '';
 
 	/**
 	 * Handles addon's API name.
 	 *
 	 * @var string
 	 */
-	public const name = '';
+	public const NAME = '';
 
 	/**
 	 * Handles addon's custom bridge class name.
 	 *
 	 * @var string
 	 */
-	public const bridge_class = '\POSTS_BRIDGE\Post_Bridge';
+	public const BRIDGE = '\POSTS_BRIDGE\Post_Bridge';
 
 	/**
 	 * Addon's default config getter.
@@ -56,7 +62,7 @@ class Addon extends Singleton {
 	 * @return array
 	 */
 	public static function schema() {
-		$bridge_schema = PBAPI::get_bridge_schema( static::name );
+		$bridge_schema = PBAPI::get_bridge_schema( static::NAME );
 
 		return array(
 			'type'       => 'object',
@@ -83,13 +89,15 @@ class Addon extends Singleton {
 	 */
 	protected static function defaults() {
 		return array(
-			'title'   => static::title,
+			'title'   => static::TITLE,
 			'bridges' => array(),
 		);
 	}
 
 	/**
 	 * Public singleton initializer.
+	 *
+	 * @param mixed[] ...$args Array of class constructor arguments.
 	 */
 	final public static function setup( ...$args ) {
 		return static::get_instance( ...$args );
@@ -101,7 +109,7 @@ class Addon extends Singleton {
 	 * @return array Addons registry state.
 	 */
 	final public static function registry() {
-		$state      = get_option( self::registry, array( 'rest' => true ) ) ?: array();
+		$state      = get_option( self::REGISTRY, array( 'rest' => true ) ) ?: array();
 		$addons_dir = POSTS_BRIDGE_ADDONS_DIR;
 		$addons     = array_diff( scandir( $addons_dir ), array( '.', '..' ) );
 
@@ -124,7 +132,7 @@ class Addon extends Singleton {
 	/**
 	 * Updates the addons' registry state.
 	 *
-	 * @param array $value Plugin's general setting data.
+	 * @param array<string, boolean> $addons Addons registry state.
 	 */
 	private static function update_registry( $addons = array() ) {
 		$registry = self::registry();
@@ -136,9 +144,14 @@ class Addon extends Singleton {
 			$registry[ $addon ] = (bool) $enabled;
 		}
 
-		update_option( self::registry, $registry );
+		update_option( self::REGISTRY, $registry );
 	}
 
+	/**
+	 * Public addons list getter.
+	 *
+	 * @return Addon[] List of enabled addon instances.
+	 */
 	final public static function addons() {
 		$addons = array();
 		foreach ( self::$addons as $addon ) {
@@ -153,7 +166,7 @@ class Addon extends Singleton {
 	/**
 	 * Addon instances getter.
 	 *
-	 * @var string $name Addon name.
+	 * @param string $name Addon name.
 	 *
 	 * @return Addon|null
 	 */
@@ -183,11 +196,7 @@ class Addon extends Singleton {
 						$registry = self::registry();
 						$addons   = array();
 						foreach ( self::$addons as $name => $addon ) {
-							$logo_path =
-							POSTS_BRIDGE_ADDONS_DIR .
-							'/' .
-							$addon::name .
-							'/assets/logo.png';
+							$logo_path = POSTS_BRIDGE_ADDONS_DIR . '/' . $addon::NAME . '/assets/logo.png';
 
 							if ( is_file( $logo_path ) && is_readable( $logo_path ) ) {
 								$logo = plugin_dir_url( $logo_path ) . 'logo.png';
@@ -197,7 +206,7 @@ class Addon extends Singleton {
 
 							$addons[ $name ] = array(
 								'name'    => $name,
-								'title'   => $addon::title,
+								'title'   => $addon::TITLE,
 								'enabled' => $registry[ $name ] ?? false,
 								'logo'    => $logo,
 							);
@@ -265,7 +274,7 @@ class Addon extends Singleton {
 		$uniques   = array();
 		$sanitized = array();
 
-		$schema = PBAPI::get_bridge_schema( static::name );
+		$schema = PBAPI::get_bridge_schema( static::NAME );
 		foreach ( $bridges as $bridge ) {
 			$bridge['post_type'] = trim( $bridge['post_type'] );
 
@@ -296,7 +305,7 @@ class Addon extends Singleton {
 	 * @return array
 	 */
 	protected static function sanitize_bridge( $bridge, $schema ) {
-		$backends = Http_Store::setting( 'general' )->backends ?: array();
+		$backends = Settings_Store::setting( 'http' )->backends ?: array();
 
 		foreach ( $backends as $candidate ) {
 			if ( $candidate['name'] === $bridge['backend'] ) {
@@ -348,14 +357,21 @@ class Addon extends Singleton {
 		return $bridge;
 	}
 
+	/**
+	 * Handles the enabled state of the addon instance.
+	 *
+	 * @var bool
+	 */
 	public $enabled = false;
 
 	/**
 	 * Private class constructor. Add addons scripts as dependency to the
 	 * plugin's scripts and setup settings hooks.
+	 *
+	 * @param mixed[] ...$args Array of class constructor arguments.
 	 */
 	protected function construct( ...$args ) {
-		if ( empty( static::name ) || empty( static::title ) ) {
+		if ( empty( static::NAME ) || empty( static::TITLE ) ) {
 			Logger::log( 'Skip invalid addon registration', Logger::DEBUG );
 			Logger::log(
 				'Addon name and title const are required',
@@ -364,9 +380,12 @@ class Addon extends Singleton {
 			return;
 		}
 
-		self::$addons[ static::name ] = $this;
+		self::$addons[ static::NAME ] = $this;
 	}
 
+	/**
+	 * Loads the addon.
+	 */
 	public function load() {
 		add_filter(
 			'posts_bridge_templates',
@@ -375,7 +394,7 @@ class Addon extends Singleton {
 					$templates = array();
 				}
 
-				if ( $addon && $addon !== static::name ) {
+				if ( $addon && static::NAME !== $addon ) {
 					return $templates;
 				}
 
@@ -396,7 +415,7 @@ class Addon extends Singleton {
 					$bridges = array();
 				}
 
-				if ( $addon && $addon !== static::name ) {
+				if ( $addon && static::NAME !== $addon ) {
 					return $bridges;
 				}
 
@@ -406,8 +425,8 @@ class Addon extends Singleton {
 				}
 
 				foreach ( $setting->bridges ?: array() as $bridge_data ) {
-					$bridge_class = static::bridge_class;
-					$bridges[]    = new $bridge_class( $bridge_data, static::name );
+					$bridge_class = static::BRIDGE;
+					$bridges[]    = new $bridge_class( $bridge_data, static::NAME );
 				}
 
 				return $bridges;
@@ -423,7 +442,7 @@ class Addon extends Singleton {
 					$post_types = array();
 				}
 
-				if ( $addon && $addon !== static::name ) {
+				if ( $addon && static::NAME !== $addon ) {
 					return $post_types;
 				}
 
@@ -445,7 +464,7 @@ class Addon extends Singleton {
 		Settings_Store::register_setting(
 			static function ( $settings ) {
 				$schema            = static::schema();
-				$schema['name']    = static::name;
+				$schema['name']    = static::NAME;
 				$schema['default'] = static::defaults();
 
 				$settings[] = $schema;
@@ -456,9 +475,9 @@ class Addon extends Singleton {
 		Settings_Store::ready(
 			static function ( $store ) {
 				$store::use_getter(
-					static::name,
+					static::NAME,
 					static function ( $data ) {
-						$templates = PBAPI::get_addon_templates( static::name );
+						$templates = PBAPI::get_addon_templates( static::NAME );
 
 						$data['templates'] = array_map(
 							function ( $template ) {
@@ -475,8 +494,12 @@ class Addon extends Singleton {
 				);
 
 				$store::use_setter(
-					static::name,
+					static::NAME,
 					static function ( $data ) {
+						if ( ! is_array( $data ) ) {
+							return $data;
+						}
+
 						unset( $data['templates'] );
 						return static::sanitize_setting( $data );
 					},
@@ -494,7 +517,7 @@ class Addon extends Singleton {
 	 * @return string
 	 */
 	final protected static function setting_name() {
-		return 'posts-bridge_' . static::name;
+		return 'posts-bridge_' . static::NAME;
 	}
 
 	/**
@@ -503,7 +526,7 @@ class Addon extends Singleton {
 	 * @return Setting|null Setting instance.
 	 */
 	final protected static function setting() {
-		return Posts_Bridge::setting( static::name );
+		return Posts_Bridge::setting( static::NAME );
 	}
 
 	/**
@@ -514,6 +537,7 @@ class Addon extends Singleton {
 	 * @return boolean|WP_Error
 	 */
 	public function ping( $backend ) {
+		Logger::log( 'This adddon bridges has not known ping endpoint', Logger::ERROR );
 		return true;
 	}
 
@@ -526,8 +550,9 @@ class Addon extends Singleton {
 	 * @return array|WP_Error
 	 */
 	public function fetch( $endpoint, $backend ) {
-		$bridge_class = self::bridge_class;
-		$bridge       = new $bridge_class(
+		$bridge_class = self::BRIDGE;
+
+		$bridge = new $bridge_class(
 			array(
 				'post_type'   => '_',
 				'foreign_key' => 'id',
@@ -535,7 +560,6 @@ class Addon extends Singleton {
 				'backend'     => $backend,
 				'method'      => 'GET',
 			),
-			self::name
 		);
 
 		return $bridge->fetch();
@@ -555,10 +579,23 @@ class Addon extends Singleton {
 	}
 
 	/**
+	 * Performs an introspection of the backend API and returns a list of available endpoints.
+	 *
+	 * @param string      $backend Target backend name.
+	 * @param string|null $method HTTP method.
+	 *
+	 * @return array|WP_Error
+	 */
+	public function get_endpoints( $backend, $method = null ) {
+		return array();
+	}
+
+	/**
 	 * Autoload config files from a given addon's directory. Used to load
 	 * template and job config files.
 	 *
-	 * @param string $dir Path of the target directory.
+	 * @param string   $dir Path of the target directory.
+	 * @param string[] $extensions Allowed file extensions.
 	 *
 	 * @return array Array with data from files.
 	 */
@@ -584,7 +621,7 @@ class Addon extends Singleton {
 			$name = pathinfo( $file )['filename'];
 			$ext  = pathinfo( $file )['extension'] ?? null;
 
-			if ( ! in_array( $ext, $extensions ) ) {
+			if ( ! in_array( $ext, $extensions, true ) ) {
 				continue;
 			}
 
@@ -594,17 +631,19 @@ class Addon extends Singleton {
 			}
 
 			$data = null;
-			if ( $ext === 'php' ) {
+			if ( 'php' === $ext ) {
 				$data = include_once $file_path;
-			} elseif ( $ext === 'json' ) {
+			} elseif ( 'json' === $ext ) {
+				// phpcs:disable Generic.CodeAnalysis.EmptyStatement
 				try {
 					$content = file_get_contents( $file_path );
 					$data    = json_decode( $content, true, JSON_THROW_ON_ERROR );
 				} catch ( TypeError ) {
-					// pass
+					// pass.
 				} catch ( Error ) {
-					// pass
+					// pass.
 				}
+				// phpcs:enable
 			}
 
 			if ( is_array( $data ) ) {
@@ -623,18 +662,16 @@ class Addon extends Singleton {
 	 * @return Post_Bridge_Template[].
 	 */
 	private static function load_templates() {
-		$dir = POSTS_BRIDGE_ADDONS_DIR . '/' . static::name . '/templates';
+		$dir = POSTS_BRIDGE_ADDONS_DIR . '/' . static::NAME . '/templates';
 
 		$directories = apply_filters(
 			'posts_bridge_template_directories',
 			array(
 				$dir,
 				Posts_Bridge::path() . 'includes/templates',
-				get_stylesheet_directory() .
-				'/posts-bridge/templates/' .
-				static::name,
+				get_stylesheet_directory() . '/posts-bridge/templates/' . static::NAME,
 			),
-			static::name
+			static::NAME
 		);
 
 		$templates = array();
@@ -654,7 +691,7 @@ class Addon extends Singleton {
 		$templates = apply_filters(
 			'posts_bridge_load_templates',
 			$templates,
-			static::name
+			static::NAME
 		);
 
 		$loaded = array();
@@ -671,7 +708,7 @@ class Addon extends Singleton {
 				);
 			}
 
-			$template = new Post_Bridge_Template( $template, static::name );
+			$template = new Post_Bridge_Template( $template, static::NAME );
 
 			if ( $template->is_valid ) {
 				$loaded[] = $template;

@@ -8,6 +8,7 @@ const OPTIONS = [
   { label: "Basic", value: "Basic" },
   { label: "Token", value: "Token" },
   { label: "Bearer", value: "Bearer" },
+  { label: "OAuth", value: "OAuth" },
 ];
 
 export default function BackendAuthentication({ data = {}, setData }) {

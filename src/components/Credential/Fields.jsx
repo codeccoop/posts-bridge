@@ -1,5 +1,6 @@
 import { isset } from "../../lib/utils";
 import { StringField, SelectField } from "../Bridge/Fields";
+
 const { useEffect, useMemo } = wp.element;
 
 export const INTERNALS = [
@@ -103,7 +104,7 @@ export default function CredentialFields({
 
   return fields
     .filter((field) => !field.value)
-    .sort((a, b) => (a.name === "name" ? -1 : 0))
+    .sort((a) => (a.name === "name" ? -1 : 0))
     .map((field) => {
       switch (field.type) {
         case "string":

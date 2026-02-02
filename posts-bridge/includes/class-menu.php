@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class Menu
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -15,6 +20,8 @@ class Menu extends Base_Menu {
 
 	/**
 	 * Renders the plugin menu page.
+	 *
+	 * @param bool $echo Ignored.
 	 */
 	protected static function render_page( $echo = true ) {
 		printf(

@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class Rest_Addon
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -16,14 +21,14 @@ class Rest_Addon extends Addon {
 	 *
 	 * @var string
 	 */
-	public const title = 'REST API';
+	public const TITLE = 'REST API';
 
 	/**
 	 * Handles the addon's API name.
 	 *
 	 * @var string
 	 */
-	public const name = 'rest';
+	public const NAME = 'rest';
 }
 
 Rest_Addon::setup();

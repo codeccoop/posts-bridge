@@ -4,8 +4,9 @@ import { usePostTypes } from "../../hooks/useGeneral";
 import { useBackends } from "../../hooks/useHttp";
 import { isset, prependEmptyOption } from "../../lib/utils";
 import FieldWrapper from "../FieldWrapper";
+import { useApiEndpoints } from "../../providers/ApiSchema";
 
-const { TextControl, SelectControl } = wp.components;
+const { BaseControl, SelectControl } = wp.components;
 const { useEffect, useMemo } = wp.element;
 
 export const INTERNALS = [
@@ -18,7 +19,8 @@ export const INTERNALS = [
 const ORDER = ["name", "backend", "endpoint", "method"];
 
 export default function BridgeFields({ data, setData, schema, errors = {} }) {
-  const postTypes = usePostTypes();
+  const endpoints = useApiEndpoints();
+  const [postTypes] = usePostTypes();
   const rcpts = useRemoteCPTs();
 
   const postTypeOptions = useMemo(() => {
@@ -134,6 +136,7 @@ export default function BridgeFields({ data, setData, schema, errors = {} }) {
               label={field.label}
               value={data[field.name] || ""}
               setValue={(value) => setData({ ...data, [field.name]: value })}
+              datalist={field.name === "endpoint" ? endpoints : []}
             />
           );
         case "select":
@@ -151,18 +154,41 @@ export default function BridgeFields({ data, setData, schema, errors = {} }) {
     });
 }
 
-export function StringField({ label, value, setValue, error, disabled }) {
+export function StringField({
+  label,
+  value,
+  setValue,
+  error,
+  disabled,
+  datalist = [],
+}) {
   return (
     <FieldWrapper>
-      <TextControl
-        disabled={disabled}
-        label={label}
-        value={value}
-        onChange={setValue}
-        help={error}
-        __nextHasNoMarginBottom
-        __next40pxDefaultSize
-      />
+      <BaseControl label={label} help={error}>
+        <input
+          name={label}
+          type="text"
+          list={"datalist-" + label}
+          value={value}
+          onChange={(ev) => setValue(ev.target.value)}
+          disabled={disabled}
+          style={{
+            height: "40px",
+            paddingRight: "12px",
+            paddingLeft: "12px",
+            borderColor: "var(--wp-components-color-gray-600,#949494)",
+            fontSize: "13px",
+            width: "100%",
+            border: "1px solid #949494",
+            borderRadius: "2px",
+          }}
+        />
+        <datalist id={"datalist-" + label}>
+          {datalist.map((endpoint) => (
+            <option key={endpoint} value={endpoint}></option>
+          ))}
+        </datalist>
+      </BaseControl>
     </FieldWrapper>
   );
 }

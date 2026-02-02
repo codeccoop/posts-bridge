@@ -14,11 +14,11 @@ export default function useLogs({ debug }) {
       path: "posts-bridge/v1/logs?lines=1000",
       signal: AbortSignal.timeout(3000),
     })
-      .then((logs) => setLogs(logs))
-      .catch((err) => {
-        if (err.code === "fetch_error") return;
-        setError(true);
+      .then((logs) => {
+        setError(false);
+        setLogs(logs);
       })
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   };
 

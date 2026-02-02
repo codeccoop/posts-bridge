@@ -148,7 +148,7 @@ export default function MappersTable({ title, mappers, setMappers }) {
                       {"{...}"}
                       {fieldSelector === index && (
                         <DropdownSelect
-                          title={__("Fields", "forms-bridge")}
+                          title={__("Fields", "posts-bridge")}
                           tags={apiFieldOptions}
                           onChange={(value) => {
                             setFieldSelector(-1);

@@ -1,9 +1,14 @@
 <?php
+/**
+ * Class Settings_Store
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
+use HTTP_BRIDGE\Http_Setting;
 use WPCT_PLUGIN\Settings_Store as Base_Settings_Store;
-use HTTP_BRIDGE\Settings_Store as Http_Store;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit();
@@ -19,10 +24,12 @@ class Settings_Store extends Base_Settings_Store {
 	 *
 	 * @var string REST Settings Controller class name.
 	 */
-	protected const rest_controller_class = '\POSTS_BRIDGE\REST_Settings_Controller';
+	protected const REST_CONTROLER = '\POSTS_BRIDGE\REST_Settings_Controller';
 
 	/**
 	 * Inherits the parent constructor and sets up setting validation callbacks.
+	 *
+	 * @param mixed[] ...$args Array of constructor arguments.
 	 */
 	protected function construct( ...$args ) {
 		parent::construct( ...$args );
@@ -62,53 +69,6 @@ class Settings_Store extends Base_Settings_Store {
 			)
 		);
 
-		self::register_setting(
-			array(
-				'name'       => 'http',
-				'properties' => array(),
-				'default'    => array(),
-			)
-		);
-
-		self::ready(
-			function ( $store ) {
-				$store::use_getter(
-					'http',
-					static function () {
-						$setting = Http_Store::setting( 'general' );
-						return $setting->data();
-					}
-				);
-
-				$store::use_setter(
-					'http',
-					function ( $data ) {
-						if (
-							isset( $data['backends'] ) &&
-							isset( $data['credentials'] )
-						) {
-							$setting = Http_Store::setting( 'general' );
-							$setting->update( $data );
-						}
-
-						return array();
-					},
-					9
-				);
-
-				$store::use_cleaner(
-					'general',
-					static function () {
-						$setting = Http_Store::setting( 'general' );
-						$setting->update(
-							array(
-								'backends'    => array(),
-								'credentials' => array(),
-							)
-						);
-					}
-				);
-			}
-		);
+		Http_Setting::register( $this );
 	}
 }

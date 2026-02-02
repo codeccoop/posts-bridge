@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class Dolibarr_Addon
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -19,21 +24,21 @@ class Dolibarr_Addon extends Addon {
 	 *
 	 * @var string
 	 */
-	public const title = 'Dolibarr';
+	public const TITLE = 'Dolibarr';
 
 	/**
 	 * Handles the addon's API name.
 	 *
 	 * @var string
 	 */
-	public const name = 'dolibarr';
+	public const NAME = 'dolibarr';
 
 	/**
 	 * Handles the addom's custom relation class.
 	 *
 	 * @var string
 	 */
-	public const bridge_class = '\POSTS_BRIDGE\Dolibarr_Post_Bridge';
+	public const BRIDGE = '\POSTS_BRIDGE\Dolibarr_Post_Bridge';
 
 	/**
 	 * Performs a request against the backend to check the connexion status.

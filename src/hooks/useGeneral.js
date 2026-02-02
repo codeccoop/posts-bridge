@@ -24,8 +24,16 @@ export function useAddons() {
 }
 
 export function usePostTypes() {
-  const [general] = useGeneral();
-  return general.post_types || [];
+  const [general, setGeneral] = useGeneral();
+  return [
+    general.post_types || [],
+    (post_types) => {
+      setGeneral({
+        ...general,
+        post_types,
+      });
+    },
+  ];
 }
 
 export function useDebug() {
@@ -33,7 +41,7 @@ export function useDebug() {
   return [
     general.debug,
     (debug) => {
-      window.__wpfbInvalidated = true;
+      window.__wppbInvalidated = true;
       setGeneral({ ...general, debug });
     },
   ];

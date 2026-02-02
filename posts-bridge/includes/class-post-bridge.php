@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class Post_Bridge
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -20,7 +25,7 @@ class Post_Bridge {
 	 *
 	 * @var string[]
 	 */
-	public const post_model = array(
+	public const POST_MODEL = array(
 		'post_title',
 		'post_name',
 		'post_excerpt',
@@ -47,14 +52,16 @@ class Post_Bridge {
 		'tax_input',
 		'meta_input',
 		'page_template',
-		// custom
+		/* custom */
 		'featured_media',
 	);
 
 	/**
 	 * Bridge data common schema.
 	 *
-	 * @var array
+	 * @param string|null $addon Addon name.
+	 *
+	 * @return array
 	 */
 	public static function schema( $addon = null ) {
 		$schema = array(
@@ -80,7 +87,7 @@ class Post_Bridge {
 					),
 					'description' => __(
 						'Name of the primary key of the remote objects',
-						'posts-birdge'
+						'posts-bridge'
 					),
 					'type'        => 'string',
 					'default'     => 'id',
@@ -199,6 +206,11 @@ class Post_Bridge {
 	 */
 	protected $data;
 
+	/**
+	 * Handles the post bridge identifier string.
+	 *
+	 * @var string
+	 */
 	protected $id;
 
 	/** Handles post bridge's addon slug.
@@ -209,6 +221,9 @@ class Post_Bridge {
 
 	/**
 	 * Stores the post bridge's data as a private attribute.
+	 *
+	 * @param array  $data Bridge data.
+	 * @param string $addon Addon name.
 	 */
 	public function __construct( $data, $addon ) {
 		$this->data  = wpct_plugin_sanitize_with_schema(
@@ -222,6 +237,11 @@ class Post_Bridge {
 		}
 	}
 
+	/**
+	 * Bridge data getter.
+	 *
+	 * @return array|null
+	 */
 	public function data() {
 		if ( ! $this->is_valid ) {
 			return;
@@ -312,7 +332,7 @@ class Post_Bridge {
 			return new WP_Error( 'invalid_bridge' );
 		}
 
-		// Function overload to allow calls without foreign_id
+		// Function overload to allow calls without foreign_id.
 		if ( is_array( $foreign_id ) ) {
 			$foreign_id = null;
 			$headers    = $params;
@@ -462,7 +482,7 @@ class Post_Bridge {
 				continue;
 			}
 
-			if ( in_array( $mapper['name'], self::post_model ) ) {
+			if ( in_array( $mapper['name'], self::POST_MODEL ) ) {
 				$fields[ $mapper['foreign'] ] = $mapper['name'];
 			}
 		}
@@ -482,7 +502,7 @@ class Post_Bridge {
 				continue;
 			}
 
-			if ( ! in_array( $mapper['name'], self::post_model ) ) {
+			if ( ! in_array( $mapper['name'], self::POST_MODEL ) ) {
 				$fields[ $mapper['foreign'] ] = $mapper['name'];
 			}
 		}
@@ -498,6 +518,10 @@ class Post_Bridge {
 	 * @return array Data with remote fields mappeds.
 	 */
 	final public function apply_mappers( $data ) {
+		if ( ! is_array( $data ) ) {
+			return $data;
+		}
+
 		$finger        = new JSON_Finger( $data );
 		$post_fields   = $this->remote_post_fields();
 		$custom_fields = $this->remote_custom_fields();
@@ -508,7 +532,8 @@ class Post_Bridge {
 				continue;
 			}
 
-			if ( $value = $finger->get( $foreign ) ) {
+			$value = $finger->get( $foreign );
+			if ( $value ) {
 				$finger->set( $name, $value );
 			}
 
@@ -516,11 +541,14 @@ class Post_Bridge {
 		}
 
 		foreach ( $custom_fields as $foreign => $name ) {
-			if ( $value = $finger->get( $foreign ) ) {
+			$value = $finger->get( $foreign );
+			if ( $value ) {
 				// WordPress can't serialize list arrays...
 				if ( wp_is_numeric_array( $value ) ) {
 					$serializable = array();
-					for ( $i = 0; $i < count( $value ); $i++ ) {
+
+					$l = count( $value );
+					for ( $i = 0; $i < $l; $i++ ) {
 						$serializable[ (string) $i ] = $value[ $i ];
 					}
 					$value = $serializable;
@@ -534,14 +562,15 @@ class Post_Bridge {
 
 		$tax_input = array();
 		foreach ( $taxonomies as $foreign => $name ) {
-			if ( $terms = $finger->get( $foreign ) ) {
-				if ( $name === 'tags_input' ) {
+			$terms = $finger->get( $foreign );
+			if ( $terms ) {
+				if ( 'tags_input' === $name ) {
 					$terms = $this->get_post_tags( $terms );
 
 					if ( count( $terms ) ) {
 						$finger->set( 'tags_input', $terms );
 					}
-				} elseif ( $name === 'post_category' ) {
+				} elseif ( 'post_category' === $name ) {
 					$terms = $this->get_post_terms( $terms );
 
 					if ( count( $terms ) ) {
@@ -565,10 +594,10 @@ class Post_Bridge {
 			$data['tax_input'] = $tax_input;
 		}
 
-		// post type should not be user declarable
+		// post type should not be user declarable.
 		unset( $data['post_type'] );
 
-		// fallback to publish status
+		// fallback to publish status.
 		if ( ! isset( $data['post_status'] ) ) {
 			$data['post_status'] = 'publish';
 		}
@@ -581,7 +610,8 @@ class Post_Bridge {
 	 * Loop over the categories, create them if they doesn't exists, an return
 	 * its ids.
 	 *
-	 * @param array|string $categories Array with category names.
+	 * @param array|string $names Term names.
+	 * @param string       $taxonomy Taxonomy name.
 	 *
 	 * @return array Array with valid categories ids.
 	 */
@@ -590,12 +620,13 @@ class Post_Bridge {
 			$names = $this->get_post_tags( $names );
 		}
 
-		$terms      = get_terms(
+		$terms = get_terms(
 			array(
 				'taxonomy'   => $taxonomy,
 				'hide_empty' => false,
 			)
 		);
+
 		$term_names = array();
 		foreach ( $terms as $term ) {
 			$term_names[ $term->name ] = $term->term_id;
@@ -696,9 +727,9 @@ class Post_Bridge {
 
 		$bridges = $setting->bridges ?: array();
 
-		$index = array_search( $this->name, array_column( $bridges, 'name' ) );
+		$index = array_search( $this->name, array_column( $bridges, 'name' ), true );
 
-		if ( $index === false ) {
+		if ( false === $index ) {
 			$bridges[] = $this->data;
 		} else {
 			$bridges[ $index ] = $this->data;
@@ -721,9 +752,9 @@ class Post_Bridge {
 
 		$bridges = $setting->bridges ?: array();
 
-		$index = array_search( $this->name, array_column( $bridges, 'name' ) );
+		$index = array_search( $this->name, array_column( $bridges, 'name' ), true );
 
-		if ( $index === false ) {
+		if ( false === $index ) {
 			return false;
 		}
 

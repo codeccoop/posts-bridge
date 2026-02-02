@@ -22,7 +22,7 @@ const DEFAULTS = {
 };
 
 export default function NewCustomPostType({ add }) {
-  const postTypes = usePostTypes();
+  const [postTypes] = usePostTypes();
 
   const [data, setData] = useState({ ...DEFAULTS });
 

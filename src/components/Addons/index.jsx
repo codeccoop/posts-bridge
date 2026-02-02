@@ -18,8 +18,8 @@ export default function Addons() {
         return { name, enabled };
       });
 
-      window.__wpfbInvalidated = true;
-      window.__wpfbReload = true;
+      window.__wppbInvalidated = true;
+      window.__wppbReload = true;
       setAddons(newAddons);
     },
     [addons]
@@ -31,10 +31,10 @@ export default function Addons() {
   );
 
   return (
-    <PanelBody title={__("Addons", "posts-bridge")} initialOpen={false}>
+    <PanelBody title={__("Add-ons", "posts-bridge")} initialOpen={false}>
       <p>
         {__(
-          "Each addon allows you to create API specific bridges",
+          "Each add-on allows you to create API specific bridges and comes with a library of bridge templates",
           "posts-bridge"
         )}
       </p>

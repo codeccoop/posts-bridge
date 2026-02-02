@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class WP_Addon
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -17,17 +22,17 @@ class WP_Addon extends Addon {
 	/**
 	 * Handles the addon name.
 	 */
-	public const title = 'WP';
+	public const TITLE = 'WP';
 
 	/**
 	 * Handles the addon's API name.
 	 */
-	public const name = 'wp';
+	public const NAME = 'wp';
 
 	/**
 	 * Handles the addon's custom bridge class.
 	 */
-	public const bridge_class = '\POSTS_BRIDGE\WP_Post_Bridge';
+	public const BRIDGE = '\POSTS_BRIDGE\WP_Post_Bridge';
 
 	/**
 	 * Performs a request against the backend to check the connexion status.

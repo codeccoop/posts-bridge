@@ -1,4 +1,9 @@
 <?php
+/**
+ * Google Sheets addon hooks
+ *
+ * @package postsbridge
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit();
@@ -7,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_filter(
 	'posts_bridge_bridge_schema',
 	function ( $schema, $addon ) {
-		if ( $addon !== 'gsheets' ) {
+		if ( 'gsheets' !== $addon ) {
 			return $schema;
 		}
 
@@ -33,7 +38,7 @@ add_filter(
 add_filter(
 	'posts_bridge_template_defaults',
 	function ( $defaults, $addon, $schema ) {
-		if ( $addon !== 'gsheets' ) {
+		if ( 'gsheets' !== $addon ) {
 			return $defaults;
 		}
 
@@ -79,8 +84,7 @@ add_filter(
 						'name'     => 'scope',
 						'label'    => __( 'Scope', 'posts-bridge' ),
 						'type'     => 'text',
-						'value'    =>
-							'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
+						'value'    => 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
 						'required' => true,
 					),
 					array(
@@ -139,8 +143,7 @@ add_filter(
 					'name'          => '',
 					'schema'        => 'Bearer',
 					'oauth_url'     => 'https://accounts.google.com/o/oauth2/v2',
-					'scope'         =>
-						'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
+					'scope'         => 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
 					'client_id'     => '',
 					'client_secret' => '',
 					'access_token'  => '',
@@ -159,12 +162,11 @@ add_filter(
 add_filter(
 	'posts_bridge_template_data',
 	function ( $data, $template_id ) {
-		if ( strpos( $template_id, 'gsheets-' ) !== 0 ) {
+		if ( 0 !== strpos( $template_id, 'gsheets-' ) ) {
 			return $data;
 		}
 
-		$data['bridge']['endpoint'] =
-			'/v4/spreadsheets/' . $data['bridge']['endpoint'];
+		$data['bridge']['endpoint'] = '/v4/spreadsheets/' . $data['bridge']['endpoint'];
 		return $data;
 	},
 	10,
@@ -174,11 +176,11 @@ add_filter(
 add_filter(
 	'http_bridge_oauth_url',
 	function ( $url, $verb ) {
-		if ( strpos( $url, 'accounts.google.com' ) === false ) {
+		if ( false === strpos( $url, 'accounts.google.com' ) ) {
 			return $url;
 		}
 
-		if ( $verb === 'auth' ) {
+		if ( 'auth' === $verb ) {
 			return $url;
 		}
 

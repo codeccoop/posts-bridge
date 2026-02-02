@@ -1,4 +1,9 @@
 <?php
+/**
+ * Odoo addon hooks
+ *
+ * @package postsbridge
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit();
@@ -7,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_filter(
 	'posts_bridge_bridge_schema',
 	function ( $schema, $addon ) {
-		if ( $addon !== 'odoo' ) {
+		if ( 'odoo' !== $addon ) {
 			return $schema;
 		}
 
@@ -37,7 +42,7 @@ add_filter(
 add_filter(
 	'posts_bridge_template_defaults',
 	function ( $defaults, $addon, $schema ) {
-		if ( $addon !== 'odoo' ) {
+		if ( 'odoo' !== $addon ) {
 			return $defaults;
 		}
 

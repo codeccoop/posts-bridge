@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class Odoo_Post_Bridge
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -9,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
 
+/**
+ * Odoo post bridge.
+ */
 class Odoo_Post_Bridge extends Post_Bridge {
 
 	/**
@@ -16,7 +24,7 @@ class Odoo_Post_Bridge extends Post_Bridge {
 	 *
 	 * @var string
 	 */
-	private const endpoint = '/jsonrpc';
+	private const ENDPOINT = '/jsonrpc';
 
 	/**
 	 * Handle active rpc session data.
@@ -138,7 +146,7 @@ class Odoo_Post_Bridge extends Post_Bridge {
 
 		$payload = self::rpc_payload( $session_id, 'common', 'login', $login );
 
-		$response = $backend->post( self::endpoint, $payload );
+		$response = $backend->post( self::ENDPOINT, $payload );
 
 		$user_id = self::rpc_response( $response );
 
@@ -226,14 +234,14 @@ class Odoo_Post_Bridge extends Post_Bridge {
 
 		$payload = self::rpc_payload( $sid, 'object', 'execute', $args, $fields );
 
-		$response = $backend->post( self::endpoint, $payload );
+		$response = $backend->post( self::ENDPOINT, $payload );
 
 		$result = self::rpc_response( $response );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 
-		if ( $this->method === 'read' ) {
+		if ( 'read' === $this->method ) {
 			$response['data'] = $response['data']['result'][0];
 		}
 

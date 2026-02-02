@@ -37,7 +37,7 @@ export default function RemoveButton({
       onDoubleClick={(ev) => {
         onClick(ev);
         clearTimeout(alertDelay.current);
-        window.__wpfbInvalidated = !!isDestructive;
+        window.__wppbInvalidated = !!isDestructive;
       }}
       style={style}
       showTooltip={true}

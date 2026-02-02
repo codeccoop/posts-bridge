@@ -78,18 +78,18 @@ export default function SettingsProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (window.__wpfbInvalidated === true) {
+    if (window.__wppbInvalidated === true) {
       submit(state)
         .then(() => {
-          if (window.__wpfbReload) {
+          if (window.__wppbReload) {
             window.location.reload();
           }
         })
         .finally(() => {
-          window.__wpfbReload = false;
+          window.__wppbReload = false;
         });
 
-      window.__wpfbInvalidated = false;
+      window.__wppbInvalidated = false;
     }
   }, [state]);
 

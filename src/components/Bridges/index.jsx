@@ -13,10 +13,12 @@ const { TabPanel } = wp.components;
 const { useEffect, useMemo, useRef } = wp.element;
 const { __ } = wp.i18n;
 
-const CSS = `.bridges-tabs-panel .components-tab-panel__tabs{overflow-x:auto;}
-.bridges-tabs-panel .components-tab-panel__tabs>button{flex-shrink:0;}`;
+const CSS = `.bridges-tabs-panel>.components-tab-panel__tabs{overflow-x:auto;}
+.bridges-tabs-panel>.components-tab-panel__tabs>button{flex-shrink:0;}`;
 
 const DEFAULTS = {
+  name: "bridge-" + Date.now(),
+  backend: "",
   enabled: true,
   is_valid: true,
   field_mappers: [],
@@ -28,7 +30,7 @@ export default function Bridges() {
   const [bridges, setBridges] = useBridges();
   const allRcpts = useAllRCPTs();
   const rcpts = useRemoteCPTs();
-  const postTypes = usePostTypes();
+  const [postTypes] = usePostTypes();
 
   const freePostTypes = useMemo(() => {
     return postTypes.filter((p) => !allRcpts.has(p));
@@ -86,6 +88,7 @@ export default function Bridges() {
       tax_mappers: JSON.parse(JSON.stringify(bridge.tax_mappers || [])),
     };
 
+    window.__wppbInvalidated = true;
     setBridges(bridges.concat(copy));
   };
 

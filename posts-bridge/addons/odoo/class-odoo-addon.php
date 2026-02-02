@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class Odoo_Addon
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -19,21 +24,21 @@ class Odoo_Addon extends Addon {
 	 *
 	 * @var string
 	 */
-	public const title = 'Odoo';
+	public const TITLE = 'Odoo';
 
 	/**
 	 * Handles the addon's API name.
 	 *
 	 * @var string
 	 */
-	public const name = 'odoo';
+	public const NAME = 'odoo';
 
 	/**
 	 * Handles the addom's custom relation class.
 	 *
 	 * @var string
 	 */
-	public const bridge_class = '\POSTS_BRIDGE\Odoo_Post_Bridge';
+	public const BRIDGE = '\POSTS_BRIDGE\Odoo_Post_Bridge';
 
 	/**
 	 * Performs a request against the backend to check the connexion status.
@@ -115,9 +120,9 @@ class Odoo_Addon extends Addon {
 				continue;
 			}
 
-			if ( $spec['type'] === 'char' || $spec['type'] === 'html' ) {
+			if ( 'char' === $spec['type'] || 'html' === $spec['type'] ) {
 				$schema = array( 'type' => 'string' );
-			} elseif ( $spec['type'] === 'float' ) {
+			} elseif ( 'float' === $spec['type'] ) {
 				$schema = array( 'type' => 'number' );
 			} elseif (
 				in_array(

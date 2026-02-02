@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class GSheets_Addon
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -12,6 +17,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once 'class-gsheets-post-bridge.php';
 require_once 'hooks.php';
 
+/**
+ * Google Sheets addon.
+ */
 class GSheets_Addon extends Addon {
 
 	/**
@@ -19,21 +27,21 @@ class GSheets_Addon extends Addon {
 	 *
 	 * @var string
 	 */
-	public const title = 'Google Sheets';
+	public const TITLE = 'Google Sheets';
 
 	/**
 	 * Handles the addon's API name.
 	 *
 	 * @var string
 	 */
-	public const name = 'gsheets';
+	public const NAME = 'gsheets';
 
 	/**
 	 * Handles the addom's custom relation class.
 	 *
 	 * @var string
 	 */
-	public const bridge_class = '\POSTS_BRIDGE\GSheets_Post_Bridge';
+	public const BRIDGE = '\POSTS_BRIDGE\GSheets_Post_Bridge';
 
 	/**
 	 * Performs a request against the backend to check the connexion status.
@@ -65,7 +73,7 @@ class GSheets_Addon extends Addon {
 		$parsed = wp_parse_url( $backend->base_url );
 		$host   = $parsed['host'] ?? '';
 
-		if ( $host !== 'sheets.googleapis.com' ) {
+		if ( 'sheets.googleapis.com' !== $host ) {
 			return false;
 		}
 
@@ -123,7 +131,7 @@ class GSheets_Addon extends Addon {
 	 * @return array List of fields and content type of the endpoint.
 	 */
 	public function get_endpoint_schema( $endpoint, $backend ) {
-		$bridges = PBAPI::get_addon_bridges( self::name );
+		$bridges = PBAPI::get_addon_bridges( self::NAME );
 		foreach ( $bridges as $candidate ) {
 			$data = $candidate->data();
 			if ( ! $data ) {
@@ -134,6 +142,11 @@ class GSheets_Addon extends Addon {
 				$data['endpoint'] === $endpoint &&
 				$data['backend'] === $backend
 			) {
+				/**
+				* Found bridge.
+				*
+				* @var GSheets_Post_Bridge
+				*/
 				$bridge = $candidate;
 			}
 		}

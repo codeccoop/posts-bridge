@@ -9,7 +9,7 @@ const { useState, useEffect, useMemo } = wp.element;
 const { __ } = wp.i18n;
 
 export default function CustomPostType({ name, update, remove }) {
-  const postTypes = usePostTypes();
+  const [postTypes] = usePostTypes();
 
   const data = useCustomPostTypeData(name);
   const [state, setState] = useState({ name });

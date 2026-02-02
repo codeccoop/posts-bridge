@@ -1,17 +1,29 @@
 import { useLoading } from "../../providers/Loading";
 import { useError } from "../../providers/Error";
 import { useFetchSettings } from "../../providers/Settings";
-import { restUrl } from "../../lib/utils";
 
+const { useMemo } = wp.element;
 const { Button } = wp.components;
 const apiFetch = wp.apiFetch;
 const { __ } = wp.i18n;
 
-export default function AuthorizeButton({ addon, data }) {
+export default function AuthorizeButton({ data }) {
   const [loading, setLoading] = useLoading();
   const [error, setError] = useError();
 
   const fetchSettings = useFetchSettings();
+
+  const authorized = useMemo(() => {
+    if (data.refresh_token) return true;
+    else if (!(data.access_token && data.expires_at)) return false;
+
+    let expirationDate = new Date(data.expires_at);
+    if (expirationDate.getFullYear() === 1970) {
+      expirationDate = new Date(data.expires_at * 1000);
+    }
+
+    return Date.now() < expirationDate.getTime();
+  }, [data.access_token, data.expires_at]);
 
   const revoke = () => {
     setLoading(true);
@@ -34,27 +46,20 @@ export default function AuthorizeButton({ addon, data }) {
       method: "POST",
       data: { credential: data },
     })
-      .then(({ success }) => {
+      .then(({ success, data }) => {
         if (!success) throw "error";
 
+        const { url, params } = data;
         const form = document.createElement("form");
-        form.action = data.oauth_url + "/auth";
+        form.action = url;
         form.method = "GET";
         form.target = "_blank";
 
-        let innerHTML = `
-<input name="client_id" value="${data.client_id}" />
-<input name="response_type" value="code" />
-<input name="redirect_uri" value="${restUrl("http-bridge/v1/oauth/redirect")}" />
-<input name="access_type" value="offline" />
-<input name="state" value="${btoa(addon)}" />
-`;
-
-        if (data.scope) {
-          innerHTML += `<input name="scope" value="${data.scope}" />`;
-        }
-
-        form.innerHTML = innerHTML;
+        form.innerHTML = Object.keys(params).reduce((html, name) => {
+          const value = params[name];
+          if (!value) return html;
+          return html + `<input name="${name}" value="${value}" />`;
+        }, "");
 
         form.style.visibility = "hidden";
         document.body.appendChild(form);
@@ -65,7 +70,7 @@ export default function AuthorizeButton({ addon, data }) {
       .finally(() => setLoading(false));
   };
 
-  if (data.refresh_token) {
+  if (authorized) {
     return (
       <Button
         onClick={revoke}

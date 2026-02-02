@@ -8,7 +8,7 @@ import useAuthorizedCredential from "./useAuthorizedCredential";
 import { prependEmptyOption, isset } from "../../../lib/utils";
 
 const { Button, Notice } = wp.components;
-const { useMemo, useState, useEffect, useCallback } = wp.element;
+const { useMemo, useState, useEffect, useCallback, useRef } = wp.element;
 const apiFetch = wp.apiFetch;
 const { __ } = wp.i18n;
 
@@ -80,7 +80,6 @@ export default function TemplateWizard({ onSubmit }) {
       if (field.default || field.value) {
         const value = field.value || field.default;
         const group = refToGroup(field.ref);
-        defaults[group] = defaults[group];
         defaults[group][field.name] = value;
       } else if (field.type === "select" && field.required) {
         const group = refToGroup(field.ref);
@@ -118,10 +117,13 @@ export default function TemplateWizard({ onSubmit }) {
     authorized,
   });
 
+  const fetchErrorRef = useRef(fetchError);
+  fetchErrorRef.current = fetchError;
+
   useEffect(() => {
-    if (!backend || !fetchError || !wired) return;
+    if (!backend || !wired || !fetchErrorRef.current) return;
     setFetchError(false);
-  }, [backend, wired, fetchError]);
+  }, [backend, wired]);
 
   useEffect(() => {
     if (!wired && fetched) {
@@ -271,6 +273,7 @@ export default function TemplateWizard({ onSubmit }) {
         setData={patchData}
         wired={wired}
         fetched={fetched}
+        fetchError={fetchError}
         credential={credential?.name}
       />
       {authError && (

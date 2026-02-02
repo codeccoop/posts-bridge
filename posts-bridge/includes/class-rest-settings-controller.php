@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class REST_Settings_Controller
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -21,8 +26,6 @@ class REST_Settings_Controller extends Base_Controller {
 
 	/**
 	 * Inherits the parent initialized and register the post types route
-	 *
-	 * @param string $group Plugin settings group name.
 	 */
 	protected static function init() {
 		parent::init();
@@ -109,13 +112,16 @@ class REST_Settings_Controller extends Base_Controller {
 		);
 	}
 
+	/**
+	 * Registers json schemas REST API routes.
+	 */
 	private static function register_schema_route() {
 		foreach ( Addon::addons() as $addon ) {
 			if ( ! $addon->enabled ) {
 				continue;
 			}
 
-			$addon = $addon::name;
+			$addon = $addon::NAME;
 			register_rest_route(
 				'posts-bridge/v1',
 				"/{$addon}/schemas",
@@ -151,7 +157,7 @@ class REST_Settings_Controller extends Base_Controller {
 				continue;
 			}
 
-			$addon = $addon::name;
+			$addon = $addon::NAME;
 
 			$schema = Post_Bridge_Template::schema( $addon );
 			$args   = array();
@@ -226,13 +232,16 @@ class REST_Settings_Controller extends Base_Controller {
 		}
 	}
 
+	/**
+	 * Registers http backends REST API routes.
+	 */
 	private static function register_backend_routes() {
 		foreach ( Addon::addons() as $addon ) {
 			if ( ! $addon->enabled ) {
 				continue;
 			}
 
-			$addon = $addon::name;
+			$addon = $addon::NAME;
 
 			register_rest_route(
 				'posts-bridge/v1',
@@ -253,6 +262,27 @@ class REST_Settings_Controller extends Base_Controller {
 						),
 					),
 				)
+			);
+
+			register_rest_route(
+				'posts-bridge/v1',
+				"/{$addon}/backend/endpoints",
+				array(
+					array(
+						'methods'             => WP_REST_Server::CREATABLE,
+						'callback'            => static function ( $request ) use ( $addon ) {
+							return self::get_backend_endpoints( $addon, $request );
+						},
+						'permission_callback' => array( self::class, 'permission_callback' ),
+						'args'                => array(
+							'backend' => FBAPI::get_backend_schema(),
+							'method'  => array(
+								'description' => __( 'HTTP method used to filter the list of endpoints', 'posts-bridge' ),
+								'type'        => 'string',
+							),
+						),
+					),
+				),
 			);
 
 			register_rest_route(
@@ -278,6 +308,10 @@ class REST_Settings_Controller extends Base_Controller {
 								'type'        => 'string',
 								'required'    => true,
 							),
+							'method'   => array(
+								'description' => __( 'HTTP method', 'posts-bridge' ),
+								'type'        => 'string',
+							),
 						),
 					),
 				)
@@ -288,8 +322,6 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Callback for GET requests to the post_types endpoint.
 	 *
-	 * @param REST_Request Request instance.
-	 *
 	 * @return array|WP_Error Post type data.
 	 */
 	private static function get_post_types() {
@@ -299,7 +331,7 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Callback for GET requests to the post_types endpoint.
 	 *
-	 * @param REST_Request Request instance.
+	 * @param REST_Request $request Request instance.
 	 *
 	 * @return array|WP_Error Post type data.
 	 */
@@ -322,7 +354,7 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Callback for POST requests to the post types endpoint.
 	 *
-	 * @param REST_Request Request instance.
+	 * @param REST_Request $request Request instance.
 	 *
 	 * @return array|WP_Error Template use result.
 	 */
@@ -353,6 +385,13 @@ class REST_Settings_Controller extends Base_Controller {
 		return $data;
 	}
 
+	/**
+	 * Callback for DELETE requests to the post types endpoint.
+	 *
+	 * @param REST_Request $request Request instance.
+	 *
+	 * @return array|WP_Error Template use result.
+	 */
 	private static function delete_post_type( $request ) {
 		$key     = sanitize_key( $request['name'] );
 		$success = Custom_Post_Type::unregister( $key );
@@ -417,6 +456,14 @@ class REST_Settings_Controller extends Base_Controller {
 		return array( $addon, $backend['name'], $credential['name'] ?? null );
 	}
 
+	/**
+	 * Callback to the backend ping endpoint.
+	 *
+	 * @param string          $addon Addon name.
+	 * @param WP_REST_Request $request Request object.
+	 *
+	 * @return array|WP_Error
+	 */
 	private static function ping_backend( $addon, $request ) {
 		$handler = self::prepare_addon_backend_request_handler(
 			$addon,
@@ -445,6 +492,47 @@ class REST_Settings_Controller extends Base_Controller {
 		return array( 'success' => $result );
 	}
 
+	/**
+	 * Backend endpoints route callback.
+	 *
+	 * @param string          $addon Addon name.
+	 * @param WP_REST_Request $request Request object.
+	 *
+	 * @return array|WP_Error
+	 */
+	private static function get_backend_endpoints( $addon, $request ) {
+		$handler = self::prepare_addon_backend_request_handler( $addon, $request );
+
+		if ( is_wp_error( $handler ) ) {
+			return $handler;
+		}
+
+		[$addon, $backend] = $handler;
+
+		$endpoints = $addon->get_endpoints( $backend, $request['method'] );
+
+		if ( is_wp_error( $endpoints ) ) {
+			$error = self::internal_server_error();
+			$error->add(
+				$endpoints->get_error_code(),
+				$endpoints->get_error_message(),
+				$endpoints->get_error_data()
+			);
+
+			return $error;
+		}
+
+		return $endpoints;
+	}
+
+	/**
+	 * Backend endpoint schema route callback.
+	 *
+	 * @param string          $addon Addon name.
+	 * @param WP_REST_Request $request Request object.
+	 *
+	 * @return array|WP_Error
+	 */
 	private static function get_endpoint_schema( $addon, $request ) {
 		$handler = self::prepare_addon_backend_request_handler(
 			$addon,
@@ -472,11 +560,23 @@ class REST_Settings_Controller extends Base_Controller {
 		return $schema;
 	}
 
+	/**
+	 * Callback of the addon schemas endpoint.
+	 *
+	 * @param string $name Addon name.
+	 *
+	 * @return array
+	 */
 	private static function addon_schemas( $name ) {
 		$bridge = PBAPI::get_bridge_schema( $name );
 		return array( 'bridge' => $bridge );
 	}
 
+	/**
+	 * Callback of the http schemas endpoint.
+	 *
+	 * @return array
+	 */
 	private static function http_schemas() {
 		$backend    = PBAPI::get_backend_schema();
 		$credential = PBAPI::get_credential_schema();
@@ -490,7 +590,7 @@ class REST_Settings_Controller extends Base_Controller {
 	 * Callback for GET requests to the templates endpoint.
 	 *
 	 * @param string          $addon Addon name.
-	 * @param WP_REST_Request $request.
+	 * @param WP_REST_Request $request REST request object.
 	 *
 	 * @return array|WP_Error Template data.
 	 */
@@ -512,8 +612,8 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Callback for POST requests to the templates endpoint.
 	 *
-	 * @param string                        $addon Name of the owner addon of the template.
-	 * @param REST_Request Request instance.
+	 * @param string       $addon Name of the owner addon of the template.
+	 * @param REST_Request $request REST request object.
 	 *
 	 * @return array|WP_Error Template use result.
 	 */
@@ -532,9 +632,18 @@ class REST_Settings_Controller extends Base_Controller {
 			return $result;
 		}
 
-		return array( 'success' => $result === true );
+		return array( 'success' => true === $result );
 	}
 
+	/**
+	 * Callback to the fetch template options endpoint. It searches for template
+	 * fields with dynamic options and fetch its values from the backend.
+	 *
+	 * @param Addon           $addon Addon instance.
+	 * @param WP_REST_Request $request Request object.
+	 *
+	 * @return array|WP_Error
+	 */
 	private static function get_template_options( $addon, $request ) {
 		$handler = self::prepare_addon_backend_request_handler(
 			$addon,
@@ -549,17 +658,20 @@ class REST_Settings_Controller extends Base_Controller {
 
 		$template = PBAPI::get_template( $request['name'], $addon::name );
 		if ( ! $template ) {
+			Logger::log( 'Template not found', Logger::ERROR );
 			return self::not_found();
 		}
 
 		if ( ! $template->is_valid ) {
+			Logger::log( 'Invalid template', Logger::ERROR );
 			return self::bad_request();
 		}
 
 		$field_options = array();
 		$fields        = $template->fields;
 		foreach ( $fields as $field ) {
-			if ( $endpoint = $field['options']['endpoint'] ?? null ) {
+			$endpoint = $field['options']['endpoint'] ?? null;
+			if ( $endpoint ) {
 				if ( is_string( $field['options']['finger'] ) ) {
 					$finger = array(
 						'value' => $field['options']['finger'],
@@ -571,12 +683,14 @@ class REST_Settings_Controller extends Base_Controller {
 				$value_pointer = $finger['value'];
 
 				if ( ! JSON_Finger::validate( $value_pointer ) ) {
+					Logger::log( 'Fetch template options error: Invalid value json pointer', Logger::ERROR );
 					return self::internal_server_error();
 				}
 
 				$label_pointer = $finger['label'] ?? $finger['value'];
 
 				if ( ! JSON_Finger::validate( $label_pointer ) ) {
+					Logger::log( 'Fetch template options error: Invalid label json pointer', Logger::ERROR );
 					return self::internal_server_error();
 				}
 
@@ -590,6 +704,9 @@ class REST_Settings_Controller extends Base_Controller {
 						$response->get_error_data()
 					);
 
+					Logger::log( 'Fetch template options error response', Logger::ERROR );
+					Logger::log( $error, Logger::ERROR );
+
 					return $error;
 				}
 
@@ -601,7 +718,9 @@ class REST_Settings_Controller extends Base_Controller {
 				$values = $json_finger->get( $value_pointer );
 
 				if ( ! wp_is_numeric_array( $values ) ) {
-					return self::internal_server_error();
+					Logger::log( 'Not found template options error response', Logger::ERROR );
+					Logger::log( $response, Logger::ERROR );
+					return self::not_found();
 				}
 
 				foreach ( $values as $value ) {
@@ -616,7 +735,8 @@ class REST_Settings_Controller extends Base_Controller {
 					wp_is_numeric_array( $labels ) &&
 					count( $labels ) === count( $values )
 				) {
-					for ( $i = 0; $i < count( $labels ); $i++ ) {
+					$l = count( $labels );
+					for ( $i = 0; $i < $l; $i++ ) {
 						$options[ $i ]['label'] = $labels[ $i ];
 					}
 				}

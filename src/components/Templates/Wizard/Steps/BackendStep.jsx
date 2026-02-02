@@ -20,6 +20,7 @@ export default function BackendStep({
   wired,
   fetched,
   credential,
+  fetchError,
 }) {
   const [backends] = useBackends();
   const names = useBackendNames();
@@ -129,14 +130,14 @@ export default function BackendStep({
   const statusIcon = useMemo(() => {
     if (wired === true && fetched === true) {
       return "👌";
-    } else if (wired === false) {
+    } else if (wired === false || fetchError) {
       return "👎";
     } else if (backend) {
       return "⏳";
     }
 
     return null;
-  }, [wired, fetched, backend]);
+  }, [wired, fetched, backend, fetchError]);
 
   return (
     <TemplateStep
@@ -155,7 +156,15 @@ export default function BackendStep({
         }}
       >
         <strong>{__("Connection status", "posts-bridge")}:</strong>
-        <i style={{ fontSize: "1.5em", marginLeft: "0.25em" }}>{statusIcon}</i>
+        <i
+          style={{
+            fontSize: "1.5em",
+            marginLeft: "0.25em",
+            fontStyle: "normal",
+          }}
+        >
+          {statusIcon}
+        </i>
       </p>
       {backendOptions.length > 0 && (
         <SelectControl
@@ -170,6 +179,7 @@ export default function BackendStep({
       {!reuse &&
         sortedFields.map((field) => (
           <Field
+            key={field.name}
             data={{
               ...field,
               value: state[field.name] || "",
