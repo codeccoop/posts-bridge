@@ -157,10 +157,6 @@ class GSheets_Addon extends Addon {
 	 * @return array List of fields and content type of the endpoint.
 	 */
 	public function get_endpoint_schema( $endpoint, $backend, $method = null ) {
-		if ( 'POST' !== $method ) {
-			return array();
-		}
-
 		$bridges = PBAPI::get_addon_bridges( self::NAME );
 		foreach ( $bridges as $candidate ) {
 			$data = $candidate->data();
@@ -168,10 +164,7 @@ class GSheets_Addon extends Addon {
 				continue;
 			}
 
-			if (
-				$data['endpoint'] === $endpoint &&
-				$data['backend'] === $backend
-			) {
+			if ( $data['backend'] === $backend ) {
 				/**
 				* Found bridge.
 				*

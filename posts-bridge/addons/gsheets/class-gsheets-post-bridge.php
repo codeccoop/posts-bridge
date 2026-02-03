@@ -89,8 +89,6 @@ class GSheets_Post_Bridge extends Post_Bridge {
 		}
 
 		$values = $response['data']['values'];
-
-		self::$rows = $this->values_to_rows( $values );
 		return $values[0] ?? array();
 	}
 
@@ -168,7 +166,8 @@ class GSheets_Post_Bridge extends Post_Bridge {
 			return $this->endpoint;
 		}
 
-		return $this->endpoint . '/values/' . rawurldecode( $tab );
+		$tab = strtolower( strpos( trim( $tab ), ' ' ) ? "'{$tab}'" : $tab );
+		return $this->endpoint . '/values/' . rawurlencode( $tab );
 	}
 
 	/**
@@ -224,8 +223,9 @@ class GSheets_Post_Bridge extends Post_Bridge {
 			return $sheets;
 		}
 
-		if ( ! in_array( strtolower( $this->single_endpoint ), $sheets, true ) ) {
-			$result = $this->add_sheet( count( $sheets ), $this->single_endpoint, $backend );
+		$tab = trim( $this->single_endpoint );
+		if ( ! in_array( strtolower( $tab ), $sheets, true ) ) {
+			$result = $this->add_sheet( count( $sheets ), $tab, $backend );
 			if ( is_wp_error( $result ) ) {
 				return $result;
 			}
