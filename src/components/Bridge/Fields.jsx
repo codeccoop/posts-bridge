@@ -115,6 +115,7 @@ export default function BridgeFields({ data, setData, schema, errors = {} }) {
     }, {});
 
     if (Object.keys(defaults).length) {
+      delete defaults.post_type;
       setData({ ...data, ...defaults });
     }
   }, [data, fields]);

@@ -81,9 +81,14 @@ export default function Bridges() {
     const i = bridges.findIndex((b) => b.post_type === post_type);
     const bridge = bridges[i];
 
+    const newPostType = freePostTypes.find((p) => !allRcpts.has(p));
+    if (!newPostType) {
+      return;
+    }
+
     const copy = {
       ...bridge,
-      post_type: freePostTypes.find((p) => !allRcpts.has(p)),
+      post_type: newPostType,
       field_mappers: JSON.parse(JSON.stringify(bridge.field_mappers || [])),
       tax_mappers: JSON.parse(JSON.stringify(bridge.tax_mappers || [])),
     };

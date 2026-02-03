@@ -8,15 +8,24 @@ import { isset, uploadJson } from "../../lib/utils";
 import useResponsive from "../../hooks/useResponsive";
 import Mappers from "../Mappers";
 import ArrowUpIcon from "../icons/ArrowUp";
+import useTab from "../../hooks/useTab";
 
 const { Button } = wp.components;
-const { useState, useMemo } = wp.element;
+const { useState, useMemo, useRef } = wp.element;
 const { __ } = wp.i18n;
 
 export default function NewBridge({ add, schema }) {
   const isResponsive = useResponsive();
+  const [tab] = useTab();
+  const fromTab = useRef(tab);
 
   const [data, setData] = useState({});
+
+  if (fromTab.current !== tab) {
+    setData({});
+  }
+
+  fromTab.current = tab;
 
   const [error, setError] = useError();
 
