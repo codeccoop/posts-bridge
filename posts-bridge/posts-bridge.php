@@ -2,7 +2,7 @@
 /**
  * Plugin Name:         Posts Bridge
  * Plugin URI:          https://postsbridge.codeccoop.org
- * Description:         Bridge your posts collections with your backend over HTTP APIs, enabling remote and automated web content management
+ * Description:         Synchronize backend data with WordPress post collections over HTTP APIs, enabling remote and automated web content management.
  * Author:              codeccoop
  * Author URI:          https://www.codeccoop.org
  * License:             GPLv2 or later

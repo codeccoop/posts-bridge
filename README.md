@@ -5,6 +5,8 @@
 
 Synchronize backend data with WordPress post collections over HTTP APIs, enabling remote and automated web content management.
 
+With **Posts Bridge** you can move your workspace from the WordPress admin to collaboration tools like Google Spreadsheets, Airtable or Grist, or get your Odoo and Dolibarr data automatically synchronized with your website. Don't bother your team with context switching and manual web content synchronizations. Work where your data is, and use Posts Bridge to seamlessly transform it to web content without effort.
+
 ## How it works
 
 Posts Bridge treats post collections as indexes that represents your backend data and allows you to use Gutenberg, WordPress' powerful page builder, as the frontend editor of your backend. Whether through manual or automatic synchronization —using ahead-of-time or live fetches— Posts Bridge fully integrates your backend data into the WordPress CMS system.
@@ -19,11 +21,34 @@ Posts Bridge comes with free add-ons. Each add-on add to the plugin new bridges 
 
 Posts Bridge has the following add-ons:
 
-- [REST API](https://en.wikipedia.org/wiki/REST)
-- [Dolibarr](<https://wiki.dolibarr.org/index.php/Module_Web_Services_API_REST_(developer)>)
+**📊 CRM & Sales**
+
+- [Bigin](https://postsbridge.codeccoop.org/documentation/bigin/)
+- [SuiteCRM](https://postsbridge.codeccoop.org/documentation/suitecrm/)
+- [Vtiger](https://postsbridge.codeccoop.org/documentation/vtiger/)
+- [Zoho CRM](https://postsbridge.codeccoop.org/documentation/zoho-crm/)
+
+**🗓️ Productivity**
+
+- [Airtable](https://postsbridge.codeccoop.org/documentation/airtable/)
+- [Google Calendar](https://postsbridge.codeccoop.org/documentation/google-calendar/)
 - [Google Sheets](https://workspace.google.com/products/sheets/)
-- [Odoo](https://www.odoo.com/)
-- [WP](https://developer.wordpress.org/rest-api/)
+- [Grist](https://postsbridge.codeccoop.org/documentation/grist/)
+- [Nextcloud](https://postsbridge.codeccoop.org/documentation/nextcloud/)
+
+**📦 ERP & Accounting**
+
+- [Dolibarr](https://postsbridge.codeccoop.org/documentation/dolibarr/)
+- [Holded](https://postsbridge.codeccoop.org/documentation/holded/)
+- [Odoo](https://postsbridge.codeccoop.org/documentation/odoo/)
+
+**✏️ CMS**
+
+- [WordPress](https://postsbridge.codeccoop.org/documentation/wp/)
+
+**Need a custom integration?**
+
+Connect to any custom API using standard HTTP methods and authentication using the abstract **REST API** add-on. Perfect for integrating with proprietary or less common systems.
 
 ## Backends
 
