@@ -77,6 +77,14 @@ If you want your backend data loaded dynamically on each render, you can use the
 
 To streamline the bridge setup process, Posts Bridge comes packed with templates. Templates are blueprints of bridges you can use to set up your integrations in a matter of minutes.
 
+## REST API Endpoints
+
+Forms Bridge registers custom REST API endpoints for each bridge to easily connect to WordPress from your backend over HTTP requests.
+
+## JWT Authentication
+
+Authenticate your HTTP requests to the WordPress REST API with JWT tokens.
+
 ## Docs
 
 Browse the plugin's documentation on [postsbridge.codeccoop.org](https://postsbridge.codeccoop.org).

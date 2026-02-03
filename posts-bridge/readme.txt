@@ -75,6 +75,12 @@ Dynamically load backend data on render time and replace the post HTML with remo
 **Templates**
 Use pre-built templates to integrate well known backends with post type collections in minutes.
 
+**REST API endpoints**
+Forms Bridge registers custom REST API endpoints for each bridge to easily connect to WordPress from your backend over HTTP requests.
+
+**JWT authentication**
+Authenticate your HTTP requests to the WordPress REST API with JWT tokens.
+
 **Debugging console**
 Monitor requests, responses, and errors in real time.
 
