@@ -545,4 +545,54 @@ class Addon extends Singleton {
 	public function get_endpoints( $backend, $method = null ) {
 		return array();
 	}
+
+	/**
+	 * Expand an endpoint schema to a plain list of fields with json-schema
+	 * finger pointers as names.
+	 *
+	 * @param array $fields Array of API fields.
+	 *
+	 * @return array
+	 */
+	protected function expand_endpoint_schema( $fields ) {
+		$schema = array();
+		foreach ( $fields as $field ) {
+			$finger = array( $field['name'] );
+
+			if ( 'array' === $field['schema']['type'] ) {
+				$field['schema']['type'] = $field['schema']['items']['type'] . '[]';
+
+				$finger[] = 0;
+				$schema[] = $field;
+
+				$field['schema'] = $field['schema']['items'];
+			} else {
+				$schema[] = $field;
+			}
+
+			if ( 'object' === $field['schema']['type'] ) {
+				$props = $field['schema']['properties'];
+				$queue = array();
+
+				while ( $props ) {
+					foreach ( $props as $key => $prop_schema ) {
+						$schema[] = array(
+							'name'   => JSON_Finger::pointer( array_merge( $finger, array( $key ) ) ),
+							'schema' => $prop_schema,
+						);
+
+						if ( 'object' === $prop_schema['type'] ) {
+							$finger[] = $key;
+							$queue[]  = $prop_schema['properties'];
+						}
+					}
+
+					$finger = array_slice( $finger, 0, -1 );
+					$props  = array_shift( $queue );
+				}
+			}
+		}
+
+		return $schema;
+	}
 }
