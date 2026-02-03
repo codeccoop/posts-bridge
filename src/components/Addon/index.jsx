@@ -1,5 +1,4 @@
 // source
-import TemplatesProvider from "../../providers/Templates";
 import { useAddons } from "../../hooks/useGeneral";
 import Bridges from "../Bridges";
 import useTab from "../../hooks/useTab";
@@ -27,10 +26,8 @@ export default function Addon() {
   }, [name, logo]);
 
   return (
-    <TemplatesProvider>
-      <PanelRow>
-        <Bridges />
-      </PanelRow>
-    </TemplatesProvider>
+    <PanelRow>
+      <Bridges />
+    </PanelRow>
   );
 }

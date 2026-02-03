@@ -17,7 +17,7 @@ Think of a bridge as a mapping that links your backend data with a post type col
 
 ## Add-ons
 
-Posts Bridge comes with free add-ons. Each add-on add to the plugin new bridges to work with specific APIs, and bridge templates.
+Posts Bridge comes with free add-ons. Each add-on add to the plugin new bridges to work with specific APIs.
 
 Posts Bridge has the following add-ons:
 
@@ -74,10 +74,6 @@ With mappers you can map backend data to post fields, custom fields and into tax
 ### Remote Field
 
 If you want your backend data loaded dynamically on each render, you can use the **Remote Field** custom block. This block lets you designate parts of your post templates as remote content. On render time, this blocks will be replaced with the data fetched from the backend.
-
-### Templates
-
-To streamline the bridge setup process, Posts Bridge comes packed with templates. Templates are blueprints of bridges you can use to set up your integrations in a matter of minutes.
 
 ### REST API Endpoints
 

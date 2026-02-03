@@ -22,7 +22,7 @@ Posts Bridge treats post collections as indexes that represents your backend dat
 
 == Add-ons ==
 
-Posts Bridge comes with free add-ons. Each add-on add to the plugin new bridges to work with specific APIs, and bridge templates.
+Posts Bridge comes with free add-ons. Each add-on add to the plugin new bridges to work with specific APIs.
 
 Posts Bridge has the following add-ons:
 
@@ -72,9 +72,6 @@ Rename and mutate your backend API responses to match the WordPress post model (
 **Remote fields**
 Dynamically load backend data on render time and replace the post HTML with remote data.
 
-**Templates**
-Use pre-built templates to integrate well known backends with post type collections in minutes.
-
 **REST API endpoints**
 Forms Bridge registers custom REST API endpoints for each bridge to easily connect to WordPress from your backend over HTTP requests.
 
@@ -123,8 +120,7 @@ You can get support from Còdec using the [Posts Bridge support forum](https://w
 1. Settings page – Configure global plugin options
 2. Backends – Save and reuse API connection details
 3. Bridges – Create synchronization pipelines for your post collections
-4. Template wizard – Set up integrations in minutes.
-5. Debug console – Monitor and troubleshoot requests.
+4. Debug console – Monitor and troubleshoot requests.
 
 == Changelog ==
 

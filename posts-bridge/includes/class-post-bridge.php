@@ -69,53 +69,46 @@ class Post_Bridge {
 			'title'                => 'post-bridge',
 			'type'                 => 'object',
 			'properties'           => array(
-				'post_type'     => array(
+				'post_type'       => array(
 					'title'       => _x( 'Post type', 'Bridge schema', 'posts-bridge' ),
-					'description' => __(
-						'Post type of the bridge',
-						'posts-bridge'
-					),
+					'description' => __( 'Post type of the bridge', 'posts-bridge' ),
 					'type'        => 'string',
 					'minLength'   => 1,
 					'default'     => 'post',
 				),
-				'foreign_key'   => array(
-					'title'       => _x(
-						'Foreign key',
-						'Bridge schema',
-						'posts-bridge'
-					),
-					'description' => __(
-						'Name of the primary key of the remote objects',
-						'posts-bridge'
-					),
+				'foreign_key'     => array(
+					'title'       => _x( 'Foreign key', 'Bridge schema', 'posts-bridge' ),
+					'description' => __( 'Name of the primary key of the remote objects', 'posts-bridge' ),
 					'type'        => 'string',
 					'default'     => 'id',
 				),
-				'backend'       => array(
+				'backend'         => array(
 					'title'       => _x( 'Backend', 'Bridge schema', 'posts-bridge' ),
 					'description' => __( 'Backend name', 'posts-bridge' ),
 					'type'        => 'string',
 					'default'     => '',
 				),
-				'endpoint'      => array(
+				'endpoint'        => array(
 					'title'       => _x( 'Endpoint', 'Bridge schema', 'posts-bridge' ),
 					'description' => __( 'HTTP API endpoint', 'posts-bridge' ),
 					'type'        => 'string',
 					'default'     => '/',
 				),
-				'method'        => array(
+				'single_endpoint' => array(
+					'title'       => _x( 'Single endpoint pattern', 'Bridge schema', 'posts-bridge' ),
+					'description' => __( 'Pattern of the endpoint to fetch a single record', 'posts-bridge' ),
+					'type'        => 'string',
+					'default'     => '/{id}',
+				),
+				'method'          => array(
 					'title'       => _x( 'Method', 'Bridge schema', 'posts-bridge' ),
 					'description' => __( 'HTTP method', 'posts-bridge' ),
 					'type'        => 'string',
 					'enum'        => array( 'GET', 'POST', 'PUT', 'PATCH', 'DELETE' ),
 					'default'     => 'GET',
 				),
-				'tax_mappers'   => array(
-					'description' => __(
-						'Array of bridge remote taxonomy mappings',
-						'posts-bridge'
-					),
+				'tax_mappers'     => array(
+					'description' => __( 'Array of bridge\'s remote taxonomy mappings', 'posts-bridge' ),
 					'type'        => 'array',
 					'items'       => array(
 						'type'                 => 'object',
@@ -127,8 +120,7 @@ class Post_Bridge {
 							'foreign' => array(
 								'type'              => 'string',
 								'minLength'         => 1,
-								'validate_callback' =>
-									'\POSTS_BRIDGE\JSON_Finger::validate',
+								'validate_callback' => '\POSTS_BRIDGE\JSON_Finger::validate',
 							),
 						),
 						'additionalProperties' => false,
@@ -136,11 +128,8 @@ class Post_Bridge {
 					),
 					'default'     => array(),
 				),
-				'field_mappers' => array(
-					'description' => __(
-						'Array of bridge\'s remote field mappings',
-						'posts-bridge'
-					),
+				'field_mappers'   => array(
+					'description' => __( 'Array of bridge\'s remote field mappings', 'posts-bridge' ),
 					'type'        => 'array',
 					'items'       => array(
 						'type'                 => 'object',
@@ -152,8 +141,7 @@ class Post_Bridge {
 							'foreign' => array(
 								'type'              => 'string',
 								'minLength'         => 1,
-								'validate_callback' =>
-									'\POSTS_BRIDGE\JSON_Finger::validate',
+								'validate_callback' => '\POSTS_BRIDGE\JSON_Finger::validate',
 							),
 						),
 						'additionalProperties' => false,
@@ -161,19 +149,13 @@ class Post_Bridge {
 					),
 					'default'     => array(),
 				),
-				'is_valid'      => array(
-					'description' => __(
-						'Validation result of the bridge setting',
-						'posts-bridge'
-					),
+				'is_valid'        => array(
+					'description' => __( 'Validation result of the bridge setting', 'posts-bridge' ),
 					'type'        => 'boolean',
 					'default'     => true,
 				),
-				'enabled'       => array(
-					'description' => __(
-						'Boolean flag to enable/disable a bridge',
-						'posts-bridge'
-					),
+				'enabled'         => array(
+					'description' => __( 'Boolean flag to enable/disable a bridge', 'posts-bridge' ),
 					'type'        => 'boolean',
 					'default'     => true,
 				),
@@ -184,6 +166,7 @@ class Post_Bridge {
 				'backend',
 				'method',
 				'endpoint',
+				'single_endpoint',
 				'tax_mappers',
 				'field_mappers',
 				'is_valid',
@@ -226,11 +209,8 @@ class Post_Bridge {
 	 * @param string $addon Addon name.
 	 */
 	public function __construct( $data, $addon ) {
-		$this->data  = wpct_plugin_sanitize_with_schema(
-			$data,
-			static::schema( $addon )
-		);
 		$this->addon = $addon;
+		$this->data  = wpct_plugin_sanitize_with_schema( $data, static::schema( $addon ) );
 
 		if ( $this->is_valid ) {
 			$this->id = $addon . '-' . $this->data['post_type'];
@@ -319,35 +299,23 @@ class Post_Bridge {
 	}
 
 	/**
-	 * Fetches remote data for a given foreign id.
+	 * Performs a request to an endpoint using the bridge backend and HTTP method.
 	 *
-	 * @param int|string|null $foreign_id Foreig key value.
-	 * @param array           $params Request query params.
-	 * @param array           $headers Request headers.
+	 * @param string $endpoint Foreig key value.
+	 * @param array  $params Request params.
+	 * @param array  $headers HTTP headers.
 	 *
-	 * @return array|WP_Error
+	 * @return array|WP_Error Backend HTTP response.
 	 */
-	public function fetch( $foreign_id = null, $params = array(), $headers = array() ) {
+	public function request( $endpoint, $params = array(), $headers = array() ) {
 		if ( ! $this->is_valid ) {
-			return new WP_Error( 'invalid_bridge' );
+			return new WP_Error( 'invalid_bridge', 'Bridge is invalid', (array) $this->data );
 		}
 
-		// Function overload to allow calls without foreign_id.
-		if ( is_array( $foreign_id ) ) {
-			$foreign_id = null;
-			$headers    = $params;
-			$params     = $foreign_id;
-		}
+		$schema = self::schema( $this->addon );
 
-		$schema = $this->schema();
-
-		if (
-			! in_array(
-				$this->method,
-				$schema['properties']['method']['enum'],
-				true
-			)
-		) {
+		$allowed_methods = $schema['properties']['method']['enum'] ?? array( $this->method );
+		if ( ! in_array( $this->method, $allowed_methods, true ) ) {
 			return new WP_Error(
 				'method_not_allowed',
 				sprintf(
@@ -359,56 +327,100 @@ class Post_Bridge {
 			);
 		}
 
-		$backend  = $this->backend();
-		$method   = $this->method;
-		$endpoint = $this->endpoint( $foreign_id );
+		$backend = $this->backend();
+		$method  = $this->method;
 
 		return $backend->$method( $endpoint, $params, $headers );
 	}
 
+	/**
+	 * Performs a request to the bridge single_endpoint using the bridge backend and HTTP method.
+	 *
+	 * @param string|int $foreign_id ID of the remote object.
+	 * @param array      $params Request params.
+	 * @param array      $headers HTTP headers.
+	 *
+	 * @return array|WP_Error Backend entry data.
+	 */
+	public function fetch_one( $foreign_id, $params = array(), $headers = array() ) {
+		if ( ! $this->is_valid ) {
+			return new WP_Error( 'invalid_bridge', 'Bridge is invalid', (array) $this->data );
+		}
+
+		$endpoint = $this->endpoint( $foreign_id );
+		$response = $this->request( $endpoint, $params, $headers );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		return $response['data'] ?? array();
+	}
+
+	/**
+	 * Performs a request to the bridge endpoint using the bridge backend and HTTP method.
+	 *
+	 * @param array $params Request params.
+	 * @param array $headers HTTP headers.
+	 *
+	 * @return array|WP_Error Backend entries data.
+	 */
+	public function fetch_all( $params = array(), $headers = array() ) {
+		if ( ! $this->is_valid ) {
+			return new WP_Error( 'invalid_bridge', 'Bridge is invalid', (array) $this->data );
+		}
+
+		$endpoint = $this->endpoint();
+		$response = $this->request( $endpoint, $params, $headers );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		return $response['data'] ?? array();
+	}
+
+	/**
+	 * Gets the formatted bridge endpoint.
+	 *
+	 * @param string|int|null $foreign_id ID of the remote object, optional.
+	 *
+	 * @return string
+	 */
 	protected function endpoint( $foreign_id = null ) {
-		$endpoint = $this->data['endpoint'] ?? '';
+		$endpoint = $this->data['single_endpoint'] ?? $this->data['endpoint'] ?? '/';
 		$parsed   = wp_parse_url( $endpoint );
 
-		$endpoint = $parsed['path'] ?? '';
+		if ( ! $foreign_id ) {
+			return $endpoint;
+		}
 
-		if ( $foreign_id ) {
-			$endpoint .= '/' . $foreign_id;
+		$endpoint = $parsed['path'] ?? '/';
+
+		if ( preg_match( '/{+id}+|%s|%d/i', $endpoint, $matches ) ) {
+			$endpoint = str_replace( $matches[0], $foreign_id, $endpoint );
+		} else {
+			$endpoint = preg_replace( '/\/+$/', '', $endpoint ) . '/' . $foreign_id;
 		}
 
 		if ( isset( $parsed['query'] ) ) {
 			$endpoint .= '?' . $parsed['query'];
 		}
 
-		return apply_filters(
-			'posts_bridge_endpoint',
-			$endpoint,
-			$foreign_id,
-			$this
-		);
+		return $endpoint;
 	}
 
-	protected function list_remotes() {
-		$response = $this->fetch();
-
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		return $response['data'];
-	}
-
+	/**
+	 * Looks up for the list of remote foreign ids.
+	 *
+	 * @return string[]
+	 */
 	public function foreign_ids() {
-		$items = $this->list_remotes();
+		$items = $this->fetch_all();
 
 		if ( is_wp_error( $items ) ) {
-			Logger::log(
-				"Index fetch response error on the {$this->post_type} bridge",
-				Logger::ERROR
-			);
-
+			Logger::log( "Index fetch response error on the {$this->post_type} bridge", Logger::ERROR );
 			Logger::log( $items, Logger::ERROR );
-
 			return array();
 		}
 
@@ -425,11 +437,15 @@ class Post_Bridge {
 
 		$ids = array();
 		foreach ( $items as $item ) {
-			$finger = new JSON_Finger( $item );
-			$id     = $finger->get( $this->foreign_key );
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
 
+			$finger = new JSON_Finger( $item );
+
+			$id = $finger->get( $this->foreign_key );
 			if ( $id ) {
-				$ids[] = $id;
+				$ids[] = (string) $id;
 			}
 		}
 
@@ -445,6 +461,11 @@ class Post_Bridge {
 		return $ids;
 	}
 
+	/**
+	 * Returns a map with mapped remote fields to taxonomies.
+	 *
+	 * @return array<string, string>
+	 */
 	final public function remote_taxonomies() {
 		$taxonomies = array();
 		foreach ( $this->tax_mappers as $mapper ) {
@@ -459,9 +480,9 @@ class Post_Bridge {
 	}
 
 	/**
-	 * Bridge's remote fields getter.
+	 * Bridge's remote taxonomies getter.
 	 *
-	 * @return array Map of remote fields with foreign as keys and names as values.
+	 * @return array<string, string>
 	 */
 	final public function remote_fields() {
 		return array_merge(
@@ -473,7 +494,7 @@ class Post_Bridge {
 	/**
 	 * Bridge's remote post fields getter.
 	 *
-	 * @return array Map of remote fields with foreign as keys and names as values.
+	 * @return array<string, string>
 	 */
 	final public function remote_post_fields() {
 		$fields = array();
@@ -482,7 +503,7 @@ class Post_Bridge {
 				continue;
 			}
 
-			if ( in_array( $mapper['name'], self::POST_MODEL ) ) {
+			if ( in_array( $mapper['name'], self::POST_MODEL, true ) ) {
 				$fields[ $mapper['foreign'] ] = $mapper['name'];
 			}
 		}
@@ -493,7 +514,7 @@ class Post_Bridge {
 	/**
 	 * Bridge's remote custom fields getter.
 	 *
-	 * @return array Map of remote fields with foreign as keys and names as values.
+	 * @return array<string, string>
 	 */
 	final public function remote_custom_fields() {
 		$fields = array();
@@ -502,7 +523,7 @@ class Post_Bridge {
 				continue;
 			}
 
-			if ( ! in_array( $mapper['name'], self::POST_MODEL ) ) {
+			if ( ! in_array( $mapper['name'], self::POST_MODEL, true ) ) {
 				$fields[ $mapper['foreign'] ] = $mapper['name'];
 			}
 		}
@@ -511,9 +532,9 @@ class Post_Bridge {
 	}
 
 	/**
-	 * Apply fields mapping to a given data.
+	 * Apply fields mapping to a remote entry data.
 	 *
-	 * @param array $data Data to apply fields mappings.
+	 * @param array $data Remote entry data.
 	 *
 	 * @return array Data with remote fields mappeds.
 	 */
@@ -669,7 +690,11 @@ class Post_Bridge {
 
 		$output = array();
 		foreach ( $tags as $tag ) {
-			$tag = trim( $tag );
+			if ( ! $tag || is_array( $tag ) || is_object( $tag ) ) {
+				continue;
+			}
+
+			$tag = trim( strval( $tag ) );
 			if ( $tag ) {
 				$output[] = $tag;
 			}
@@ -715,6 +740,11 @@ class Post_Bridge {
 		return new static( $data, $this->addon );
 	}
 
+	/**
+	 * Save the bridge data in the database.
+	 *
+	 * @return boolean
+	 */
 	public function save() {
 		if ( ! $this->is_valid ) {
 			return false;
@@ -740,6 +770,11 @@ class Post_Bridge {
 		return true;
 	}
 
+	/**
+	 * Removes the bridge from the database.
+	 *
+	 * @return boolean
+	 */
 	public function delete() {
 		if ( ! $this->is_valid ) {
 			return false;

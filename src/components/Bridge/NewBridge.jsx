@@ -4,7 +4,6 @@ import useRemoteCPTs from "../../hooks/useRemoteCPTs";
 import { usePostTypes } from "../../hooks/useGeneral";
 import { useError } from "../../providers/Error";
 import BridgeFields, { INTERNALS } from "./Fields";
-import Templates from "../Templates";
 import { isset, uploadJson } from "../../lib/utils";
 import useResponsive from "../../hooks/useResponsive";
 import Mappers from "../Mappers";
@@ -179,15 +178,6 @@ export default function NewBridge({ add, schema }) {
               >
                 {__("Syncrhonize", "posts-bridge")}
               </Button>
-              <div
-                style={{
-                  marginLeft: isResponsive ? 0 : "auto",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                <Templates />
-              </div>
             </div>
           </div>
         </div>

@@ -6,7 +6,6 @@ const { useMemo } = wp.element;
 const DEFAULT = {
   title: "",
   bridges: [],
-  templates: [],
 };
 
 export default function useAddon() {
@@ -32,13 +31,4 @@ export function useRemoteCPTs() {
   return useMemo(() => {
     return new Set(bridges.map((b) => b.post_type));
   }, [bridges]);
-}
-
-export function useTemplates() {
-  const [addon, setAddon] = useAddon();
-
-  return [
-    addon.templates || [],
-    (templates) => setAddon({ ...addon, templates }),
-  ];
 }

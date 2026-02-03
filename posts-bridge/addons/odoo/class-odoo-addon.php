@@ -94,7 +94,7 @@ class Odoo_Addon extends Addon {
 			)
 		);
 
-		return $bridge->fetch();
+		return $bridge->request( $bridge->endpoint );
 	}
 
 	/**
@@ -110,7 +110,6 @@ class Odoo_Addon extends Addon {
 	public function get_endpoints( $backend, $method = null ) {
 		$bridge = new Odoo_Post_Bridge(
 			array(
-				'name'          => '__odoo-' . time(),
 				'method'        => 'search_read',
 				'endpoint'      => 'ir.model',
 				'backend'       => $backend,
@@ -127,7 +126,7 @@ class Odoo_Addon extends Addon {
 			)
 		);
 
-		$response = $bridge->fetch();
+		$response = $bridge->request( $bridge->endpoint );
 
 		if ( is_wp_error( $response ) ) {
 			return array();
@@ -147,10 +146,11 @@ class Odoo_Addon extends Addon {
 	 *
 	 * @param string $model Target model name.
 	 * @param string $backend Target backend name.
+	 * @param null   $method Ignored.
 	 *
 	 * @return array List of fields and content type of the model.
 	 */
-	public function get_endpoint_schema( $model, $backend ) {
+	public function get_endpoint_schema( $model, $backend, $method = null ) {
 		$bridge = new Odoo_Post_Bridge(
 			array(
 				'method'   => 'fields_get',
@@ -159,7 +159,7 @@ class Odoo_Addon extends Addon {
 			)
 		);
 
-		$response = $bridge->fetch();
+		$response = $bridge->request( $model );
 
 		if ( is_wp_error( $response ) ) {
 			return array();

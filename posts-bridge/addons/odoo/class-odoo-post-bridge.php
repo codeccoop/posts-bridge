@@ -24,7 +24,7 @@ class Odoo_Post_Bridge extends Post_Bridge {
 	 *
 	 * @var string
 	 */
-	private const ENDPOINT = '/jsonrpc';
+	public const ENDPOINT = '/jsonrpc';
 
 	/**
 	 * Handle active rpc session data.
@@ -33,6 +33,11 @@ class Odoo_Post_Bridge extends Post_Bridge {
 	 */
 	private static $session;
 
+	/**
+	 * Handles the current HTTP request of the bridge.
+	 *
+	 * @var array
+	 */
 	private static $request;
 
 	/**
@@ -72,8 +77,7 @@ class Odoo_Post_Bridge extends Post_Bridge {
 	/**
 	 * Handle RPC responses and catch errors on the application layer.
 	 *
-	 * @param array   $response Request response.
-	 * @param boolean $is_single Should the result be an entity or an array.
+	 * @param array $res Request response.
 	 *
 	 * @return mixed|WP_Error Request result.
 	 */
@@ -83,13 +87,12 @@ class Odoo_Post_Bridge extends Post_Bridge {
 		}
 
 		if ( empty( $res['data'] ) ) {
-			$content_type =
-				Http_Client::get_content_type( $res['headers'] ) ?? 'undefined';
+			$content_type = Http_Client::get_content_type( $res['headers'] ) ?? 'undefined';
 
 			return new WP_Error(
 				'unkown_content_type',
-				/* translators: %s: Content-Type header value */
 				sprintf(
+					/* translators: %s: Content-Type header value */
 					__( 'Unkown HTTP response content type %s', 'posts-bridge' ),
 					sanitize_text_field( $content_type )
 				),
@@ -133,7 +136,8 @@ class Odoo_Post_Bridge extends Post_Bridge {
 	/**
 	 * JSON RPC login request.
 	 *
-	 * @param Odoo_DB $db Bridge's database instance.
+	 * @param array   $login RPC login credentials.
+	 * @param Backend $backend Backend object.
 	 *
 	 * @return array|WP_Error Tuple with RPC session id and user id.
 	 */
@@ -158,32 +162,35 @@ class Odoo_Post_Bridge extends Post_Bridge {
 		return self::$session;
 	}
 
+	/**
+	 * Bridge constructor.
+	 *
+	 * @param array $data Bridge data.
+	 */
 	public function __construct( $data ) {
 		parent::__construct( $data, 'odoo' );
-
-		if ( $this->is_valid && isset( $data['method'] ) ) {
-			$this->data['method'] = $data['method'];
-		}
 	}
 
 	/**
-	 * Fetches remote data for a given foreign id.
+	 * Performs an RPC call to the Odoo API.
 	 *
-	 * @param int|string $foreign_id Foreig key value.
+	 * @param string $model Model name.
+	 * @param array  $params RPC args.
+	 * @param array  $headers HTTP headers.
 	 *
-	 * @return array|WP_Error Remote data for the given id.
+	 * @return array|WP_Error
 	 */
-	public function fetch( $foreign_id = null, $params = array(), $headers = array() ) {
+	public function request( $model, $params = array(), $headers = array() ) {
 		if ( ! $this->is_valid ) {
-			return new WP_Error( 'invalid_bridge' );
+			return new WP_Error( 'invalid_bridge', 'Bridge is invalid', (array) $this->data );
 		}
 
 		$backend = $this->backend();
-
 		if ( ! $backend ) {
 			return new WP_Error(
 				'invalid_backend',
-				'The bridge does not have a valid backend'
+				'The bridge does not have a valid backend',
+				$this->data,
 			);
 		}
 
@@ -191,7 +198,8 @@ class Odoo_Post_Bridge extends Post_Bridge {
 		if ( ! $credential ) {
 			return new WP_Error(
 				'invalid_credential',
-				'The bridge does not have a valid credential'
+				'The bridge does not have a valid credential',
+				$backend->data(),
 			);
 		}
 
@@ -216,10 +224,7 @@ class Odoo_Post_Bridge extends Post_Bridge {
 		$login[1]    = $uid;
 
 		$foreigns = array_keys( $this->remote_fields() );
-		$foreigns = array_merge(
-			$foreigns,
-			array_keys( $this->remote_taxonomies() )
-		);
+		$foreigns = array_merge( $foreigns, array_keys( $this->remote_taxonomies() ) );
 
 		$fields = array();
 		foreach ( $foreigns as $foreign ) {
@@ -229,12 +234,12 @@ class Odoo_Post_Bridge extends Post_Bridge {
 			}
 		}
 
-		$args   = array_merge( $login, array( $this->endpoint, $this->method ) );
-		$args[] = array_filter( array( (int) $foreign_id ) );
+		$args   = array_merge( $login, array( $model, $this->method ) );
+		$args[] = $params;
 
 		$payload = self::rpc_payload( $sid, 'object', 'execute', $args, $fields );
 
-		$response = $backend->post( self::ENDPOINT, $payload );
+		$response = $backend->post( self::ENDPOINT, $payload, $headers );
 
 		$result = self::rpc_response( $response );
 		if ( is_wp_error( $result ) ) {
@@ -248,16 +253,36 @@ class Odoo_Post_Bridge extends Post_Bridge {
 		return $response;
 	}
 
-	protected function list_remotes() {
-		$bridge = $this->patch(
+	/**
+	 * Performs an RPC read call for the bridge model by foreign id.
+	 *
+	 * @param int|string $foreign_id Foreig key value.
+	 * @param array      $params Ignored.
+	 * @param array      $headers HTTP headers.
+	 *
+	 * @return array|WP_Error Remote data for the given id.
+	 */
+	public function fetch_one( $foreign_id, $params = array(), $headers = array() ) {
+		return $this->patch( array( 'method' => 'read' ) )
+			->fetch_one( self::ENDPOINT, array( $foreign_id ), $headers );
+	}
+
+	/**
+	 * Performs an RPC search call for the bridge model.
+	 *
+	 * @param array $params Ignored.
+	 * @param array $headers HTTP headers.
+	 *
+	 * @return array|WP_Error List of remote model IDs.
+	 */
+	public function fetch_all( $params = array(), $headers = array() ) {
+		$response = $this->patch(
 			array(
 				'method'        => 'search',
 				'field_mappers' => array(),
 				'tax_mappers'   => array(),
 			)
-		);
-
-		$response = $bridge->fetch();
+		)->request( self::ENDPOINT, $params, $headers );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;

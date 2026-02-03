@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class GSheets_Post_Bridge extends Post_Bridge {
 
 	/**
-	 * Handles spreadhseet rows data in memory.
+	 * Handles spreadsheet rows data in memory.
 	 *
 	 * @var array
 	 */
@@ -34,11 +34,19 @@ class GSheets_Post_Bridge extends Post_Bridge {
 		parent::__construct( $data, 'gsheets' );
 	}
 
+	/**
+	 * Format plain table values to named rows.
+	 *
+	 * @param array $values Matrix with table values.
+	 *
+	 * @return array
+	 */
 	private function values_to_rows( $values ) {
 		$headers = $values[0] ?? array();
 
 		$rows = array();
 
+		array_splice( $values, 0, 1 );
 		$l = count( $values );
 		for ( $i = 1; $i <= $l; $i++ ) {
 			$row = array();
@@ -53,19 +61,29 @@ class GSheets_Post_Bridge extends Post_Bridge {
 		return $rows;
 	}
 
+	/**
+	 * Fetches the first row of the sheet and return it as an array of headers / columns.
+	 *
+	 * @param Backend|null $backend Bridge backend instance.
+	 *
+	 * @return array<string>|WP_Error
+	 */
 	public function get_headers( $backend = null ) {
 		if ( ! $this->is_valid ) {
-			return new WP_Error( 'invalid_bridge' );
+			return new WP_Error( 'invalid_bridge', 'Bridge is invalid', (array) $this->data );
+		}
+
+		if ( null !== self::$rows && count( self::$rows ) ) {
+			return array_keys( self::$rows[0] );
 		}
 
 		if ( ! $backend ) {
 			$backend = $this->backend;
 		}
 
-		$range = rawurlencode( $this->tab ) . '!1:1';
+		$endpoint = $this->endpoint( $this->single_endpoint ) . '!1:1';
 
-		$response = $backend->get( $this->endpoint . '/values/' . $range );
-
+		$response = $backend->get( $endpoint );
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
@@ -76,6 +94,15 @@ class GSheets_Post_Bridge extends Post_Bridge {
 		return $values[0] ?? array();
 	}
 
+	/**
+	 * Creates a new sheet on the document.
+	 *
+	 * @param integer $index Position of the new sheet in the sheets list.
+	 * @param string  $title Sheet title.
+	 * @param Backend $backend Bridge backend instance.
+	 *
+	 * @return array|WP_Error Sheet data or creation error.
+	 */
 	private function add_sheet( $index, $title, $backend ) {
 		$response = $backend->post(
 			$this->endpoint . ':batchUpdate',
@@ -107,6 +134,13 @@ class GSheets_Post_Bridge extends Post_Bridge {
 		return $response['data'];
 	}
 
+	/**
+	 * Request for the list of sheets of the document.
+	 *
+	 * @param Backend $backend Bridge backend instance.
+	 *
+	 * @return array<string>|WP_Error
+	 */
 	private function get_sheets( $backend ) {
 		$response = $backend->get( $this->endpoint );
 
@@ -122,41 +156,63 @@ class GSheets_Post_Bridge extends Post_Bridge {
 		return $sheets;
 	}
 
-	public function fetch( $foreign_id = null, $params = array(), $headers = array() ) {
-		if ( ! $this->is_valid ) {
-			return new WP_Error( 'invalid_bridge' );
+	/**
+	 * Gets the formatted bridge endpoint.
+	 *
+	 * @param string|null $tab Tab name, optional.
+	 *
+	 * @return string
+	 */
+	protected function endpoint( $tab = null ) {
+		if ( ! $tab ) {
+			return $this->endpoint;
 		}
 
-		$rows = $this->get_rows();
+		return $this->endpoint . '/values/' . rawurldecode( $tab );
+	}
+
+	/**
+	 * Fetches one row data by row ID.
+	 *
+	 * @param string $foreign_id ID of the target row.
+	 * @param array  $params Request params.
+	 * @param array  $headers HTTP headers.
+	 *
+	 * @return array|WP_Error
+	 */
+	public function fetch_one( $foreign_id, $params = array(), $headers = array() ) {
+		if ( ! $this->is_valid ) {
+			return new WP_Error( 'invalid_bridge', 'Bridge is invalid', (array) $this->data );
+		}
+
+		$rows = $this->fetch_all( $params, $headers );
 		if ( is_wp_error( $rows ) ) {
 			return $rows;
 		}
 
 		foreach ( $rows as $row ) {
-			if ( $row[ $this->foreign_key ] === $foreign_id ) {
-				return array(
-					'headers'       => array(),
-					'cookies'       => array(),
-					'filename'      => null,
-					'body'          => wp_json_encode( $row ),
-					'response'      => array(
-						'status'  => 200,
-						'message' => 'Success',
-					),
-					'http_response' => array(
-						'data'    => null,
-						'headers' => null,
-						'status'  => null,
-					),
-					'data'          => $row,
-				);
+			$row_id = $row[ $this->foreign_key ] ?? null;
+			if ( $row_id === $foreign_id ) {
+				return $row;
 			}
 		}
 
-		return new WP_Error( 'not_found' );
+		return new WP_Error( 'not_found', 'Record not found', array( 'foreign_id' => $foreign_id ) );
 	}
 
-	private function get_rows() {
+	/**
+	 * Fetches the spreadsheet table data.
+	 *
+	 * @param array $params Request params.
+	 * @param array $headers HTTP headers.
+	 *
+	 * @return array|WP_Error Backend entries data.
+	 */
+	public function fetch_all( $params = array(), $headers = array() ) {
+		if ( ! $this->is_valid ) {
+			return new WP_Error( 'invalid_bridge', 'Bridge is invalid', (array) $this->data );
+		}
+
 		if ( null !== self::$rows ) {
 			return self::$rows;
 		}
@@ -168,31 +224,19 @@ class GSheets_Post_Bridge extends Post_Bridge {
 			return $sheets;
 		}
 
-		if ( ! in_array( strtolower( $this->tab ), $sheets, true ) ) {
-			$result = $this->add_sheet( count( $sheets ), $this->tab, $backend );
+		if ( ! in_array( strtolower( $this->single_endpoint ), $sheets, true ) ) {
+			$result = $this->add_sheet( count( $sheets ), $this->single_endpoint, $backend );
 			if ( is_wp_error( $result ) ) {
 				return $result;
 			}
 		}
 
-		$endpoint = $this->endpoint . '/values/' . rawurldecode( $this->tab ); // . '!A1:Z';
-
-		$response = $this->backend->get( $endpoint );
+		$response = $this->request( $this->endpoint, $params, $headers );
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
 		self::$rows = $this->values_to_rows( $response['data']['values'] );
 		return self::$rows;
-	}
-
-	protected function list_remotes() {
-		$rows = $this->get_rows();
-
-		if ( is_wp_error( $rows ) ) {
-			return $rows;
-		}
-
-		return $rows;
 	}
 }

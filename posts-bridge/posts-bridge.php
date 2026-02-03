@@ -44,7 +44,6 @@ require_once __DIR__ . '/includes/class-settings-store.php';
 require_once __DIR__ . '/includes/class-logger.php';
 require_once __DIR__ . '/includes/class-menu.php';
 require_once __DIR__ . '/includes/class-post-bridge.php';
-require_once __DIR__ . '/includes/class-post-bridge-template.php';
 require_once __DIR__ . '/includes/class-posts-synchronizer.php';
 require_once __DIR__ . '/includes/class-remote-cpt.php';
 require_once __DIR__ . '/includes/class-remote-featured-media.php';

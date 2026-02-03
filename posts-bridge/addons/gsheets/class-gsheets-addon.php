@@ -51,18 +51,9 @@ class GSheets_Addon extends Addon {
 	 * @return boolean
 	 */
 	public function ping( $backend ) {
-		$bridge = new GSheets_Post_Bridge(
-			array(
-				'backend'  => $backend,
-				'endpoint' => '/',
-				'method'   => 'GET',
-				'tab'      => 'foo',
-			)
-		);
-
-		$backend = $bridge->backend;
+		$backend = PBAPI::get_backend( $backend );
 		if ( ! $backend ) {
-			Logger::log( 'Google Sheets backend ping error: Bridge has no valid backend', Logger::ERROR );
+			Logger::log( "Google Sheets backend ping error: Unknown backend {$backend}", Logger::ERROR );
 			return false;
 		}
 
@@ -101,17 +92,17 @@ class GSheets_Addon extends Addon {
 	public function fetch( $endpoint, $backend ) {
 		$backend = PBAPI::get_backend( $backend );
 		if ( ! $backend ) {
-			return new WP_Error( 'invalid_backend' );
+			return new WP_Error( 'invalid_backend', 'Backend is unknown', array( 'backend' => $backend ) );
 		}
 
 		$credential = $backend->credential;
 		if ( ! $credential ) {
-			return new WP_Error( 'invalid_credential' );
+			return new WP_Error( 'invalid_credential', 'The backend has no valid credential', (array) $backend->data() );
 		}
 
 		$access_token = $credential->get_access_token();
 		if ( ! $access_token ) {
-			return new WP_Error( 'invalid_credential' );
+			return new WP_Error( 'invalid_credential', 'Unable to get the credential access token' );
 		}
 
 		$response = http_bridge_get(
@@ -142,6 +133,8 @@ class GSheets_Addon extends Addon {
 		$response = $this->fetch( null, $backend );
 
 		if ( is_wp_error( $response ) || empty( $response['data']['files'] ) ) {
+			Logger::log( 'Google Sheets get endpoints error: Introspection error response', Logger::ERROR );
+			Logger::log( $response, Logger::ERROR );
 			return array();
 		}
 
@@ -189,12 +182,15 @@ class GSheets_Addon extends Addon {
 		}
 
 		if ( ! isset( $bridge ) ) {
+			Logger::log( 'Google Sheets get endpoint schema error: Unkown bridge', Logger::ERROR );
 			return array();
 		}
 
 		$headers = $bridge->get_headers();
 
 		if ( is_wp_error( $headers ) ) {
+			Logger::log( 'Google Sheets get endpoint schema error: Introspection error response', Logger::ERROR );
+			Logger::log( $headers, Logger::ERROR );
 			return array();
 		}
 

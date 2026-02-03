@@ -7,6 +7,8 @@
 
 namespace POSTS_BRIDGE;
 
+use PBAPI;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
@@ -55,15 +57,13 @@ class Dolibarr_Addon extends Addon {
 	 * @return boolean
 	 */
 	public function ping( $backend ) {
-		$bridge = new Dolibarr_Post_Bridge(
-			array(
-				'method'   => 'GET',
-				'endpoint' => '/api/index.php/status',
-				'backend'  => $backend,
-			)
-		);
+		$backend = PBAPI::get_backend( $backend );
+		if ( ! $backend ) {
+			Logger::log( "Backend {$backend} is unknown", Logger::ERROR );
+			return false;
+		}
 
-		$response = $bridge->fetch();
+		$response = $backend->get( '/api/index.php/status' );
 		if ( is_wp_error( $response ) ) {
 			Logger::log( 'Dolibarr backend ping error response', Logger::ERROR );
 			Logger::log( $response, Logger::ERROR );
@@ -92,15 +92,12 @@ class Dolibarr_Addon extends Addon {
 	 * @return array
 	 */
 	public function get_endpoint_schema( $endpoint, $backend, $method = null ) {
-		$bridge = new Dolibarr_Post_Bridge(
-			array(
-				'endpoint' => self::SWAGGER_ENDPOINT,
-				'backend'  => $backend,
-				'method'   => 'GET',
-			)
-		);
+		$backend = PBAPI::get_backend( $backend );
+		if ( ! $backend ) {
+			return array();
+		}
 
-		$response = $bridge->fetch();
+		$response = $backend->get( self::SWAGGER_ENDPOINT );
 
 		if ( is_wp_error( $response ) ) {
 			return array();
@@ -120,9 +117,7 @@ class Dolibarr_Addon extends Addon {
 			return array();
 		}
 
-		$response = $bridge->patch( array( 'endpoint' => $endpoint ) )
-			->fetch( array( 'limit' => 1 ) );
-
+		$response = $backend->get( $endpoint, array( 'limit' => 1 ) );
 		if ( is_wp_error( $response ) ) {
 			return array();
 		}
@@ -164,22 +159,23 @@ class Dolibarr_Addon extends Addon {
 	 * @return array|WP_Error
 	 */
 	public function get_endpoints( $backend, $method = null ) {
-		$bridge = new Dolibarr_Post_Bridge(
-			array(
-				'endpoint' => self::SWAGGER_ENDPOINT,
-				'backend'  => $backend,
-				'method'   => 'GET',
-			)
-		);
+		$backend = PBAPI::get_backend( $backend );
+		if ( ! $backend ) {
+			Logger::log( "Backend {$backend} is unkown", Logger::ERROR );
+			return array();
+		}
 
-		$response = $bridge->fetch();
-
+		$response = $backend->get( self::SWAGGER_ENDPOINT );
 		if ( is_wp_error( $response ) ) {
+			Logger::log( 'Dolibarr get endpoints error response', Logger::ERROR );
+			Logger::log( $response, Logger::ERROR );
 			return array();
 		}
 
 		$version = $response['data']['swagger'] ?? null;
 		if ( ! $version ) {
+			Logger::log( 'Dolibarr get endpoints error: Invalid swagger schema', Logger::ERROR );
+			Logger::log( $response['data'] ?? $response['body'], Logger::ERROR );
 			return array();
 		}
 

@@ -7,8 +7,6 @@
 
 namespace POSTS_BRIDGE;
 
-use Error;
-use TypeError;
 use PBAPI;
 use WPCT_PLUGIN\Singleton;
 
@@ -350,10 +348,9 @@ class Addon extends Singleton {
 
 		$bridge['tax_mappers'] = $mappers;
 
-		$bridge['is_valid'] =
-			$bridge['backend'] && $bridge['method'] && $bridge['endpoint'];
+		$bridge['is_valid'] = $bridge['backend'] && $bridge['method'] && $bridge['endpoint'];
+		$bridge['enabled']  = boolval( $bridge['enabled'] ?? true );
 
-		$bridge['enabled'] = boolval( $bridge['enabled'] ?? true );
 		return $bridge;
 	}
 
@@ -387,27 +384,6 @@ class Addon extends Singleton {
 	 * Loads the addon.
 	 */
 	public function load() {
-		add_filter(
-			'posts_bridge_templates',
-			static function ( $templates, $addon = null ) {
-				if ( ! wp_is_numeric_array( $templates ) ) {
-					$templates = array();
-				}
-
-				if ( $addon && static::NAME !== $addon ) {
-					return $templates;
-				}
-
-				foreach ( static::load_templates() as $template ) {
-					$templates[] = $template;
-				}
-
-				return $templates;
-			},
-			10,
-			2
-		);
-
 		add_filter(
 			'posts_bridge_bridges',
 			static function ( $bridges, $addon = null ) {
@@ -474,25 +450,6 @@ class Addon extends Singleton {
 
 		Settings_Store::ready(
 			static function ( $store ) {
-				$store::use_getter(
-					static::NAME,
-					static function ( $data ) {
-						$templates = PBAPI::get_addon_templates( static::NAME );
-
-						$data['templates'] = array_map(
-							function ( $template ) {
-								return array(
-									'title' => $template->title,
-									'name'  => $template->name,
-								);
-							},
-							$templates
-						);
-
-						return $data;
-					}
-				);
-
 				$store::use_setter(
 					static::NAME,
 					static function ( $data ) {
@@ -500,7 +457,6 @@ class Addon extends Singleton {
 							return $data;
 						}
 
-						unset( $data['templates'] );
 						return static::sanitize_setting( $data );
 					},
 					9
@@ -554,7 +510,6 @@ class Addon extends Singleton {
 
 		$bridge = new $bridge_class(
 			array(
-				'post_type'   => '_',
 				'foreign_key' => 'id',
 				'endpoint'    => $endpoint,
 				'backend'     => $backend,
@@ -569,12 +524,13 @@ class Addon extends Singleton {
 	 * Performs an introspection of the backend endpoint and returns API fields
 	 * and accepted content type.
 	 *
-	 * @param string $endpoint Target endpoint name.
-	 * @param string $backend Target backend name.
+	 * @param string      $endpoint Target endpoint name.
+	 * @param string      $backend Target backend name.
+	 * @param string|null $method HTTP method.
 	 *
 	 * @return array|WP_Error
 	 */
-	public function get_endpoint_schema( $endpoint, $backend ) {
+	public function get_endpoint_schema( $endpoint, $backend, $method = 'GET' ) {
 		return array();
 	}
 
@@ -589,144 +545,4 @@ class Addon extends Singleton {
 	public function get_endpoints( $backend, $method = null ) {
 		return array();
 	}
-
-	/**
-	 * Autoload config files from a given addon's directory. Used to load
-	 * template and job config files.
-	 *
-	 * @param string   $dir Path of the target directory.
-	 * @param string[] $extensions Allowed file extensions.
-	 *
-	 * @return array Array with data from files.
-	 */
-	private static function autoload_dir( $dir, $extensions = array( 'php', 'json' ) ) {
-		if ( ! is_readable( $dir ) || ! is_dir( $dir ) ) {
-			return array();
-		}
-
-		static $load_cache;
-
-		$files = array();
-		foreach ( array_diff( scandir( $dir ), array( '.', '..' ) ) as $file ) {
-			$file_path = $dir . '/' . $file;
-
-			if ( is_file( $file_path ) && is_readable( $file_path ) ) {
-				$files[] = $file_path;
-			}
-		}
-
-		$loaded = array();
-		foreach ( $files as $file_path ) {
-			$file = basename( $file_path );
-			$name = pathinfo( $file )['filename'];
-			$ext  = pathinfo( $file )['extension'] ?? null;
-
-			if ( ! in_array( $ext, $extensions, true ) ) {
-				continue;
-			}
-
-			if ( isset( $load_cache[ $file_path ] ) ) {
-				$loaded[] = $load_cache[ $file_path ];
-				continue;
-			}
-
-			$data = null;
-			if ( 'php' === $ext ) {
-				$data = include_once $file_path;
-			} elseif ( 'json' === $ext ) {
-				// phpcs:disable Generic.CodeAnalysis.EmptyStatement
-				try {
-					$content = file_get_contents( $file_path );
-					$data    = json_decode( $content, true, JSON_THROW_ON_ERROR );
-				} catch ( TypeError ) {
-					// pass.
-				} catch ( Error ) {
-					// pass.
-				}
-				// phpcs:enable
-			}
-
-			if ( is_array( $data ) ) {
-				$data['name']             = $name;
-				$loaded[]                 = $data;
-				$load_cache[ $file_path ] = $data;
-			}
-		}
-
-		return $loaded;
-	}
-
-	/**
-	 * Loads addon's bridge templates.
-	 *
-	 * @return Post_Bridge_Template[].
-	 */
-	private static function load_templates() {
-		$dir = POSTS_BRIDGE_ADDONS_DIR . '/' . static::NAME . '/templates';
-
-		$directories = apply_filters(
-			'posts_bridge_template_directories',
-			array(
-				$dir,
-				Posts_Bridge::path() . 'includes/templates',
-				get_stylesheet_directory() . '/posts-bridge/templates/' . static::NAME,
-			),
-			static::NAME
-		);
-
-		$templates = array();
-		foreach ( $directories as $dir ) {
-			if ( ! is_dir( $dir ) ) {
-				continue;
-			}
-
-			foreach ( self::autoload_dir( $dir ) as $template ) {
-				$template['name']               = sanitize_title( $template['name'] );
-				$templates[ $template['name'] ] = $template;
-			}
-		}
-
-		$templates = array_values( $templates );
-
-		$templates = apply_filters(
-			'posts_bridge_load_templates',
-			$templates,
-			static::NAME
-		);
-
-		$loaded = array();
-		foreach ( $templates as $template ) {
-			if (
-				is_array( $template ) &&
-				isset( $template['data'], $template['name'] )
-			) {
-				$template = array_merge(
-					$template['data'],
-					array(
-						'name' => $template['name'],
-					)
-				);
-			}
-
-			$template = new Post_Bridge_Template( $template, static::NAME );
-
-			if ( $template->is_valid ) {
-				$loaded[] = $template;
-			}
-		}
-
-		return $loaded;
-	}
-
-	// /**
-	// * Registers remote cpts remote fields as post meta to make it visibles
-	// * on the REST API.
-	// */
-	// private static function register_meta()
-	// {
-	// $bridges = static::bridges();
-	// foreach ($bridges as $bridge) {
-	// $bridge->register_meta();
-	// }
-	// }
 }
