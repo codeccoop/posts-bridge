@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class Remote_CPT
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -19,7 +24,7 @@ class Remote_CPT {
 	 *
 	 * @var string Meta key.
 	 */
-	public const _foreign_key_handle = '_posts_bridge_foreign_key';
+	public const FOREIGN_KEY_HANDLE = '_posts_bridge_foreign_key';
 
 	/**
 	 * Handle value of the remote model foreign key.
@@ -71,23 +76,19 @@ class Remote_CPT {
 			return $this->remote_data;
 		}
 
-		$response = $this->bridge()->fetch( $this->foreign_id() );
+		$data = $this->bridge()->fetch_one( $this->foreign_id() );
 
-		if ( is_wp_error( $response ) ) {
-			Logger::log(
-				"Remote CPT({$this->post_type}) #{$this->ID} fetch error",
-				Logger::ERROR
-			);
+		if ( is_wp_error( $data ) ) {
+			Logger::log( "Remote CPT({$this->post_type}) #{$this->ID} fetch error", Logger::ERROR );
+			Logger::log( $data, Logger::ERROR );
 
-			Logger::log( $response, Logger::ERROR );
-
-			$this->remote_data = $response;
+			$this->remote_data = $data;
 			return array();
 		}
 
 		$this->remote_data = (array) apply_filters(
 			'posts_bridge_remote_data',
-			$response['data'],
+			$data,
 			$this
 		);
 
@@ -131,7 +132,8 @@ class Remote_CPT {
 			return;
 		}
 
-		if ( $value = ( new JSON_Finger( $data ) )->get( $attr ) ) {
+		$value = ( new JSON_Finger( $data ) )->get( $attr );
+		if ( $value ) {
 			return $value;
 		}
 
@@ -154,13 +156,11 @@ class Remote_CPT {
 	 */
 	private function foreign_id() {
 		if ( empty( $this->foreign_id ) ) {
-			$this->foreign_id =
-				get_post_meta(
-					$this->post->ID,
-					self::_foreign_key_handle,
-					true
-				) ?:
-				null;
+			$this->foreign_id = get_post_meta(
+				$this->post->ID,
+				self::FOREIGN_KEY_HANDLE,
+				true
+			) ?: null;
 		}
 
 		return $this->foreign_id;

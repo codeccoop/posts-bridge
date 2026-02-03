@@ -202,7 +202,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 
 		update_post_meta(
 			$post->ID,
-			Remote_CPT::_foreign_key_handle,
+			Remote_CPT::FOREIGN_KEY_HANDLE,
 			$request[ $foreign_key ]
 		);
 	}

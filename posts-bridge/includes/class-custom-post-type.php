@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class Custom_Post_Type
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -6,6 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
 
+/**
+ * Custom post types manager
+ */
 class Custom_Post_Type {
 
 	/**
@@ -13,7 +21,7 @@ class Custom_Post_Type {
 	 *
 	 * @var array
 	 */
-	private const internal_post_types = array(
+	public const INTERNAL_TYPES = array(
 		'attachment',
 		'revision',
 		'nav_menu_item',
@@ -35,7 +43,7 @@ class Custom_Post_Type {
 	 *
 	 * @var string
 	 */
-	private const option_name = 'posts_bridge_custom_post_types';
+	private const OPTION_NAME = 'posts_bridge_custom_post_types';
 
 	/**
 	 * Handle custom post types registry.
@@ -255,7 +263,7 @@ class Custom_Post_Type {
 
 	public static function load_custom_post_types() {
 		add_action(
-			'add_option_' . self::option_name,
+			'add_option_' . self::OPTION_NAME,
 			static function ( $option, $value ) {
 				self::$registry = $value;
 			},
@@ -264,7 +272,7 @@ class Custom_Post_Type {
 		);
 
 		add_action(
-			'update_option_' . self::option_name,
+			'update_option_' . self::OPTION_NAME,
 			function ( $from, $to ) {
 				self::$registry = $to;
 			},
@@ -273,7 +281,7 @@ class Custom_Post_Type {
 		);
 
 		add_action(
-			'delete_option_' . self::option_name,
+			'delete_option_' . self::OPTION_NAME,
 			function () {
 				self::$registry = null;
 			},
@@ -307,7 +315,7 @@ class Custom_Post_Type {
 		$name              = sanitize_key( $data['name'] );
 		$registry[ $name ] = self::sanitize_args( $name, $data );
 
-		update_option( self::option_name, $registry );
+		update_option( self::OPTION_NAME, $registry );
 
 		$success = self::register_post_type( $name, $registry[ $name ] );
 		if ( is_wp_error( $success ) ) {
@@ -323,7 +331,7 @@ class Custom_Post_Type {
 		$registry = self::registry();
 		unset( $registry[ $name ] );
 
-		update_option( self::option_name, $registry );
+		update_option( self::OPTION_NAME, $registry );
 
 		$success = unregister_post_type( $name );
 		if ( is_wp_error( $success ) ) {
@@ -338,7 +346,7 @@ class Custom_Post_Type {
 			return self::$registry;
 		}
 
-		self::$registry = (array) get_option( self::option_name, array() );
+		self::$registry = (array) get_option( self::OPTION_NAME, array() );
 		return self::$registry;
 	}
 
@@ -362,7 +370,7 @@ class Custom_Post_Type {
 			array_filter(
 				$post_types,
 				static function ( $post_type ) {
-					return ! in_array( $post_type, self::internal_post_types );
+					return ! in_array( $post_type, self::INTERNAL_TYPES, true );
 				}
 			)
 		);
