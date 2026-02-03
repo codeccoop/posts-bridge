@@ -37,9 +37,10 @@ add_filter(
 
 			if ( false === $exists ) {
 				$backends[] = array(
-					'name'     => 'Airtable API',
-					'base_url' => 'https://api.airtable.com',
-					'headers'  => array(
+					'name'       => 'Airtable API',
+					'base_url'   => 'https://api.airtable.com',
+					'credential' => 'Airtable Token',
+					'headers'    => array(
 						array(
 							'name'  => 'Content-Type',
 							'value' => 'application/json',
@@ -53,4 +54,27 @@ add_filter(
 	},
 	20,
 	1,
+);
+
+add_filter(
+	'http_bridge_credentials',
+	function ( $credentials ) {
+		if ( PBAPI::get_addon( 'airtable' ) ) {
+			$schemas = array_column( $credentials, 'schema' );
+			$exists  = array_search( 'Bearer', $schemas, true );
+
+			if ( false === $exists ) {
+				$credentials[] = array(
+					'name'         => 'Airtable Token',
+					'schema'       => 'Bearer',
+					'access_token' => 'your-api-key',
+					'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
+				);
+			}
+		}
+
+		return $credentials;
+	},
+	20,
+	1
 );
