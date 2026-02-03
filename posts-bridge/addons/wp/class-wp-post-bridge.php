@@ -18,54 +18,64 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_Post_Bridge extends Post_Bridge {
 
+	/**
+	 * Bridge constructor.
+	 *
+	 * @param array $data Bridge data.
+	 */
 	public function __construct( $data ) {
-		parent::__construct( $data, 'wp' );
-	}
+		$data['foreign_id']      = 'id';
+		$data['single_endpoint'] = rtrim( $data['endpoint'], '/' ) . '/{id}';
 
-	public function __get( $name ) {
-		switch ( $name ) {
-			case 'foreign_key':
-				return 'id';
-			default:
-				return parent::__get( $name );
-		}
+		parent::__construct( $data, 'wp' );
 	}
 
 	/**
 	 * Fetches remote data for a given foreign id.
 	 *
-	 * @param int|string|null $foreign_id Foreig key value.
-	 * @param array           $params Request query params.
-	 * @param array           $headers Request headers.
+	 * @param int   $foreign_id Remote post ID.
+	 * @param array $params Request query params.
+	 * @param array $headers Request headers.
 	 *
 	 * @return array|WP_Error
 	 */
-	public function fetch( $foreign_id = null, $params = array(), $headers = array() ) {
+	public function fetch_one( $foreign_id, $params = array(), $headers = array() ) {
 		if ( ! $this->is_valid ) {
-			return new WP_Error( 'invalid_bridge' );
+			return new WP_Error( 'invalid_bridge', 'Bridge is invalid', (array) $this->data );
 		}
 
-		if ( $foreign_id ) {
-			$params = array( 'context' => 'edit' );
-		}
+		$params['context'] = 'edit';
 
-		$response = parent::fetch( $foreign_id, $params, $headers );
+		$endpoint = $this->endpoint( $foreign_id );
+		$response = parent::request( $endpoint, $params, $headers );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
-		if ( $foreign_id ) {
-			$response['data'] = $this->remote_data( $response['data'] );
-		}
-
-		return $response;
+		$data = $this->remote_data( $response['data'] );
+		return $data;
 	}
 
-	protected function list_remotes() {
+	/**
+	 * Peforms a recursive request through paged responses to get all post IDs.
+	 *
+	 * @param array $params Ignored.
+	 * @param array $headers HTTP headers.
+	 *
+	 * @return array|WP_Error List of remote model IDs.
+	 */
+	public function fetch_all( $params = array(), $headers = array() ) {
 		return $this->get_paged_ids();
 	}
 
+	/**
+	 * Peforms a recursive request through paged responses to get all post IDs.
+	 *
+	 * @param integer $page Current page index.
+	 *
+	 * @return array|WP_Error
+	 */
 	private function get_paged_ids( $page = 1 ) {
 		$pages    = 1e10;
 		$endpoint = $this->endpoint();
@@ -102,6 +112,13 @@ class WP_Post_Bridge extends Post_Bridge {
 		return $posts;
 	}
 
+	/**
+	 * Traverse post response links to fetch full post data and formats the return.
+	 *
+	 * @param array $data REST response data.
+	 *
+	 * @return array
+	 */
 	private function remote_data( $data ) {
 		$backend = $this->backend();
 
@@ -113,6 +130,12 @@ class WP_Post_Bridge extends Post_Bridge {
 		foreach ( $aliases as $alias ) {
 			$data[ 'post_' . $alias ] = $data[ $alias ] ?? null;
 			unset( $data[ $alias ] );
+		}
+
+		foreach ( $data as $key => $value ) {
+			if ( is_array( $value ) && isset( $data[ $key ]['raw'] ) ) {
+				$data[ $key ] = $data[ $key ]['raw'];
+			}
 		}
 
 		$attachments = $data['_links']['wp:attachments'] ?? array();
@@ -165,12 +188,11 @@ class WP_Post_Bridge extends Post_Bridge {
 				continue;
 			}
 
-			$field =
-				'post_tag' === $tax['taxonomy']
-					? 'tags'
-					: ( 'category' === $tax['taxonomy']
-						? 'categories'
-						: $tax['taxonomy'] );
+			$field = 'post_tag' === $tax['taxonomy']
+				? 'tags'
+				: ( 'category' === $tax['taxonomy']
+					? 'categories'
+					: $tax['taxonomy'] );
 
 			$res = $backend->get( $tax['href'] );
 			if ( is_wp_error( $res ) ) {
