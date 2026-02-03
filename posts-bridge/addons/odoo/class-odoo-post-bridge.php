@@ -169,6 +169,10 @@ class Odoo_Post_Bridge extends Post_Bridge {
 	 */
 	public function __construct( $data ) {
 		parent::__construct( $data, 'odoo' );
+
+		if ( 'read' !== $data['method'] ) {
+			$this->data['method'] = $data['method'];
+		}
 	}
 
 	/**
@@ -237,6 +241,7 @@ class Odoo_Post_Bridge extends Post_Bridge {
 		$args   = array_merge( $login, array( $model, $this->method ) );
 		$args[] = $params;
 
+		$fields  = false !== strpos( $this->method, 'read' ) ? $fields : null;
 		$payload = self::rpc_payload( $sid, 'object', 'execute', $args, $fields );
 
 		$response = $backend->post( self::ENDPOINT, $payload, $headers );
@@ -263,8 +268,14 @@ class Odoo_Post_Bridge extends Post_Bridge {
 	 * @return array|WP_Error Remote data for the given id.
 	 */
 	public function fetch_one( $foreign_id, $params = array(), $headers = array() ) {
-		return $this->patch( array( 'method' => 'read' ) )
-			->fetch_one( self::ENDPOINT, array( $foreign_id ), $headers );
+		$response = $this->patch( array( 'method' => 'read' ) )
+			->request( $this->endpoint, $foreign_id, $headers );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		return $response['data'];
 	}
 
 	/**
@@ -282,7 +293,7 @@ class Odoo_Post_Bridge extends Post_Bridge {
 				'field_mappers' => array(),
 				'tax_mappers'   => array(),
 			)
-		)->request( self::ENDPOINT, $params, $headers );
+		)->request( $this->endpoint, $params, $headers );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
