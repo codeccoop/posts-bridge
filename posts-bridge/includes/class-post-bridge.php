@@ -388,13 +388,12 @@ class Post_Bridge {
 	 * @return string
 	 */
 	protected function endpoint( $foreign_id = null ) {
-		$endpoint = $this->data['single_endpoint'] ?? $this->data['endpoint'] ?? '/';
-		$parsed   = wp_parse_url( $endpoint );
-
-		if ( ! $foreign_id ) {
-			return $endpoint;
+		if ( null === $foreign_id ) {
+			return $this->data['endpoint'];
 		}
 
+		$endpoint = $this->data['single_endpoint'] ?? $this->data['endpoint'] ?? '/';
+		$parsed   = wp_parse_url( $endpoint );
 		$endpoint = $parsed['path'] ?? '/';
 
 		if ( preg_match( '/{+id}+|%s|%d/i', $endpoint, $matches ) ) {
@@ -621,6 +620,12 @@ class Post_Bridge {
 		// fallback to publish status.
 		if ( ! isset( $data['post_status'] ) ) {
 			$data['post_status'] = 'publish';
+		}
+
+		foreach ( array_keys( $data ) as $key ) {
+			if ( ! in_array( strtolower( $key ), self::POST_MODEL, true ) ) {
+				unset( $data[ $key ] );
+			}
 		}
 
 		return $data;
