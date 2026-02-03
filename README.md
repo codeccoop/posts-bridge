@@ -50,7 +50,9 @@ Posts Bridge has the following add-ons:
 
 Connect to any custom API using standard HTTP methods and authentication using the abstract **REST API** add-on. Perfect for integrating with proprietary or less common systems.
 
-## Backends
+## Features
+
+### Backends
 
 In Posts Bridge, a backend is a set of configurations that handles the information required to get your posts synchronized over HTTP requests with remote systems.
 
@@ -63,25 +65,25 @@ To register a new backend you only have to set 3 fields:
 
 Once registered, you can reuse your backend connection on your post bridges.
 
-## Field Mappers
+### Field Mappers
 
 Field mappers allow you to mutate your backend API responses to match the WordPress post model (e.g., `post_title`, `post_content`, `post_name`, etc.). This enable automatic conversion of backend data into WordPress posts on each synchronization loop (ahead-of-time).
 
 With mappers you can map backend data to post fields, custom fields and into taxonomy terms (such as categories and tags).
 
-## Remote Field
+### Remote Field
 
 If you want your backend data loaded dynamically on each render, you can use the **Remote Field** custom block. This block lets you designate parts of your post templates as remote content. On render time, this blocks will be replaced with the data fetched from the backend.
 
-## Templates
+### Templates
 
 To streamline the bridge setup process, Posts Bridge comes packed with templates. Templates are blueprints of bridges you can use to set up your integrations in a matter of minutes.
 
-## REST API Endpoints
+### REST API Endpoints
 
 Forms Bridge registers custom REST API endpoints for each bridge to easily connect to WordPress from your backend over HTTP requests.
 
-## JWT Authentication
+### JWT Authentication
 
 Authenticate your HTTP requests to the WordPress REST API with JWT tokens.
 
