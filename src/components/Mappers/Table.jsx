@@ -85,6 +85,12 @@ export default function MappersTable({ title, mappers, setMappers }) {
           {title}
         </label>
       </div>
+      <datalist id="datalist-mappers-api-fields">
+        {apiFields.map((f) => (
+          <option key={f.name} value={f.name} />
+        ))}
+      </datalist>
+
       <table
         style={{
           width: "calc(100% + 10px)",
@@ -130,6 +136,7 @@ export default function MappersTable({ title, mappers, setMappers }) {
                             setMapper(index, "foreign", ev.target.value)
                           }
                           style={useInputStyle(foreign)}
+                          list="datalist-mappers-api-fields"
                         />
                       </BaseControl>
                     </div>
