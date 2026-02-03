@@ -581,7 +581,7 @@ class Posts_Synchronizer extends Singleton {
 			update_post_meta( $post_id, Remote_CPT::FOREIGN_KEY_HANDLE, $foreign_id );
 
 			if ( isset( $data['featured_media'] ) ) {
-				$featured_media = Remote_Featured_Media::handle( $data['featured_media'] );
+				$featured_media = Remote_Featured_Media::handle( $data['featured_media'], null, $bridge->backend );
 			} else {
 				$featured_media = Remote_Featured_Media::default_thumbnail_id();
 			}
