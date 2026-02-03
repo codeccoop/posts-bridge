@@ -1,4 +1,9 @@
 <?php
+/**
+ * Class Posts_Synchronizer
+ *
+ * @package postsbridge
+ */
 
 namespace POSTS_BRIDGE;
 
@@ -23,23 +28,28 @@ class Posts_Synchronizer extends Singleton {
 	 *
 	 * @var string ajax_none
 	 */
-	private const ajax_nonce = 'posts-bridge-ajax-sync';
+	private const AJAX_NONCE = 'posts-bridge-ajax-sync';
 
 	/**
 	 * Handle synchronization ajax action name.
 	 *
 	 * @var string
 	 */
-	private const sync_action = 'posts_bridge_sync';
+	private const SYNC_ACTION = 'posts_bridge_sync';
 
-	private const ping_action = 'posts_bridge_sync_ping';
+	/**
+	 * Handle ping ajax action name.
+	 *
+	 * @var string
+	 */
+	private const PING_ACTION = 'posts_bridge_sync_ping';
 
 	/**
 	 * Handles synchronization schedule hook name.
 	 *
 	 * @var string Synchronization schedule hook name.
 	 */
-	private const schedule_hook = '_posts_bridge_sync_schedule';
+	private const SCHEDULE_HOOK = '_posts_bridge_sync_schedule';
 
 	/**
 	 * Handle full synchronization mode. Full synchronization will fetch remote data of all remote models.
@@ -92,24 +102,24 @@ class Posts_Synchronizer extends Singleton {
 	 * @param array   $payload Arguments to be passed to the hook's callback function.
 	 */
 	private static function add_schedule( $timestamp, $recurrence, $payload = array() ) {
-		$next_schedule = wp_next_scheduled( self::schedule_hook, $payload );
+		$next_schedule = wp_next_scheduled( self::SCHEDULE_HOOK, $payload );
 
 		if ( $next_schedule ) {
-			// if new timestamp is nearer than the existing one, replace it
+			// if new timestamp is nearer than the existing one, replace it.
 			if ( $next_schedule > $timestamp ) {
 				wp_unschedule_event(
 					$next_schedule,
-					self::schedule_hook,
+					self::SCHEDULE_HOOK,
 					$payload
 				);
 				$next_schedule = null;
 			} else {
-				// if recurrence from the existing schedule is different from the new one, replace it
-				$schedule = wp_get_schedule( self::schedule_hook, $payload );
+				// if recurrence from the existing schedule is different from the new one, replace it.
+				$schedule = wp_get_schedule( self::SCHEDULE_HOOK, $payload );
 				if ( $schedule !== $recurrence ) {
 					wp_unschedule_event(
 						$next_schedule,
-						self::schedule_hook,
+						self::SCHEDULE_HOOK,
 						$payload
 					);
 					$next_schedule = null;
@@ -117,12 +127,12 @@ class Posts_Synchronizer extends Singleton {
 			}
 		}
 
-		// creates a new schedule if it doesn't exists
+		// creates a new schedule if it doesn't exists.
 		if ( ! $next_schedule ) {
 			wp_schedule_event(
 				$timestamp,
 				$recurrence,
-				self::schedule_hook,
+				self::SCHEDULE_HOOK,
 				$payload
 			);
 		}
@@ -132,9 +142,9 @@ class Posts_Synchronizer extends Singleton {
 	 * Unschedule the scheduled plugin's hook.
 	 */
 	public static function unschedule() {
-		$timestamp = wp_next_scheduled( self::schedule_hook, array() );
-		if ( $timestamp !== false ) {
-			wp_unschedule_event( $timestamp, self::schedule_hook );
+		$timestamp = wp_next_scheduled( self::SCHEDULE_HOOK, array() );
+		if ( false !== $timestamp ) {
+			wp_unschedule_event( $timestamp, self::SCHEDULE_HOOK );
 		}
 	}
 
@@ -180,29 +190,34 @@ class Posts_Synchronizer extends Singleton {
 		}
 	}
 
+	/**
+	 * Localize postsBridgeAjaxSync script with nonces.
+	 */
 	private static function ajax_localization() {
 		wp_localize_script(
 			'posts-bridge',
 			'postsBridgeAjaxSync',
 			array(
 				'url'     => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( self::ajax_nonce ),
+				'nonce'   => wp_create_nonce( self::AJAX_NONCE ),
 				'actions' => array(
-					'sync' => self::sync_action,
-					'ping' => self::ping_action,
+					'sync' => self::SYNC_ACTION,
+					'ping' => self::PING_ACTION,
 				),
 			)
 		);
 	}
 
-	/*
+	/**
 	 * Binds schedules to general settings updates.
+	 *
+	 * @param mixed[] ...$args Constructor arguments.
 	 */
 	protected function construct( ...$args ) {
 		add_action(
 			'updated_option',
 			static function ( $option ) {
-				if ( $option === 'posts-bridge_general' ) {
+				if ( 'posts-bridge_general' === $option ) {
 					self::schedule();
 				}
 			},
@@ -223,14 +238,14 @@ class Posts_Synchronizer extends Singleton {
 		);
 
 		add_action(
-			'wp_ajax_' . self::sync_action,
+			'wp_ajax_' . self::SYNC_ACTION,
 			static function () {
 				self::ajax_callback();
 			}
 		);
 
 		add_action(
-			'wp_ajax_' . self::ping_action,
+			'wp_ajax_' . self::PING_ACTION,
 			static function () {
 				self::ping_callback();
 			}
@@ -244,19 +259,21 @@ class Posts_Synchronizer extends Singleton {
 		);
 
 		add_action(
-			self::schedule_hook,
+			self::SCHEDULE_HOOK,
 			static function () {
-				if ( is_file( POSTS_BRIDGE_DIR . '/sync-lock' ) ) {
-					Logger::log(
-						'Skip scheduled synchronization due to sync lock conflicts',
-						Logger::ERROR
-					);
+				$upload_dir = Posts_Bridge::upload_dir();
+				if ( $upload_dir && is_file( $upload_dir . '/sync-lock' ) ) {
+					Logger::log( 'Skip scheduled synchronization due to sync lock conflicts', Logger::ERROR );
 					return;
 				}
 
 				Logger::log( 'Start scheduled synchronization' );
 
-				touch( POSTS_BRIDGE_DIR . '/sync-lock' );
+				$upload_dir = Posts_Bridge::upload_dir();
+				if ( $upload_dir ) {
+					touch( $upload_dir . '/sync-lock' );
+				}
+
 				set_error_handler(
 					function ( $code, $message, $file, $line ) {
 						Logger::log(
@@ -269,8 +286,12 @@ class Posts_Synchronizer extends Singleton {
 							Logger::ERROR
 						);
 
-						unlink( POSTS_BRIDGE_DIR . '/sync-lock' );
-						wp_die( $message );
+						$upload_dir = Posts_Bridge::upload_dir();
+						if ( $upload_dir ) {
+							wp_delete_file( $upload_dir . '/sync-lock' );
+						}
+
+						wp_die( esc_html( $message ) );
 					}
 				);
 
@@ -306,18 +327,24 @@ class Posts_Synchronizer extends Singleton {
 					Logger::log( 'End scheduled synchronization' );
 
 					restore_error_handler();
-					if ( is_file( POSTS_BRIDGE_DIR . '/sync-lock' ) ) {
-						unlink( POSTS_BRIDGE_DIR . '/sync-lock' );
+
+					$upload_dir = Posts_Bridge::upload_dir();
+					if ( $upload_dir && is_file( $upload_dir . '/sync-lock' ) ) {
+						wp_delete_file( $upload_dir . '/sync-lock' );
 					}
 				}
 			}
 		);
 	}
 
+	/**
+	 * Callback to the ping ajax action. Checks if a synchronization is running in the background.
+	 */
 	private static function ping_callback() {
-		check_ajax_referer( self::ajax_nonce );
+		check_ajax_referer( self::AJAX_NONCE );
 
-		if ( is_file( POSTS_BRIDGE_DIR . '/sync-lock' ) ) {
+		$upload_dir = Posts_Bridge::upload_dir();
+		if ( $upload_dir && is_file( $upload_dir . '/sync-lock' ) ) {
 			wp_send_json(
 				array(
 					'success' => false,
@@ -332,16 +359,19 @@ class Posts_Synchronizer extends Singleton {
 
 	/**
 	 * Ajax synchronization callback.
+	 *
+	 * @throws Exception For bad requests or internal server errors.
 	 */
 	private static function ajax_callback() {
-		check_ajax_referer( self::ajax_nonce );
+		check_ajax_referer( self::AJAX_NONCE );
 
 		try {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				throw new Exception( 'ajax_unauthorized', 401 );
 			}
 
-			if ( is_file( POSTS_BRIDGE_DIR . '/sync-lock' ) ) {
+			$upload_dir = Posts_Bridge::upload_dir();
+			if ( $upload_dir && is_file( $upload_dir . '/sync-lock' ) ) {
 				wp_send_json(
 					array(
 						'success' => false,
@@ -365,7 +395,11 @@ class Posts_Synchronizer extends Singleton {
 
 			Logger::log( 'Start ajax synchronization' );
 
-			touch( POSTS_BRIDGE_DIR . '/sync-lock' );
+			$upload_dir = Posts_Bridge::upload_dir();
+			if ( $upload_dir ) {
+				touch( $upload_dir . '/sync-lock' );
+			}
+
 			set_error_handler(
 				function ( $code, $message, $file, $line ) {
 					Logger::log(
@@ -378,8 +412,12 @@ class Posts_Synchronizer extends Singleton {
 						Logger::ERROR
 					);
 
-					unlink( POSTS_BRIDGE_DIR . '/sync-lock' );
-					wp_die( $message );
+					$upload_dir = Posts_Bridge::upload_dir();
+					if ( $upload_dir ) {
+						wp_delete_file( $upload_dir . '/sync-lock' );
+					}
+
+					wp_die( esc_html( $message ) );
 				}
 			);
 
@@ -393,36 +431,29 @@ class Posts_Synchronizer extends Singleton {
 
 			foreach ( $bridges as $bridge ) {
 				if ( ! $bridge->is_valid ) {
-					Logger::log(
-						"Skip synchronization for invalid {$bridge->post_type} bridge"
-					);
+					Logger::log( "Skip synchronization for invalid {$bridge->post_type} bridge" );
 					continue;
 				}
 
 				if ( ! $bridge->enabled ) {
-					Logger::log(
-						"Skip synchronization for invalid {$bridge->post_type} bridge"
-					);
+					Logger::log( "Skip synchronization for invalid {$bridge->post_type} bridge" );
 					continue;
 				}
 
 				self::sync( $bridge );
 			}
 		} catch ( Error | Exception $e ) {
-			Logger::log(
-				"Ajax synchronization error on {$bridge->post_type} bridge",
-				Logger::ERROR
-			);
-
+			Logger::log( "Ajax synchronization error on {$bridge->post_type} bridge", Logger::ERROR );
 			Logger::log( $e, Logger::ERROR );
-
 			$error = $e;
 		} finally {
 			Logger::log( 'Ajax synchronization completed' );
 
 			restore_error_handler();
-			if ( is_file( POSTS_BRIDGE_DIR . '/sync-lock' ) ) {
-				unlink( POSTS_BRIDGE_DIR . '/sync-lock' );
+
+			$upload_dir = Posts_Bridge::upload_dir();
+			if ( $upload_dir && is_file( $upload_dir . '/sync-lock' ) ) {
+				wp_delete_file( $upload_dir . '/sync-lock' );
 			}
 
 			if ( isset( $error ) ) {
@@ -431,7 +462,8 @@ class Posts_Synchronizer extends Singleton {
 						'success' => false,
 						'error'   => $error->getMessage(),
 					),
-					$error->getCode()
+					$error->getCode(),
+					400,
 				);
 			}
 
@@ -444,7 +476,7 @@ class Posts_Synchronizer extends Singleton {
 	 *
 	 * @param Post_Bridge $bridge Remote relation instance.
 	 *
-	 * @return boolean True if success, false otherwise.
+	 * @throws Exception On HTTP error response or inert post errors.
 	 */
 	private static function sync( $bridge ) {
 		$foreign_ids = $bridge->foreign_ids();
@@ -474,12 +506,10 @@ class Posts_Synchronizer extends Singleton {
 			if ( ! isset( $remote_pairs[ $foreign_id ] ) ) {
 				// if post does not exists on the remote backend, then remove it.
 				$post_id = get_the_ID();
-				Logger::log(
-					"Remove post {$post_id} on synchronization clean up"
-				);
+				Logger::log( "Remove post {$post_id} on synchronization clean up" );
 				wp_delete_post( $post_id );
-			} elseif ( self::$sync_mode === 'light' ) {
-					// if light mode, skip synchronization for existing ones
+			} elseif ( 'light' === self::$sync_mode ) {
+					// if light mode, skip synchronization for existing ones.
 					unset( $remote_pairs[ $foreign_id ] );
 			} else {
 				$remote_pairs[ $foreign_id ] = get_post();
@@ -491,12 +521,10 @@ class Posts_Synchronizer extends Singleton {
 
 		wp_reset_postdata();
 
-		Logger::log(
-			"Start remote posts synchronization for {$post_type} bridge"
-		);
+		Logger::log( "Start remote posts synchronization for {$post_type} bridge" );
 
 		foreach ( $remote_pairs as $foreign_id => $post ) {
-			// if is a new remote model, mock a post as its local counterpart
+			// if is a new remote model, mock a post as its local counterpart.
 			if ( empty( $post ) ) {
 				$post = new WP_Post(
 					(object) array(
@@ -523,9 +551,7 @@ class Posts_Synchronizer extends Singleton {
 			);
 
 			if ( $skip ) {
-				Logger::log(
-					"Skip synchrionization for Remote CPT({$post_type}) with foreign id {$foreign_id}"
-				);
+				Logger::log( "Skip synchrionization for Remote CPT({$post_type}) with foreign id {$foreign_id}" );
 
 				$rcpt->ID && wp_delete_post( $rcpt->ID );
 				continue;
@@ -535,39 +561,27 @@ class Posts_Synchronizer extends Singleton {
 
 			$data['post_type'] = $post_type;
 
-			if ( $rcpt->ID !== 0 ) {
+			if ( 0 !== $rcpt->ID ) {
 				$data['ID'] = $rcpt->ID;
 			}
 
 			do_action( 'posts_bridge_before_synchronization', $rcpt, $data );
 
-			Logger::log(
-				"Remote CPT({$post_type}) #{$rcpt->ID} remote data after mappers"
-			);
+			Logger::log( "Remote CPT({$post_type}) #{$rcpt->ID} remote data after mappers" );
 			Logger::log( $data );
 
 			$post_id = wp_insert_post( $data );
 
 			if ( is_wp_error( $post_id ) || ! $post_id ) {
-				Logger::log(
-					'Post creation error on synchronization',
-					Logger::ERROR
-				);
-
+				Logger::log( 'Post creation error on synchronization', Logger::ERROR );
 				Logger::log( 'Exit synchronization on error' );
 				throw new Exception( 'insert_error', 500 );
 			}
 
-			update_post_meta(
-				$post_id,
-				Remote_CPT::_foreign_key_handle,
-				$foreign_id
-			);
+			update_post_meta( $post_id, Remote_CPT::FOREIGN_KEY_HANDLE, $foreign_id );
 
 			if ( isset( $data['featured_media'] ) ) {
-				$featured_media = Remote_Featured_Media::handle(
-					$data['featured_media']
-				);
+				$featured_media = Remote_Featured_Media::handle( $data['featured_media'] );
 			} else {
 				$featured_media = Remote_Featured_Media::default_thumbnail_id();
 			}
@@ -579,9 +593,7 @@ class Posts_Synchronizer extends Singleton {
 			do_action( 'posts_bridge_synchronization', $rcpt, $data );
 		}
 
-		Logger::log(
-			"Ends remote posts synchronization for {$post_type} bridge"
-		);
+		Logger::log( "Ends remote posts synchronization for {$post_type} bridge" );
 	}
 }
 
