@@ -24,7 +24,9 @@ class Dolibarr_Post_Bridge extends Post_Bridge {
 	 * @param array $data Bridge data.
 	 */
 	public function __construct( $data ) {
-		$data['foreign_key'] = 'id';
+		$data['foreign_key']     = 'id';
+		$data['single_endpoint'] = rtrim( $data['endpoint'], '/' ) . '/{id}';
+
 		parent::__construct( $data, 'dolibarr' );
 	}
 
