@@ -182,10 +182,6 @@ class GSheets_Post_Bridge extends Post_Bridge {
 	 * @return array|WP_Error
 	 */
 	public function fetch_one( $foreign_id, $params = array(), $headers = array() ) {
-		if ( ! $this->is_valid ) {
-			return new WP_Error( 'invalid_bridge', 'Bridge is invalid', (array) $this->data );
-		}
-
 		$rows = $this->fetch_all( $params, $headers );
 		if ( is_wp_error( $rows ) ) {
 			return $rows;

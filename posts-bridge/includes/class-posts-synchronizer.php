@@ -586,7 +586,9 @@ class Posts_Synchronizer extends Singleton {
 				$featured_media = Remote_Featured_Media::default_thumbnail_id();
 			}
 
-			set_post_thumbnail( $post_id, $featured_media );
+			if ( $featured_media ) {
+				set_post_thumbnail( $post_id, $featured_media );
+			}
 
 			$rcpt = new Remote_CPT( $post_id, $foreign_id, $data );
 

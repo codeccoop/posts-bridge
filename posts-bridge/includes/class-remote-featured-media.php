@@ -113,7 +113,10 @@ class Remote_Featured_Media {
 			return self::default_thumbnail_id();
 		}
 
-		self::memorize( $attachment_id, $src );
+		if ( $attachment_id ) {
+			self::memorize( $attachment_id, $src );
+		}
+
 		return $attachment_id;
 	}
 
@@ -154,7 +157,8 @@ class Remote_Featured_Media {
 	 * @return int|null ID of the created attachment.
 	 */
 	private static function attach_url( $src ) {
-		if ( $attachment_id = self::memory( $src ) ) {
+		$attachment_id = self::memory( $src );
+		if ( $attachment_id ) {
 			return $attachment_id;
 		}
 
@@ -176,7 +180,7 @@ class Remote_Featured_Media {
 	private static function attach( $src, $content, $unlink = true ) {
 		$filename = basename( $src );
 
-		// unlink temp files
+		// unlink temp files.
 		if ( is_file( $src ) && $unlink ) {
 			wp_delete_file( $src );
 		}
@@ -201,8 +205,7 @@ class Remote_Featured_Media {
 			$filepath = $_filepath;
 		}
 
-		$success =
-			is_writable( $filepath ) && file_put_contents( $filepath, $content );
+		$success = is_writable( dirname( $filepath ) ) && file_put_contents( $filepath, $content );
 		if ( ! $success ) {
 			return;
 		}
