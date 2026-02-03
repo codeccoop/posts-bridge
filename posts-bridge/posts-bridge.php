@@ -24,6 +24,7 @@ define( 'POSTS_BRIDGE_INDEX', __FILE__ );
 define( 'POSTS_BRIDGE_DIR', __DIR__ );
 define( 'POSTS_BRIDGE_ADDONS_DIR', POSTS_BRIDGE_DIR . '/addons' );
 
+/* Packages */
 if ( ! class_exists( 'WPCT_PLUGIN\Plugin' ) ) {
 	require_once __DIR__ . '/deps/plugin/class-plugin.php';
 }

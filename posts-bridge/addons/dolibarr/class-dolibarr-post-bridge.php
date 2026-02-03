@@ -11,6 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
 
+/**
+ * Dolibarr post bridge
+ */
 class Dolibarr_Post_Bridge extends Post_Bridge {
 
 	public function __construct( $data ) {

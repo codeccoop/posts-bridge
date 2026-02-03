@@ -62,11 +62,13 @@ class GSheets_Addon extends Addon {
 
 		$backend = $bridge->backend;
 		if ( ! $backend ) {
+			Logger::log( 'Google Sheets backend ping error: Bridge has no valid backend', Logger::ERROR );
 			return false;
 		}
 
 		$credential = $backend->credential;
 		if ( ! $credential ) {
+			Logger::log( 'Google Sheets backend ping error: Backend has no valid credential', Logger::ERROR );
 			return false;
 		}
 
@@ -74,11 +76,18 @@ class GSheets_Addon extends Addon {
 		$host   = $parsed['host'] ?? '';
 
 		if ( 'sheets.googleapis.com' !== $host ) {
+			Logger::log( 'Google Sheets backend ping error: Backend does not point to the Google Sheets API endpoints', Logger::ERROR );
 			return false;
 		}
 
 		$access_token = $credential->get_access_token();
-		return (bool) $access_token;
+
+		if ( ! $access_token ) {
+			Logger::log( 'Google Sheets backend ping error: Unable to recover the credential access token', Logger::ERROR );
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -122,15 +131,43 @@ class GSheets_Addon extends Addon {
 	}
 
 	/**
+	 * Performs an introspection of the backend API and returns a list of available endpoints.
+	 *
+	 * @param string      $backend Target backend name.
+	 * @param string|null $method HTTP method.
+	 *
+	 * @return array|WP_Error
+	 */
+	public function get_endpoints( $backend, $method = null ) {
+		$response = $this->fetch( null, $backend );
+
+		if ( is_wp_error( $response ) || empty( $response['data']['files'] ) ) {
+			return array();
+		}
+
+		return array_map(
+			function ( $file ) {
+				return '/v4/spreadsheets/' . $file['id'];
+			},
+			$response['data']['files']
+		);
+	}
+
+	/**
 	 * Performs an introspection of the backend endpoint and returns API fields
 	 * and accepted content type.
 	 *
-	 * @param string $endpoint Concatenation of spreadsheet ID and tab name.
-	 * @param string $backend Backend name.
+	 * @param string      $endpoint Concatenation of spreadsheet ID and tab name.
+	 * @param string      $backend Backend name.
+	 * @param string|null $method HTTP method.
 	 *
 	 * @return array List of fields and content type of the endpoint.
 	 */
-	public function get_endpoint_schema( $endpoint, $backend ) {
+	public function get_endpoint_schema( $endpoint, $backend, $method = null ) {
+		if ( 'POST' !== $method ) {
+			return array();
+		}
+
 		$bridges = PBAPI::get_addon_bridges( self::NAME );
 		foreach ( $bridges as $candidate ) {
 			$data = $candidate->data();

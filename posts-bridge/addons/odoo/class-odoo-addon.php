@@ -57,7 +57,14 @@ class Odoo_Addon extends Addon {
 		);
 
 		$response = $bridge->fetch();
-		return ! is_wp_error( $response );
+
+		if ( is_wp_error( $response ) ) {
+			Logger::log( 'Odoo backend ping error response', Logger::ERROR );
+			Logger::log( $response, Logger::ERROR );
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -88,6 +95,50 @@ class Odoo_Addon extends Addon {
 		);
 
 		return $bridge->fetch();
+	}
+
+	/**
+	 * Fetch available models from the backend
+	 *
+	 * @param string      $backend Backend name.
+	 * @param string|null $method RPC method.
+	 *
+	 * @return array
+	 *
+	 * @todo Implementar el endpoint de consulta de endpoints disponibles.
+	 */
+	public function get_endpoints( $backend, $method = null ) {
+		$bridge = new Odoo_Post_Bridge(
+			array(
+				'name'          => '__odoo-' . time(),
+				'method'        => 'search_read',
+				'endpoint'      => 'ir.model',
+				'backend'       => $backend,
+				'field_mappers' => array(
+					array(
+						'name'    => 'model',
+						'foreign' => 'model',
+					),
+					array(
+						'name'    => 'name',
+						'foreign' => 'name',
+					),
+				),
+			)
+		);
+
+		$response = $bridge->fetch();
+
+		if ( is_wp_error( $response ) ) {
+			return array();
+		}
+
+		return array_map(
+			function ( $model ) {
+				return $model['model'];
+			},
+			$response['data']['result']
+		);
 	}
 
 	/**

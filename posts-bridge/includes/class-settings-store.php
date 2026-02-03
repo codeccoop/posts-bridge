@@ -24,7 +24,7 @@ class Settings_Store extends Base_Settings_Store {
 	 *
 	 * @var string REST Settings Controller class name.
 	 */
-	protected const REST_CONTROLER = '\POSTS_BRIDGE\REST_Settings_Controller';
+	public const REST_CONTROLLER = '\POSTS_BRIDGE\REST_Settings_Controller';
 
 	/**
 	 * Inherits the parent constructor and sets up setting validation callbacks.

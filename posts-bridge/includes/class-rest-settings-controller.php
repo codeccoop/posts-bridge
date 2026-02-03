@@ -275,7 +275,7 @@ class REST_Settings_Controller extends Base_Controller {
 						},
 						'permission_callback' => array( self::class, 'permission_callback' ),
 						'args'                => array(
-							'backend' => FBAPI::get_backend_schema(),
+							'backend' => PBAPI::get_backend_schema(),
 							'method'  => array(
 								'description' => __( 'HTTP method used to filter the list of endpoints', 'posts-bridge' ),
 								'type'        => 'string',
