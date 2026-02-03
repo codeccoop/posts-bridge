@@ -166,14 +166,22 @@ class Remote_Featured_Media {
 		if ( isset( $url['query'] ) ) {
 			$src = str_replace( '?' . $url['query'], '', $src );
 		}
-		return self::attach( $src, file_get_contents( $src ) );
+
+		$response = wp_remote_get( $src );
+
+		if ( is_wp_error( $response ) || 300 >= $response['response']['code'] ) {
+			return;
+		}
+
+		return self::attach( $src, $response['body'] );
 	}
 
 	/**
 	 * Attach an image to the wp media store.
 	 *
-	 * @param string $src Image source.
-	 * @param bytes  $content Binary file content.
+	 * @param string  $src Image source.
+	 * @param bytes   $content Binary file content.
+	 * @param boolena $unlink Whether to unlink the source on exit.
 	 *
 	 * @return int ID of the created attachment.
 	 */
@@ -185,7 +193,7 @@ class Remote_Featured_Media {
 			wp_delete_file( $src );
 		}
 
-		// get wp current upload dir
+		// get wp current upload dir.
 		$upload_dir = wp_upload_dir();
 		if ( wp_mkdir_p( $upload_dir['path'] ) ) {
 			$filepath = $upload_dir['path'] . '/' . $filename;

@@ -715,6 +715,10 @@ class Post_Bridge {
 	final public function register_meta() {
 		$fields = $this->remote_fields();
 		foreach ( array_keys( $fields ) as $foreign ) {
+			if ( $foreign === $fields[ $foreign ] ) {
+				continue;
+			}
+
 			register_post_meta(
 				$this->post_type,
 				$foreign,
