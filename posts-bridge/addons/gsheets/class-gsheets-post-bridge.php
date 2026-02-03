@@ -162,12 +162,14 @@ class GSheets_Post_Bridge extends Post_Bridge {
 	 * @return string
 	 */
 	protected function endpoint( $tab = null ) {
+		$endpoint = $this->endpoint . '/values';
+
 		if ( ! $tab ) {
-			return $this->endpoint;
+			return $endpoint;
 		}
 
 		$tab = strtolower( strpos( trim( $tab ), ' ' ) ? "'{$tab}'" : $tab );
-		return $this->endpoint . '/values/' . rawurlencode( $tab );
+		return $endpoint . '/' . rawurlencode( $tab );
 	}
 
 	/**
@@ -231,7 +233,8 @@ class GSheets_Post_Bridge extends Post_Bridge {
 			}
 		}
 
-		$response = $this->request( $this->endpoint, $params, $headers );
+		$endpoint = $this->endpoint( $this->single_endpoint );
+		$response = $this->request( $endpoint, $params, $headers );
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
