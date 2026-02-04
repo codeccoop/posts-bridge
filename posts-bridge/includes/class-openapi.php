@@ -177,17 +177,14 @@ class OpenAPI {
 
 		$c = count( $parameters );
 		for ( $i = 0; $i < $c; $i++ ) {
-			$param = &$parameters[ $i ];
+			$parameters[ $i ] = $this->expand_refs( $parameters[ $i ] );
 
+			$param = &$parameters[ $i ];
 			if ( ! isset( $param['in'] ) || 'formData' === $param['in'] ) {
 				$param['in'] = 'body';
 			}
 
 			if ( 'body' === $param['in'] && isset( $param['schema'] ) ) {
-				if ( isset( $param['schema']['$ref'] ) ) {
-					$param['schema'] = array_merge( $param['schema'], $this->get_ref( $param['schema']['$ref'] ) );
-				}
-
 				if ( isset( $param['schema']['properties'] ) && is_array( $param['schema']['properties'] ) ) {
 					array_splice( $parameters, $i, 1 );
 
@@ -210,22 +207,8 @@ class OpenAPI {
 		}
 
 		$l = count( $parameters );
-		for ( $i = 0; $i < $l; $i++ ) {
+		for ( $i = 0; $i < $l; ++$i ) {
 			$param = &$parameters[ $i ];
-
-			if ( isset( $param['$ref'] ) ) {
-				$parameters[ $i ] = array_merge( $param, $this->get_ref( $param['$ref'] ) );
-				$param            = &$parameters[ $i ];
-			} elseif ( isset( $param['schema']['$ref'] ) ) {
-				$param['schema'] = array_merge( $param['schema'], $this->get_ref( $param['schema']['$ref'] ) );
-			}
-
-			if ( isset( $param['anyOf'] ) ) {
-				$param['schema'] = $param['anyOf'][0];
-			} elseif ( isset( $param['oneOf'] ) ) {
-				$param['schema'] = $param['oneOf'][0];
-			}
-
 			if ( isset( $param['type'] ) && ! isset( $param['schema'] ) ) {
 				$param['schema'] = array( 'type' => $param['type'] );
 				unset( $param['type'] );
@@ -253,16 +236,14 @@ class OpenAPI {
 	}
 
 	/**
-	 * Retrives params for a path and an HTTP method. Optionally, filtered by the
-	 * param source.
+	 * Retrives response fields for a path and an HTTP method.
 	 *
-	 * @param string       $path Target path.
-	 * @param string       $method HTTP method.
-	 * @param string|array $source Param source or sources. It could be body, path, query or cookie.
+	 * @param string $path Target path.
+	 * @param string $method HTTP method.
 	 *
 	 * @return array|null
 	 */
-	public function response( $path, $method = null, $source = null ) {
+	public function response( $path, $method = null ) {
 		$path = self::parse_path( $path );
 
 		$path_obj = $this->path_obj( $path );
@@ -278,22 +259,8 @@ class OpenAPI {
 		$parameters = $this->body_to_params( $response_obj );
 
 		$l = count( $parameters );
-		for ( $i = 0; $i < $l; $i++ ) {
+		for ( $i = 0; $i < $l; ++$i ) {
 			$param = &$parameters[ $i ];
-
-			if ( isset( $param['$ref'] ) ) {
-				$parameters[ $i ] = array_merge( $param, $this->get_ref( $param['$ref'] ) );
-				$param            = &$parameters[ $i ];
-			} elseif ( isset( $param['schema']['$ref'] ) ) {
-				$param['schema'] = array_merge( $param['schema'], $this->get_ref( $param['schema']['$ref'] ) );
-			}
-
-			if ( isset( $param['anyOf'] ) ) {
-				$param['schema'] = $param['anyOf'][0];
-			} elseif ( isset( $param['oneOf'] ) ) {
-				$param['schema'] = $param['oneOf'][0];
-			}
-
 			if ( isset( $param['type'] ) && ! isset( $param['schema'] ) ) {
 				$param['schema'] = array( 'type' => $param['type'] );
 				unset( $param['type'] );
@@ -301,6 +268,60 @@ class OpenAPI {
 		}
 
 		return $parameters;
+	}
+
+	/**
+	 * Replace refs and non deterministic schemas.
+	 *
+	 * @param array $obj Schema of the param.
+	 *
+	 * @return array
+	 */
+	private function expand_refs( $obj ) {
+		if ( isset( $obj['$ref'] ) ) {
+			$obj = array_merge( $obj, $this->get_ref( $obj['$ref'] ) );
+			unset( $obj['$ref'] );
+		}
+
+		if ( isset( $obj['anyOf'] ) ) {
+			$obj = $this->expand_refs( $obj['anyOf'][0] );
+			unset( $obj['anyOf'] );
+		} elseif ( isset( $obj['oneOf'] ) ) {
+			$obj = $this->expand_refs( $obj['oneOf'][0] );
+			unset( $obj['oneOf'] );
+		} elseif ( isset( $obj['allOf'] ) ) {
+			$schema = array();
+			foreach ( $obj['allOf'] as $partial ) {
+				$schema = array_merge( $schema, $partial );
+			}
+
+			$obj = $schema;
+			unset( $obj['allOf'] );
+
+			$obj = $this->expand_refs( $obj );
+		}
+
+		$schema = $obj['schema'] ?? $obj;
+
+		if ( 'object' === $schema['type'] ) {
+			foreach ( $schema['properties'] as $name => $prop_schema ) {
+				$schema[ $name ] = $this->expand_refs( $prop_schema );
+			}
+		} elseif ( 'array' === $schema['type'] ) {
+			if ( wp_is_numeric_array( $schema['items'] ) ) {
+				return $obj;
+			}
+
+			$schema['items'] = $this->expand_refs( $schema['items'] );
+		}
+
+		if ( isset( $obj['schema'] ) ) {
+			$obj['schema'] = $schema;
+		} else {
+			$obj = $schema;
+		}
+
+		return $obj;
 	}
 
 	/**
@@ -336,15 +357,7 @@ class OpenAPI {
 		$parameters = array();
 
 		foreach ( $body['content'] as $encoding => $obj ) {
-			if ( isset( $obj['schema']['$ref'] ) ) {
-				$obj['schema'] = array_merge( $obj['schema'], $this->get_ref( $obj['schema']['$ref'] ) );
-			}
-
-			if ( isset( $obj['schema']['oneOf'] ) ) {
-				$obj['schema'] = $obj['schema']['oneOf'][0];
-			} elseif ( isset( $obj['schema']['anyOf'] ) ) {
-				$obj['schema'] = $obj['schema']['anyOf'][0];
-			}
+			$obj = $this->expand_refs( $obj );
 
 			if ( 'object' === $obj['schema']['type'] ) {
 				foreach ( $obj['schema']['properties'] as $name => $defn ) {
