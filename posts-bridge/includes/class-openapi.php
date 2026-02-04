@@ -253,6 +253,57 @@ class OpenAPI {
 	}
 
 	/**
+	 * Retrives params for a path and an HTTP method. Optionally, filtered by the
+	 * param source.
+	 *
+	 * @param string       $path Target path.
+	 * @param string       $method HTTP method.
+	 * @param string|array $source Param source or sources. It could be body, path, query or cookie.
+	 *
+	 * @return array|null
+	 */
+	public function response( $path, $method = null, $source = null ) {
+		$path = self::parse_path( $path );
+
+		$path_obj = $this->path_obj( $path );
+		if ( ! $path_obj ) {
+			return;
+		}
+
+		$response_obj = $path_obj[ $method ]['responses'][200] ?? null;
+		if ( ! $response_obj ) {
+			return;
+		}
+
+		$parameters = $this->body_to_params( $response_obj );
+
+		$l = count( $parameters );
+		for ( $i = 0; $i < $l; $i++ ) {
+			$param = &$parameters[ $i ];
+
+			if ( isset( $param['$ref'] ) ) {
+				$parameters[ $i ] = array_merge( $param, $this->get_ref( $param['$ref'] ) );
+				$param            = &$parameters[ $i ];
+			} elseif ( isset( $param['schema']['$ref'] ) ) {
+				$param['schema'] = array_merge( $param['schema'], $this->get_ref( $param['schema']['$ref'] ) );
+			}
+
+			if ( isset( $param['anyOf'] ) ) {
+				$param['schema'] = $param['anyOf'][0];
+			} elseif ( isset( $param['oneOf'] ) ) {
+				$param['schema'] = $param['oneOf'][0];
+			}
+
+			if ( isset( $param['type'] ) && ! isset( $param['schema'] ) ) {
+				$param['schema'] = array( 'type' => $param['type'] );
+				unset( $param['type'] );
+			}
+		}
+
+		return $parameters;
+	}
+
+	/**
 	 * Retrives the value of a ref in the swagger data.
 	 *
 	 * @param string $ref Ref absolute path.
@@ -295,14 +346,27 @@ class OpenAPI {
 				$obj['schema'] = $obj['schema']['anyOf'][0];
 			}
 
-			foreach ( $obj['schema']['properties'] as $name => $defn ) {
-				$parameters[] = array_merge(
-					array(
-						'name'     => $name,
-						'encoding' => $encoding,
-						'in'       => 'body',
-					),
-					$defn
+			if ( 'object' === $obj['schema']['type'] ) {
+				foreach ( $obj['schema']['properties'] as $name => $defn ) {
+					$parameters[] = array_merge(
+						array(
+							'name'     => $name,
+							'encoding' => $encoding,
+							'in'       => 'body',
+						),
+						$defn
+					);
+				}
+			} elseif ( 'array' === $obj['schema']['type'] ) {
+				if ( wp_is_numeric_array( $obj['schema']['items'] ) ) {
+					continue;
+				}
+
+				$parameters[] = array(
+					'name'     => '',
+					'encoding' => $encoding,
+					'in'       => 'body',
+					'schema'   => $obj['schema'],
 				);
 			}
 		}
