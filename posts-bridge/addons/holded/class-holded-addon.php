@@ -126,10 +126,16 @@ class Holded_Addon extends Addon {
 
 			$module_paths = array();
 			foreach ( $oa_explorer->paths() as $path ) {
+				if ( preg_match_all( '/{[^}]+}/', $path, $matches ) ) {
+					if ( '{docType}' !== $matches[0][0] || 1 < count( $matches[0] ) ) {
+						continue;
+					}
+				}
+
 				$path_obj = $oa_explorer->path_obj( $path );
 
 				if ( $path_obj && isset( $path_obj['get'] ) ) {
-					$method_paths[] = $path;
+					$module_paths[] = $path;
 				}
 			}
 
