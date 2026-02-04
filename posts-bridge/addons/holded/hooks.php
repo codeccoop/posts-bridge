@@ -29,36 +29,46 @@ add_filter(
 );
 
 add_filter(
-	'http_bridge_backends',
-	function ( $backends ) {
-		if ( PBAPI::get_addon( 'holded' ) ) {
-			$urls   = array_column( $backends, 'base_url' );
-			$exists = array_search( 'https://api.holded.com', $urls, true );
+	'option_posts-bridge_http',
+	function ( $data ) {
+		if ( ! is_array( $data ) ) {
+			return $data;
+		}
 
-			if ( false === $exists ) {
-				$name  = 'Holded API';
-				$names = array_column( $backends, 'name' );
+		if ( ! PBAPI::get_addon( 'holded' ) ) {
+			return $data;
+		}
 
-				if ( ! in_array( $name, $names, true ) ) {
-					$backends[] = array(
-						'name'     => $name,
-						'base_url' => 'https://api.holded.com',
-						'headers'  => array(
-							array(
-								'name'  => 'Content-Type',
-								'value' => 'application/json',
-							),
-							array(
-								'name'  => 'key',
-								'value' => 'your-holded-api-key',
-							),
+		$backends = $data['backends'] ?? array();
+
+		$urls   = array_column( $backends, 'base_url' );
+		$exists = array_search( 'https://api.holded.com', $urls, true );
+
+		if ( false === $exists ) {
+			$name  = 'Holded API';
+			$names = array_column( $backends, 'name' );
+
+			if ( ! in_array( $name, $names, true ) ) {
+				$backends[] = array(
+					'name'     => $name,
+					'base_url' => 'https://api.holded.com',
+					'headers'  => array(
+						array(
+							'name'  => 'Content-Type',
+							'value' => 'application/json',
 						),
-					);
-				}
+						array(
+							'name'  => 'key',
+							'value' => 'your-holded-api-key',
+						),
+					),
+				);
+
+				$data['backends'] = $backends;
 			}
 		}
 
-		return $backends;
+		return $data;
 	},
 	20,
 	1

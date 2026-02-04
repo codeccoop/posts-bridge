@@ -46,70 +46,90 @@ add_filter(
 );
 
 add_filter(
-	'http_bridge_backends',
-	function ( $backends ) {
-		if ( PBAPI::get_addon( 'gsheets' ) ) {
-			$urls   = array_column( $backends, 'base_url' );
-			$exists = array_search( 'https://sheets.googleapis.com', $urls, true );
+	'option_posts-bridge_http',
+	function ( $data ) {
+		if ( ! is_array( $data ) ) {
+			return $data;
+		}
 
-			if ( false === $exists ) {
-				$name  = 'Sheets API';
-				$names = array_column( $backends, 'name' );
+		if ( ! PBAPI::get_addon( 'gsheets' ) ) {
+			return $data;
+		}
 
-				if ( ! in_array( $name, $names, true ) ) {
-					$backends[] = array(
-						'name'       => $name,
-						'base_url'   => 'https://sheets.googleapis.com',
-						'credential' => 'Google OAuth',
-						'headers'    => array(
-							array(
-								'name'  => 'Content-Type',
-								'value' => 'application/json',
-							),
+		$backends = $data['backends'] ?? array();
+
+		$urls   = array_column( $backends, 'base_url' );
+		$exists = array_search( 'https://sheets.googleapis.com', $urls, true );
+
+		if ( false === $exists ) {
+			$name  = 'Sheets API';
+			$names = array_column( $backends, 'name' );
+
+			if ( ! in_array( $name, $names, true ) ) {
+				$backends[] = array(
+					'name'       => $name,
+					'base_url'   => 'https://sheets.googleapis.com',
+					'credential' => 'Google OAuth',
+					'headers'    => array(
+						array(
+							'name'  => 'Content-Type',
+							'value' => 'application/json',
 						),
-					);
-				}
+					),
+				);
+
+				$data['backends'] = $backends;
 			}
 		}
 
-		return $backends;
+		return $data;
 	},
 	20,
 	1,
 );
 
 add_filter(
-	'http_bridge_credentials',
-	function ( $credentials ) {
-		if ( PBAPI::get_addon( 'gsheets' ) ) {
-			foreach ( $credentials as $candidate ) {
-				if ( 'OAuth' === $candidate['schema'] ) {
-					if ( 'https://accounts.google.com/o/oauth2/v2' === $candidate['oauth_url'] ) {
-						$credential = $candidate;
-					}
-				}
-			}
+	'option_posts-bridge_http',
+	function ( $data ) {
+		if ( ! is_array( $data ) ) {
+			return $data;
+		}
 
-			if ( ! isset( $credential ) ) {
-				$name  = 'Google OAuth Client';
-				$names = array_column( $credentials, 'name' );
+		if ( ! PBAPI::get_addon( 'gsheets' ) ) {
+			return $data;
+		}
 
-				if ( ! in_array( $name, $names, true ) ) {
-					$credentials[] = array(
-						'name'          => $name,
-						'schema'        => 'OAuth',
-						'client_id'     => 'your-google-client-id',
-						'client_secret' => 'your-google-client-secret',
-						'oauth_url'     => 'https://accounts.google.com/o/oauth2/v2',
-						'scope'         => 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
-						'access_token'  => '',
-						'expires_at'    => 0,
-					);
+		$credentials = $data['credentials'] ?? array();
+
+		foreach ( $credentials as $candidate ) {
+			if ( 'OAuth' === $candidate['schema'] ) {
+				if ( 'https://accounts.google.com/o/oauth2/v2' === $candidate['oauth_url'] ) {
+					$credential = $candidate;
 				}
 			}
 		}
 
-		return $credentials;
+		if ( ! isset( $credential ) ) {
+			$name  = 'Google OAuth Client';
+			$names = array_column( $credentials, 'name' );
+
+			if ( ! in_array( $name, $names, true ) ) {
+				$credentials[] = array(
+					'name'          => $name,
+					'schema'        => 'OAuth',
+					'client_id'     => 'your-google-client-id',
+					'client_secret' => 'your-google-client-secret',
+					'oauth_url'     => 'https://accounts.google.com/o/oauth2/v2',
+					'scope'         => 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
+					'access_token'  => '',
+					'expires_at'    => 0,
+				);
+
+				$data['credentials'] = $credentials;
+			}
+		}
+
+		return $data;
 	},
 	20,
 	1

@@ -29,61 +29,81 @@ add_filter(
 );
 
 add_filter(
-	'http_bridge_backends',
-	function ( $backends ) {
-		if ( PBAPI::get_addon( 'grist' ) ) {
-			$urls   = array_column( $backends, 'base_url' );
-			$exists = array_search( 'https://docs.getgrist.com', $urls, true );
+	'option_posts-bridge_http',
+	function ( $data ) {
+		if ( ! is_array( $data ) ) {
+			return $data;
+		}
 
-			if ( false === $exists ) {
-				$name  = 'Grist API';
-				$names = array_column( $backends, 'name' );
+		if ( ! PBAPI::get_addon( 'grist' ) ) {
+			return $data;
+		}
 
-				if ( ! in_array( $name, $names, true ) ) {
-					$backends[] = array(
-						'name'       => $name,
-						'base_url'   => 'https://docs.getgrist.com',
-						'credential' => 'Grist API key',
-						'headers'    => array(
-							array(
-								'name'  => 'Content-Type',
-								'value' => 'application/json',
-							),
+		$backends = $data['backends'] ?? array();
+
+		$urls   = array_column( $backends, 'base_url' );
+		$exists = array_search( 'https://docs.getgrist.com', $urls, true );
+
+		if ( false === $exists ) {
+			$name  = 'Grist API';
+			$names = array_column( $backends, 'name' );
+
+			if ( ! in_array( $name, $names, true ) ) {
+				$backends[] = array(
+					'name'       => $name,
+					'base_url'   => 'https://docs.getgrist.com',
+					'credential' => 'Grist API key',
+					'headers'    => array(
+						array(
+							'name'  => 'Content-Type',
+							'value' => 'application/json',
 						),
-					);
-				}
+					),
+				);
+
+				$data['backends'] = $backends;
 			}
 		}
 
-		return $backends;
+		return $data;
 	},
 	20,
 	1,
 );
 
 add_filter(
-	'http_bridge_credentials',
-	function ( $credentials ) {
-		if ( PBAPI::get_addon( 'grist' ) ) {
-			$schemas = array_column( $credentials, 'schema' );
-			$exists  = array_search( 'Bearer', $schemas, true );
+	'option_posts-bridge_http',
+	function ( $data ) {
+		if ( ! is_array( $data ) ) {
+			return $data;
+		}
 
-			if ( false === $exists ) {
-				$name  = 'Grist API key';
-				$names = array_column( $credentials, 'name' );
+		if ( ! PBAPI::get_addon( 'grist' ) ) {
+			return $data;
+		}
 
-				if ( ! in_array( $name, $names, true ) ) {
-					$credentials[] = array(
-						'name'         => $name,
-						'schema'       => 'Bearer',
-						'access_token' => 'your-api-key',
-						'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
-					);
-				}
+		$credentials = $data['credentials'] ?? array();
+
+		$schemas = array_column( $credentials, 'schema' );
+		$exists  = array_search( 'Bearer', $schemas, true );
+
+		if ( false === $exists ) {
+			$name  = 'Grist API key';
+			$names = array_column( $credentials, 'name' );
+
+			if ( ! in_array( $name, $names, true ) ) {
+				$credentials[] = array(
+					'name'         => $name,
+					'schema'       => 'Bearer',
+					'access_token' => 'your-api-key',
+					'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
+				);
+
+				$data['credentials'] = $credentials;
 			}
 		}
 
-		return $credentials;
+		return $data;
 	},
 	20,
 	1
