@@ -36,17 +36,22 @@ add_filter(
 			$exists = array_search( 'https://api.airtable.com', $urls, true );
 
 			if ( false === $exists ) {
-				$backends[] = array(
-					'name'       => 'Airtable API',
-					'base_url'   => 'https://api.airtable.com',
-					'credential' => 'Airtable Token',
-					'headers'    => array(
-						array(
-							'name'  => 'Content-Type',
-							'value' => 'application/json',
+				$name  = 'Airtable API';
+				$names = array_column( $backends, 'base_url' );
+
+				if ( ! in_array( $name, $names, true ) ) {
+					$backends[] = array(
+						'name'       => $name,
+						'base_url'   => 'https://api.airtable.com',
+						'credential' => 'Airtable Token',
+						'headers'    => array(
+							array(
+								'name'  => 'Content-Type',
+								'value' => 'application/json',
+							),
 						),
-					),
-				);
+					);
+				}
 			}
 		}
 
@@ -64,12 +69,17 @@ add_filter(
 			$exists  = array_search( 'Bearer', $schemas, true );
 
 			if ( false === $exists ) {
-				$credentials[] = array(
-					'name'         => 'Airtable Token',
-					'schema'       => 'Bearer',
-					'access_token' => 'your-api-key',
-					'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
-				);
+				$name  = 'Airtable Token';
+				$names = array_column( $credentials, 'Airtable Token' );
+
+				if ( ! in_array( $name, $names, true ) ) {
+					$credentials[] = array(
+						'name'         => $name,
+						'schema'       => 'Bearer',
+						'access_token' => 'your-api-key',
+						'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
+					);
+				}
 			}
 		}
 

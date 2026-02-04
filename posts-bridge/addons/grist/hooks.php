@@ -19,7 +19,7 @@ add_filter(
 		$schema['properties']['foreign_key']['const']     = 'id';
 		$schema['properties']['endpoint']['default']      = '/v0/{baseId}/{tableName}/records';
 		$schema['properties']['single_endpoint']['const'] = '/v0/{baseId}/{tableName}/records';
-		$schema['properties']['backend']['default']       = 'Airtable API';
+		$schema['properties']['backend']['default']       = 'Grist API';
 		$schema['properties']['method']['const']          = 'GET';
 
 		return $schema;
@@ -36,17 +36,22 @@ add_filter(
 			$exists = array_search( 'https://docs.getgrist.com', $urls, true );
 
 			if ( false === $exists ) {
-				$backends[] = array(
-					'name'       => 'Grist API',
-					'base_url'   => 'https://docs.getgrist.com',
-					'credential' => 'Grist API key',
-					'headers'    => array(
-						array(
-							'name'  => 'Content-Type',
-							'value' => 'application/json',
+				$name  = 'Grist API';
+				$names = array_column( $backends, 'name' );
+
+				if ( ! in_array( $name, $names, true ) ) {
+					$backends[] = array(
+						'name'       => $name,
+						'base_url'   => 'https://docs.getgrist.com',
+						'credential' => 'Grist API key',
+						'headers'    => array(
+							array(
+								'name'  => 'Content-Type',
+								'value' => 'application/json',
+							),
 						),
-					),
-				);
+					);
+				}
 			}
 		}
 
@@ -64,12 +69,17 @@ add_filter(
 			$exists  = array_search( 'Bearer', $schemas, true );
 
 			if ( false === $exists ) {
-				$credentials[] = array(
-					'name'         => 'Grist API key',
-					'schema'       => 'Bearer',
-					'access_token' => 'your-api-key',
-					'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
-				);
+				$name  = 'Grist API key';
+				$names = array_column( $credentials, 'name' );
+
+				if ( ! in_array( $name, $names, true ) ) {
+					$credentials[] = array(
+						'name'         => $name,
+						'schema'       => 'Bearer',
+						'access_token' => 'your-api-key',
+						'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
+					);
+				}
 			}
 		}
 

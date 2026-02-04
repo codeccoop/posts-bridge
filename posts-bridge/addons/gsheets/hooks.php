@@ -19,9 +19,8 @@ add_filter(
 		$schema['properties']['endpoint']['default']        = '/v4/spreadsheets/{spreadsheet_id}';
 		$schema['properties']['single_endpoint']['title']   = _x( 'Tab', 'Google spreadsheets', 'posts-bridge' );
 		$schema['properties']['single_endpoint']['default'] = 'Sheet1';
-
-		$schema['properties']['backend']['default'] = 'Sheets API';
-		$schema['properties']['method']['const']    = 'GET';
+		$schema['properties']['backend']['default']         = 'Sheets API';
+		$schema['properties']['method']['const']            = 'GET';
 
 		return $schema;
 	},
@@ -44,4 +43,74 @@ add_filter(
 	},
 	10,
 	2
+);
+
+add_filter(
+	'http_bridge_backends',
+	function ( $backends ) {
+		if ( PBAPI::get_addon( 'gsheets' ) ) {
+			$urls   = array_column( $backends, 'base_url' );
+			$exists = array_search( 'https://sheets.googleapis.com', $urls, true );
+
+			if ( false === $exists ) {
+				$name  = 'Sheets API';
+				$names = array_column( $backends, 'name' );
+
+				if ( ! in_array( $name, $names, true ) ) {
+					$backends[] = array(
+						'name'       => $name,
+						'base_url'   => 'https://sheets.googleapis.com',
+						'credential' => 'Google OAuth',
+						'headers'    => array(
+							array(
+								'name'  => 'Content-Type',
+								'value' => 'application/json',
+							),
+						),
+					);
+				}
+			}
+		}
+
+		return $backends;
+	},
+	20,
+	1,
+);
+
+add_filter(
+	'http_bridge_credentials',
+	function ( $credentials ) {
+		if ( PBAPI::get_addon( 'gsheets' ) ) {
+			foreach ( $credentials as $candidate ) {
+				if ( 'OAuth' === $candidate['schema'] ) {
+					if ( 'https://accounts.google.com/o/oauth2/v2' === $candidate['oauth_url'] ) {
+						$credential = $candidate;
+					}
+				}
+			}
+
+			if ( ! isset( $credential ) ) {
+				$name  = 'Google OAuth Client';
+				$names = array_column( $credentials, 'name' );
+
+				if ( ! in_array( $name, $names, true ) ) {
+					$credentials[] = array(
+						'name'          => $name,
+						'schema'        => 'OAuth',
+						'client_id'     => 'your-google-client-id',
+						'client_secret' => 'your-google-client-secret',
+						'oauth_url'     => 'https://accounts.google.com/o/oauth2/v2',
+						'scope'         => 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
+						'access_token'  => '',
+						'expires_at'    => 0,
+					);
+				}
+			}
+		}
+
+		return $credentials;
+	},
+	20,
+	1
 );
