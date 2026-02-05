@@ -57,7 +57,7 @@ export default function Mappers({
     return postTaxonomies.map((tax) => {
       return {
         name: tax.slug,
-        foreign: taxMappers.find((m) => m.name === tax.slug) || "",
+        foreign: taxMappers.find((m) => m.name === tax.slug)?.foreign || "",
         label: tax.name,
         isCustom: false,
       };
