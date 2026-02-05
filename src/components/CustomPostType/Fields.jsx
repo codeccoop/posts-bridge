@@ -1,10 +1,13 @@
+import ToggleControl from "../Toggle";
+import { useTaxonomies } from "../../hooks/useTaxonomies";
+
 const {
   PanelBody,
   TextControl,
-  ToggleControl,
   SelectControl,
   __experimentalSpacer: Spacer,
 } = wp.components;
+const { useState, useEffect, useMemo } = wp.element;
 const { __ } = wp.i18n;
 
 const SUPPORTS_OPTIONS = [
@@ -59,6 +62,26 @@ export default function CPTFields({ data, setData, nameConflict }) {
     name = name.toLowerCase().replace(/\s+/, "_");
     setData({ ...data, name });
   };
+
+  const taxonomies = useTaxonomies(data.name);
+  const [taxSelection, setTaxSelection] = useState([]);
+
+  const taxOptions = useMemo(() => {
+    if (!taxonomies.length) return [{ value: "", label: "" }];
+    return taxonomies.map((tax) => ({ value: tax.slug, label: tax.name }));
+  }, [taxonomies]);
+
+  useEffect(() => {
+    setData({ ...data, taxonomies: taxSelection.join(",") });
+  }, [taxSelection]);
+
+  useEffect(() => {
+    const newTaxSelection = taxSelection.filter((slug) =>
+      taxonomies.find((tax) => slug === tax.slug)
+    );
+
+    setTaxSelection(newTaxSelection);
+  }, [taxonomies]);
 
   return (
     <>
@@ -146,13 +169,14 @@ export default function CPTFields({ data, setData, nameConflict }) {
             gap: "1em",
           }}
         >
-          <TextControl
+          <SelectControl
+            multiple
             label={__("Taxonomies", "posts-bridge")}
-            help={__("Names separated by commas", "posts-bridge")}
-            value={data.taxonomies}
-            onChange={(taxonomies) => setData({ ...data, taxonomies })}
+            value={taxSelection}
+            onChange={(taxSelection) => setTaxSelection(taxSelection)}
+            options={taxOptions}
+            style={{ height: "200px" }}
             __nextHasNoMarginBottom
-            __next40pxDefaultSize
           />
           <SelectControl
             multiple
@@ -160,6 +184,7 @@ export default function CPTFields({ data, setData, nameConflict }) {
             value={data.supports}
             onChange={(supports) => setData({ ...data, supports })}
             options={SUPPORTS_OPTIONS}
+            style={{ height: "200px" }}
             __nextHasNoMarginBottom
           />
         </div>

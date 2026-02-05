@@ -4,6 +4,7 @@ import GeneralSetting from "../General";
 import HttpSetting from "../HttpSetting";
 import Addon from "../Addon";
 import useTab from "../../hooks/useTab";
+import CustomPostTypes from "../CustomPostTypes";
 
 const {
   Card,
@@ -30,6 +31,7 @@ export default function Settings() {
     return [
       { name: "general", title: __("General", "posts-bridge") },
       { name: "http", title: __("HTTP", "posts-bridge") },
+      { name: "cpts", title: __("CPTs", "posts-bridge") },
     ].concat(addonTabs);
   }, [addons]);
 
@@ -74,6 +76,8 @@ export default function Settings() {
                   <GeneralSetting />
                 ) : tab.name === "http" ? (
                   <HttpSetting />
+                ) : tab.name === "cpts" ? (
+                  <CustomPostTypes />
                 ) : (
                   <Addon />
                 )}

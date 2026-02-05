@@ -4,7 +4,6 @@ import Synchronize from "../Synchronize";
 import Addons from "../Addons";
 import Logger from "../Logger";
 import Exporter from "../Exporter";
-import CustomPostTypes from "../CustomPostTypes";
 
 const { PanelBody, __experimentalSpacer: Spacer } = wp.components;
 const { useEffect } = wp.element;
@@ -38,12 +37,6 @@ export default function GeneralSettings() {
       />
       <Spacer paddingY="calc(8px)" />
       <Addons />
-      <PanelBody
-        title={__("Custom Post Types", "posts-bridge")}
-        initialOpen={false}
-      >
-        <CustomPostTypes />
-      </PanelBody>
       <Logger />
       <PanelBody
         title={__("Import / Export", "posts-bridge")}

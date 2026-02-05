@@ -44,20 +44,6 @@ export default function CustomPostTypes() {
   const register = useRegisterCustomPostType();
   const unregister = useUnregisterCustomPostType();
 
-  // const copyPostType = (name) => {
-  //   const i = postTypes.findIndex((p) => p.name === name);
-  //   const postType = postTypes[i];
-  //   const copy = { ...postType };
-  //
-  //   let isUnique = false;
-  //   if (!isUnique) {
-  //     copy.name += "-copy";
-  //     isUnique = postTypes.find((p) => p.name === copy.name) === undefined;
-  //   }
-  //
-  //   register(copy);
-  // };
-
   const style = useRef(document.createElement("style"));
   useEffect(() => {
     style.current.appendChild(document.createTextNode(CSS));
@@ -66,6 +52,12 @@ export default function CustomPostTypes() {
     return () => {
       document.head.removeChild(style.current);
     };
+  }, []);
+
+  useEffect(() => {
+    const img = document.querySelector("#cpts .addon-logo");
+    if (!img) return;
+    img.removeAttribute("src");
   }, []);
 
   return (

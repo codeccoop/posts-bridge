@@ -9,10 +9,10 @@ const { __ } = wp.i18n;
 const DEFAULTS = {
   public: true,
   exclude_from_search: false,
-  publicly_queyable: true,
+  publicly_queryable: true,
   show_in_rest: true,
   taxonomies: "category,post_tag",
-  supports: ["title", "excerpt", "thumbnail", "custom_fields"],
+  supports: ["title", "excerpt", "thumbnail", "custom-fields"],
   show_ui: true,
   show_in_menu: true,
   show_in_admin_bar: true,
