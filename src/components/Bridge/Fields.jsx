@@ -23,18 +23,22 @@ export default function BridgeFields({ data, setData, schema, errors = {} }) {
   const [postTypes] = usePostTypes();
   const rcpts = useRemoteCPTs();
 
+  const availablePostTypes = useMemo(() => {
+    return postTypes.filter((pt) => !rcpts.has(pt)).sort();
+  }, [rcpts, postTypes]);
+
   const postTypeOptions = useMemo(() => {
     if (postTypes.length === 0) return [{ label: "", value: "" }];
 
-    return postTypes
-      .filter((postType) => !rcpts.has(postType))
+    return availablePostTypes
+      .filter((pt) => pt !== data.post_type)
       .concat([data.post_type].filter((p) => p))
       .sort()
       .map((postType) => ({
         label: postType,
         value: postType,
       }));
-  }, [data.post_type, postTypes, rcpts]);
+  }, [data.post_type, availablePostTypes]);
 
   const [backends] = useBackends();
   const backendOptions = useMemo(() => {
@@ -111,14 +115,21 @@ export default function BridgeFields({ data, setData, schema, errors = {} }) {
         defaults.backend = "";
       }
 
+      if (!availablePostTypes.length) {
+        if (data.post_type) {
+          defaults.post_type = "";
+        }
+      } else if (rcpts.has(defaults.post_type)) {
+        defaults.post_type = availablePostTypes[0];
+      }
+
       return defaults;
     }, {});
 
     if (Object.keys(defaults).length) {
-      delete defaults.post_type;
       setData({ ...data, ...defaults });
     }
-  }, [data, fields]);
+  }, [data, fields, availablePostTypes]);
 
   return fields
     .filter((field) => !field.value)
@@ -165,7 +176,7 @@ export function StringField({
 }) {
   return (
     <FieldWrapper>
-      <BaseControl label={label} help={error}>
+      <BaseControl label={label} help={error} __nextHasNoMarginBottom>
         <input
           name={label}
           type="text"
