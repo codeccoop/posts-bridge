@@ -1,5 +1,6 @@
 import ToggleControl from "../Toggle";
 import { useTaxonomies } from "../../hooks/useTaxonomies";
+import { CustomFields } from "./CustomFields";
 
 const {
   PanelBody,
@@ -306,6 +307,15 @@ export default function CPTFields({ data, setData, nameConflict }) {
             />
           </div>
         </div>
+      </PanelBody>
+      <PanelBody
+        title={__("Custom fields", "posts-bridge")}
+        initialOpen={false}
+      >
+        <CustomFields
+          fields={data.meta}
+          setFields={(meta) => setData({ ...data, meta })}
+        />
       </PanelBody>
     </>
   );

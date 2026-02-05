@@ -52,6 +52,11 @@ class Custom_Post_Type {
 	 */
 	private static $registry = null;
 
+	/**
+	 * Custom post type schema getter.
+	 *
+	 * @return array
+	 */
 	public static function schema() {
 		return array(
 			'type'                 => 'object',
@@ -256,11 +261,47 @@ class Custom_Post_Type {
 					'required'    => false,
 					'default'     => '',
 				),
+				'meta'                => array(
+					'description' => __(
+						'Registered post meta',
+						'posts-bridge',
+					),
+					'type'        => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'name'         => array( 'type' => 'string' ),
+								'type'         => array(
+									'type'    => 'string',
+									'enum'    => array(
+										'string',
+										'integer',
+										'number',
+										'boolean',
+										'array',
+										'object',
+									),
+									'default' => 'string',
+								),
+								'default'      => array( 'type' => 'string' ),
+								'single'       => array( 'type' => 'boolean' ),
+								'show_in_rest' => array( 'type' => 'boolean' ),
+							),
+							'required'   => array( 'name', 'type' ),
+						),
+					),
+					'required'    => true,
+					'default'     => array(),
+				),
 			),
 			'additionalProperties' => false,
 		);
 	}
 
+	/**
+	 * Public loader.
+	 */
 	public static function load_custom_post_types() {
 		add_action(
 			'add_option_' . self::OPTION_NAME,
@@ -309,6 +350,13 @@ class Custom_Post_Type {
 		);
 	}
 
+	/**
+	 * Registers a post type.
+	 *
+	 * @param array $data Post type data.
+	 *
+	 * @return bool
+	 */
 	public static function register( $data ) {
 		$registry = self::registry();
 
@@ -325,6 +373,13 @@ class Custom_Post_Type {
 		return true;
 	}
 
+	/**
+	 * Unregisters a post type by name.
+	 *
+	 * @param string $name Type name.
+	 *
+	 * @return bool
+	 */
 	public static function unregister( $name ) {
 		$name = sanitize_key( $name );
 
@@ -341,6 +396,11 @@ class Custom_Post_Type {
 		return true;
 	}
 
+	/**
+	 * Post types registry getter.
+	 *
+	 * @return array
+	 */
 	private static function registry() {
 		if ( is_array( self::$registry ) ) {
 			return self::$registry;
@@ -350,6 +410,10 @@ class Custom_Post_Type {
 		return self::$registry;
 	}
 
+	/**
+	 * Init hook callback. Registers in WordPress the post types from
+	 * the internal registry.
+	 */
 	private static function init() {
 		$cpts       = self::registry();
 		$post_types = get_post_types();
@@ -363,6 +427,11 @@ class Custom_Post_Type {
 		}
 	}
 
+	/**
+	 * Gets the list of available post types excluding internals.
+	 *
+	 * @return string[]
+	 */
 	public static function post_types() {
 		$post_types = array_keys( get_post_types() );
 
@@ -376,6 +445,14 @@ class Custom_Post_Type {
 		);
 	}
 
+	/**
+	 * Registers a post type and its meta.
+	 *
+	 * @param string $name Type name.
+	 * @param array  $args Registration arguments.
+	 *
+	 * @return WP_Post_Type|WP_Error
+	 */
 	private static function register_post_type( $name, $args ) {
 		$args['labels'] = array(
 			'name'          => $args['label'],
@@ -393,9 +470,32 @@ class Custom_Post_Type {
 			$args['taxonomies'] = explode( ',', $args['taxonomies'] );
 		}
 
-		return register_post_type( $name, $args );
+		$meta   = $args['meta'] ?? array();
+		$result = register_post_type( $name, $args );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		foreach ( $meta as $field ) {
+			register_post_meta(
+				$name,
+				$field['name'],
+				array(
+					'type'         => $field['type'],
+					'default'      => $field['default'] ?? '',
+					'single'       => $field['single'] ?? true,
+					'show_in_rest' => true,
+				)
+			);
+		}
+
+		return $result;
 	}
 
+	/**
+	 * Settings store interceptors to insert types list in the general setting.
+	 */
 	private static function handle_setting() {
 		Settings_Store::ready(
 			static function ( $store ) {
@@ -421,88 +521,81 @@ class Custom_Post_Type {
 		);
 	}
 
+	/**
+	 * Post type registration arguments sanitizer.
+	 *
+	 * @param string $name Type name.
+	 * @param array  $args Post type data.
+	 *
+	 * @return array
+	 */
 	private static function sanitize_args( $name, $args ) {
 		$public  = boolval( $args['public'] ?? true );
 		$show_ui = boolval( $args['show_ui'] ?? true );
 
 		return array(
-			'label'               =>
-				! empty( $args['label'] ) && is_string( $args['label'] )
-					? sanitize_text_field( $args['label'] )
-					: $name,
-			'singular_label'      =>
-				! empty( $args['singular_label'] ) &&
-				is_string( $args['singular_label'] )
-					? sanitize_text_field( $args['singular_label'] )
-					: $name,
+			'label'               => ! empty( $args['label'] ) && is_string( $args['label'] )
+				? sanitize_text_field( $args['label'] )
+				: $name,
+			'singular_label'      => ! empty( $args['singular_label'] ) && is_string( $args['singular_label'] )
+				? sanitize_text_field( $args['singular_label'] )
+				: $name,
 			'description'         => esc_html( $args['description'] ?? '' ),
 			'public'              => $public,
-			'exclude_from_search' => boolval(
-				$args['exclude_from_search'] ?? ! $public
-			),
+			'exclude_from_search' => boolval( $args['exclude_from_search'] ?? ! $public ),
 			'publicly_queryable'  => boolval( $args['queryable'] ?? $public ),
 			'show_ui'             => $show_ui,
-			'show_in_menu'        =>
-				boolval( $args['show_in_menu'] ?? true ) && $show_ui,
-			'show_in_nav_menus'   => boolval(
-				$args['show_in_nav_menus'] ?? $public
-			),
-			'show_in_admin_bar'   =>
-				boolval( $args['show_in_admin_bar'] ?? true ) && $show_ui,
+			'show_in_menu'        => boolval( $args['show_in_menu'] ?? true ) && $show_ui,
+			'show_in_nav_menus'   => boolval( $args['show_in_nav_menus'] ?? $public ),
+			'show_in_admin_bar'   => boolval( $args['show_in_admin_bar'] ?? true ) && $show_ui,
 			'show_in_rest'        => boolval( $args['show_in_rest'] ?? true ),
-			'rest_base'           =>
-				! empty( $args['rest_base'] ) && is_string( $args['rest_base'] )
-					? sanitize_title( $args['rest_base'] )
-					: $name,
+			'rest_base'           => ! empty( $args['rest_base'] ) && is_string( $args['rest_base'] )
+				? sanitize_title( $args['rest_base'] )
+				: $name,
 			'menu_position'       => isset( $args['menu_position'] )
 				? (int) $args['menu_position']
 				: null,
-			'capability_type'     =>
-				! empty( $args['capability_type'] ) &&
-				is_string( $args['capability_type'] )
-					? sanitize_key( $args['capability_type'] )
-					: 'post',
+			'capability_type'     => ! empty( $args['capability_type'] ) && is_string( $args['capability_type'] )
+				? sanitize_key( $args['capability_type'] )
+				: 'post',
 			'map_meta_cap'        => boolval( $args['map_meta_cap'] ?? true ),
-			'supports'            =>
-				isset( $args['supports'] ) && is_array( $args['supports'] )
-					? array_map(
-						function ( $token ) {
-							return trim( $token );
-						},
-						array_filter(
-							$args['supports'],
-							static function (
-								$token
-							) {
-								$token  = trim( $token );
-								$tokens = self::schema()['properties']['supports']['enum'];
+			'supports'            => isset( $args['supports'] ) && is_array( $args['supports'] )
+				? array_map(
+					function ( $token ) {
+						return trim( $token );
+					},
+					array_filter(
+						$args['supports'],
+						static function (
+							$token
+						) {
+							$token  = trim( $token );
+							$tokens = self::schema()['properties']['supports']['enum'];
 
-								return in_array( $token, $tokens, true );
-							}
-						)
+							return in_array( $token, $tokens, true );
+						}
 					)
-					: self::schema()['properties']['supports']['default'],
-			'taxonomies'          =>
-				isset( $args['taxonomies'] ) && is_string( $args['taxonomies'] )
-					? implode(
-						',',
-						array_map(
-							function ( $tax ) {
-								return sanitize_text_field( trim( $tax ) );
-							},
-							explode( ',', $args['taxonomies'] )
-						)
+				)
+				: self::schema()['properties']['supports']['default'],
+			'taxonomies'          => isset( $args['taxonomies'] ) && is_string( $args['taxonomies'] )
+				? implode(
+					',',
+					array_map(
+						function ( $tax ) {
+							return sanitize_text_field( trim( $tax ) );
+						},
+						explode( ',', $args['taxonomies'] )
 					)
-					: array(),
+				)
+				: array(),
 			'has_archive'         => boolval( $args['has_archive'] ?? false ),
-			'rewrite'             =>
-				! empty( $args['rewrite'] ) && is_string( $args['rewrite'] )
-					? sanitize_title( $args['rest_base'] )
-					: $name,
-			'query_var'           =>
-				! empty( $args['query_var'] ) && is_string( $args['query_var'] )
-					? sanitize_key( $args['query_var'] )
-					: $name,
+			'rewrite'             => ! empty( $args['rewrite'] ) && is_string( $args['rewrite'] )
+				? sanitize_title( $args['rest_base'] )
+				: $name,
+			'query_var'           => ! empty( $args['query_var'] ) && is_string( $args['query_var'] )
+				? sanitize_key( $args['query_var'] )
+				: $name,
+			'meta'                => $args['meta'] ?? array(),
 		);
 	}
 }

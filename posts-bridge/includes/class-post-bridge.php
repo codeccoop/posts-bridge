@@ -709,30 +709,6 @@ class Post_Bridge {
 	}
 
 	/**
-	 * Register remote fields as post's meta and show on the REST API. This is
-	 * needed to load this fields on the editor.
-	 */
-	final public function register_meta() {
-		$fields = $this->remote_fields();
-		foreach ( array_keys( $fields ) as $foreign ) {
-			if ( $foreign === $fields[ $foreign ] ) {
-				continue;
-			}
-
-			register_post_meta(
-				$this->post_type,
-				$foreign,
-				array(
-					'show_in_rest'      => true,
-					'single'            => true,
-					'type'              => 'string',
-					'sanitize_callback' => 'wp_kses_post',
-				)
-			);
-		}
-	}
-
-	/**
 	 * Returns a clone of the bridge instance with its data patched by
 	 * the partial array.
 	 *
