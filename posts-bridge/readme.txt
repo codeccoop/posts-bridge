@@ -26,13 +26,6 @@ Posts Bridge comes with free add-ons. Each add-on add to the plugin new bridges 
 
 Posts Bridge has the following add-ons:
 
-**📊  CRM & Sales**
-
-* [Bigin](https://postsbridge.codeccoop.org/documentation/bigin/)
-* [SuiteCRM](https://postsbridge.codeccoop.org/documentation/suitecrm/)
-* [Vtiger](https://postsbridge.codeccoop.org/documentation/vtiger/)
-* [Zoho CRM](https://postsbridge.codeccoop.org/documentation/zoho-crm/)
-
 **🗓️ Productivity**
 
 * [Airtable](https://postsbridge.codeccoop.org/documentation/airtable/)
