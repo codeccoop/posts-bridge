@@ -53,7 +53,6 @@ class GCalendar_Addon extends Addon {
 	public function ping( $backend ) {
 		$bridge = new GCalendar_Post_Bridge(
 			array(
-				'name'     => '__gcalendar-' . time(),
 				'backend'  => $backend,
 				'endpoint' => '/calendar/v3/users/me/calendarList',
 				'method'   => 'GET',

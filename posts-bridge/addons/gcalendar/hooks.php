@@ -120,7 +120,7 @@ add_filter(
 					'client_id'     => 'your-google-client-id',
 					'client_secret' => 'your-google-client-secret',
 					'oauth_url'     => 'https://accounts.google.com/o/oauth2/v2',
-					'scope'         => 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
+					'scope'         => 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events',
 					'access_token'  => '',
 					'expires_at'    => 0,
 				);

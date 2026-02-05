@@ -225,7 +225,7 @@ class Airtable_Post_Bridge extends Post_Bridge {
 	}
 
 	/**
-	 * Performs a request to the bridge single_endpoint using the bridge backend and HTTP method.
+	 * Lookups in the bridge records for a match with the value of the foreign_id.
 	 *
 	 * @param int|string $foreign_id Foreig key value.
 	 * @param array      $params Ignored.
