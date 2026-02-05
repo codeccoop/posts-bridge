@@ -105,112 +105,122 @@ export default function MappersTable({ title, mappers, setMappers }) {
           <col span="1" style={{ width: "85px" }} />
         </colgroup>
         <tbody>
-          {mappers.map(({ name, foreign, isCustom, label }, index) => {
-            if (!isCustom) customOffset++;
+          {mappers.map(
+            ({ name, foreign, isCustom, label, datalist = [] }, index) => {
+              if (!isCustom) customOffset++;
 
-            return (
-              <tr key={index}>
-                <td>
-                  {(!isCustom && <b>{label}</b>) || (
-                    <TextControl
-                      placeholder={__("Name", "posts-bridge")}
-                      value={name}
-                      onChange={(value) => setMapper(index, "name", value)}
-                      __next40pxDefaultSize
-                      __nextHasNoMarginBottom
-                    />
-                  )}
-                </td>
-                <td>
-                  <div style={{ display: "flex" }}>
-                    <div style={{ flex: 1 }}>
-                      <BaseControl
-                        __nextHasNoMarginBottom
+              return (
+                <tr key={index}>
+                  <td>
+                    {(!isCustom && <b>{label}</b>) || (
+                      <>
+                        <datalist id={"datalist-" + name + "-" + index}>
+                          {datalist.map((val) => (
+                            <option key={val} value={val} />
+                          ))}
+                        </datalist>
+                        <TextControl
+                          placeholder={__("Name", "posts-bridge")}
+                          value={name}
+                          onChange={(value) => setMapper(index, "name", value)}
+                          list={"datalist-" + name + "-" + index}
+                          __next40pxDefaultSize
+                          __nextHasNoMarginBottom
+                        />
+                      </>
+                    )}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex" }}>
+                      <div style={{ flex: 1 }}>
+                        <BaseControl
+                          __nextHasNoMarginBottom
+                          __next40pxDefaultSize
+                        >
+                          <input
+                            type="text"
+                            placeholder={__("Foreign field", "posts-bridge")}
+                            value={foreign || ""}
+                            onChange={(ev) =>
+                              setMapper(index, "foreign", ev.target.value)
+                            }
+                            style={useInputStyle(foreign)}
+                            list="datalist-mappers-api-fields"
+                          />
+                        </BaseControl>
+                      </div>
+                      <Button
+                        style={{
+                          height: "40px",
+                          width: "40px",
+                          justifyContent: "center",
+                          marginLeft: "2px",
+                        }}
+                        disabled={!name || apiFieldOptions.length === 0}
+                        variant="secondary"
+                        onClick={() => setFieldSelector(index)}
                         __next40pxDefaultSize
                       >
-                        <input
-                          type="text"
-                          placeholder={__("Foreign field", "posts-bridge")}
-                          value={foreign || ""}
-                          onChange={(ev) =>
-                            setMapper(index, "foreign", ev.target.value)
-                          }
-                          style={useInputStyle(foreign)}
-                          list="datalist-mappers-api-fields"
-                        />
-                      </BaseControl>
+                        {"{...}"}
+                        {fieldSelector === index && (
+                          <DropdownSelect
+                            title={__("Fields", "posts-bridge")}
+                            tags={apiFieldOptions}
+                            onChange={(value) => {
+                              setFieldSelector(-1);
+                              setMapper(index, "foreign", value);
+                            }}
+                            onFocusOutside={() => setFieldSelector(-1)}
+                          />
+                        )}
+                      </Button>
                     </div>
-                    <Button
+                  </td>
+                  <td>
+                    <div
                       style={{
-                        height: "40px",
-                        width: "40px",
-                        justifyContent: "center",
-                        marginLeft: "2px",
+                        display: "flex",
+                        marginLeft: "0.45em",
+                        gap: "0.45em",
                       }}
-                      disabled={!name || apiFieldOptions.length === 0}
-                      variant="secondary"
-                      onClick={() => setFieldSelector(index)}
-                      __next40pxDefaultSize
                     >
-                      {"{...}"}
-                      {fieldSelector === index && (
-                        <DropdownSelect
-                          title={__("Fields", "posts-bridge")}
-                          tags={apiFieldOptions}
-                          onChange={(value) => {
-                            setFieldSelector(-1);
-                            setMapper(index, "foreign", value);
-                          }}
-                          onFocusOutside={() => setFieldSelector(-1)}
-                        />
-                      )}
-                    </Button>
-                  </div>
-                </td>
-                <td>
-                  <div
-                    style={{
-                      display: "flex",
-                      marginLeft: "0.45em",
-                      gap: "0.45em",
-                    }}
-                  >
-                    <Button
-                      size="compact"
-                      variant="secondary"
-                      disabled={!isCustom || !(name && foreign)}
-                      onClick={() => addMapper(index + 1)}
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        justifyContent: "center",
-                      }}
-                      __next40pxDefaultSize
-                    >
-                      +
-                    </Button>
-                    <Button
-                      disabled={
-                        !isCustom ||
-                        (index - customOffset === 0 && !(name || foreign))
-                      }
-                      variant="secondary"
-                      onClick={() => dropMapper(index)}
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        justifyContent: "center",
-                      }}
-                      isDestructive
-                      __next40pxDefaultSize
-                    >
-                      -
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
+                      <Button
+                        size="compact"
+                        variant="secondary"
+                        disabled={!isCustom || !(name && foreign)}
+                        onClick={() => addMapper(index + 1)}
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          justifyContent: "center",
+                        }}
+                        __next40pxDefaultSize
+                      >
+                        +
+                      </Button>
+                      <Button
+                        disabled={
+                          !isCustom ||
+                          (index - customOffset === 0 && !(name || foreign))
+                        }
+                        variant="secondary"
+                        onClick={() => dropMapper(index)}
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          justifyContent: "center",
+                        }}
+                        isDestructive
+                        __next40pxDefaultSize
+                      >
+                        -
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            }
+          )}
         </tbody>
       </table>
     </>

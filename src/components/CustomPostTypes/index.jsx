@@ -62,6 +62,9 @@ export default function CustomPostTypes() {
 
   return (
     <div style={{ width: "100%" }}>
+      <h3 style={{ marginTop: 0, fontSize: "13px" }}>
+        {__("Custom post types", "posts-bridge")}
+      </h3>
       <TabPanel tabs={tabs} className="cpts-tabs-panel">
         {(tab) => {
           const postType = customPostTypes[tab.index];

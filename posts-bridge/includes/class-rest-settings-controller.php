@@ -29,7 +29,7 @@ class REST_Settings_Controller extends Base_Controller {
 	 */
 	protected static function init() {
 		parent::init();
-		self::register_post_type_route();
+		self::register_post_type_routes();
 		self::register_schema_route();
 		self::register_backend_routes();
 	}
@@ -37,7 +37,7 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Registers post type API routes.
 	 */
-	private static function register_post_type_route() {
+	private static function register_post_type_routes() {
 		$namespace = self::namespace();
 		$version   = self::version();
 
@@ -91,6 +91,27 @@ class REST_Settings_Controller extends Base_Controller {
 							'required'    => true,
 						),
 						'args' => Custom_Post_Type::schema(),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			"{$namespace}/v{$version}",
+			'/post_types/(?P<name>[a-zA-Z0-9-_]+)/meta',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => static function ( $request ) {
+						return self::get_post_type_meta( $request );
+					},
+					'permission_callback' => array( self::class, 'permission_callback' ),
+					'args'                => array(
+						'name' => array(
+							'description' => __( 'Custom post type key', 'posts-bridge' ),
+							'type'        => 'string',
+							'required'    => true,
+						),
 					),
 				),
 			)
@@ -241,6 +262,37 @@ class REST_Settings_Controller extends Base_Controller {
 
 		$data['name'] = $key;
 		return $data;
+	}
+
+	/**
+	 * Callback for the GET request to the post meta endpoint.
+	 *
+	 * @param REST_Request $request Request object.
+	 *
+	 * @return array|WP_Error
+	 */
+	private static function get_post_type_meta( $request ) {
+		$key = sanitize_key( $request['name'] );
+
+		global $wp_meta_keys;
+		$meta = $wp_meta_keys['post'][ $key ] ?? null;
+
+		if ( ! $meta ) {
+			return array();
+		}
+
+		$custom_fields = array();
+		foreach ( $meta as $name => $defn ) {
+			$custom_fields[] = array(
+				'name'   => $name,
+				'schema' => array(
+					'type'    => $defn['type'],
+					'default' => $defn['default'],
+				),
+			);
+		}
+
+		return $custom_fields;
 	}
 
 	/**

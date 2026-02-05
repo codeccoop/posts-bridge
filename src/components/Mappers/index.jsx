@@ -1,6 +1,7 @@
 // source
 import MappersTable from "./Table";
 import { useTaxonomies } from "../../hooks/useTaxonomies";
+import { usePostMeta } from "../../hooks/usePostMeta";
 
 const { __experimentalSpacer: Spacer } = wp.components;
 const { useMemo } = wp.element;
@@ -23,6 +24,9 @@ export default function Mappers({
   taxMappers,
   setTaxMappers,
 }) {
+  const metaFields = usePostMeta(postType);
+  const datalistMeta = metaFields.map((field) => field.name);
+
   const fields = useMemo(() => {
     return Object.keys(MODEL)
       .map((name) => {
@@ -43,7 +47,9 @@ export default function Mappers({
   }, [fields]);
 
   const customFields = useMemo(() => {
-    return fields.slice(Object.keys(MODEL).length);
+    return fields
+      .slice(Object.keys(MODEL).length)
+      .map((field) => ({ ...field, datalist: datalistMeta }));
   }, [fields]);
 
   const postTaxonomies = useTaxonomies(postType);

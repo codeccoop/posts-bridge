@@ -161,6 +161,7 @@ export default function NewBridge({ add, schema }) {
           }
         >
           <Mappers
+            postType={data.post_type}
             fieldMappers={data.field_mappers || []}
             setFieldMappers={(field_mappers) =>
               setData({ ...data, field_mappers })
