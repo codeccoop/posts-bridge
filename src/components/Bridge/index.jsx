@@ -199,6 +199,7 @@ export default function Bridge({ data, update, remove, schema, copy }) {
         }
       >
         <Mappers
+          postType={data.post_type}
           fieldMappers={data.field_mappers || []}
           setFieldMappers={(field_mappers) =>
             update({ ...data, field_mappers })
