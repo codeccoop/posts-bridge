@@ -69,7 +69,7 @@ add_filter(
 				$backends[] = array(
 					'name'       => $name,
 					'base_url'   => 'https://sheets.googleapis.com',
-					'credential' => 'Google OAuth',
+					'credential' => 'Google OAuth Client',
 					'headers'    => array(
 						array(
 							'name'  => 'Content-Type',

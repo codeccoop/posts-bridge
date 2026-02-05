@@ -24,10 +24,8 @@ class WP_Post_Bridge extends Post_Bridge {
 	 * @param array $data Bridge data.
 	 */
 	public function __construct( $data ) {
-		$data['foreign_id']      = 'id';
-		$data['single_endpoint'] = rtrim( $data['endpoint'], '/' ) . '/{id}';
-
 		parent::__construct( $data, 'wp' );
+		$this->data['single_endpoint'] = rtrim( $data['endpoint'], '/' ) . '/{id}';
 	}
 
 	/**
