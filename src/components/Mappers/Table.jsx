@@ -162,17 +162,16 @@ export default function MappersTable({ title, mappers, setMappers }) {
                         __next40pxDefaultSize
                       >
                         {"{...}"}
-                        {fieldSelector === index && (
-                          <DropdownSelect
-                            title={__("Fields", "posts-bridge")}
-                            tags={apiFieldOptions}
-                            onChange={(value) => {
-                              setFieldSelector(-1);
-                              setMapper(index, "foreign", value);
-                            }}
-                            onFocusOutside={() => setFieldSelector(-1)}
-                          />
-                        )}
+                        <DropdownSelect
+                          open={fieldSelector === index}
+                          title={__("Fields", "posts-bridge")}
+                          tags={apiFieldOptions}
+                          onChange={(value) => {
+                            setFieldSelector(-1);
+                            setMapper(index, "foreign", value);
+                          }}
+                          onRequestClose={() => setFieldSelector(-1)}
+                        />
                       </Button>
                     </div>
                   </td>
