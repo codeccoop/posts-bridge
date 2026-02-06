@@ -246,8 +246,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 	 * @return boolean True if the request is owned.
 	 */
 	private function is_own_route( $request ) {
-		$ns =
-			$this->namespace . '/' . $this->rest_base . '/' . $this->post_type;
+		$ns = $this->namespace . '/' . $this->rest_base . '/' . $this->post_type;
 		return strstr( $request->get_route(), $ns ) !== false;
 	}
 
@@ -324,9 +323,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 					}
 				}
 
-				$value = ( new JSON_Finger( $request->get_params() ) )->get(
-					$foreign
-				);
+				$value = ( new JSON_Finger( $request->get_params() ) )->get( $foreign );
 				$request->set_param( 'featured_media', $value );
 				break;
 			}
@@ -345,11 +342,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 			$foreign_key = $this->alias( $foreign_key );
 		}
 
-		update_post_meta(
-			$post->ID,
-			Remote_CPT::FOREIGN_KEY_HANDLE,
-			$request[ $foreign_key ]
-		);
+		update_post_meta( $post->ID, Remote_CPT::FOREIGN_KEY_HANDLE, $request[ $foreign_key ] );
 	}
 
 	/**
@@ -382,8 +375,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 		$is_processed      = array_reduce(
 			$schema_properties,
 			function ( $is_processed, $property ) use ( $request ) {
-				return $is_processed ||
-					! empty( $request[ $this->alias( $property ) ] );
+				return $is_processed || ! empty( $request[ $this->alias( $property ) ] );
 			},
 			false
 		);
@@ -397,9 +389,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 
 		// Use json fingers to get foreign key value from the request.
 		$foreign_key = $bridge->foreign_key;
-		$foreign_id  = ( new JSON_Finger( $request->get_params() ) )->get(
-			$foreign_key
-		);
+		$foreign_id  = ( new JSON_Finger( $request->get_params() ) )->get( $foreign_key );
 
 		// Exits if no foreign key on the payload.
 		if ( empty( $foreign_id ) ) {
@@ -479,7 +469,8 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 	 * @return array Item schema data.
 	 */
 	public function get_item_schema() {
-		$schema                                 = parent::get_item_schema();
+		$schema = parent::get_item_schema();
+
 		$schema['properties']['featured_media'] = array( 'integer', 'string' );
 		return $schema;
 	}
