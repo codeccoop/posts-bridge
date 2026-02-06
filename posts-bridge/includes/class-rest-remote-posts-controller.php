@@ -7,6 +7,7 @@ use PBAPI;
 use WP_Error;
 use WP_REST_Posts_Controller;
 use WP_REST_Post_Meta_Fields;
+use WP_REST_Server;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit();
@@ -22,7 +23,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 	 *
 	 * @var string $rest_id_alias Alias name.
 	 */
-	private const _rest_alias_prefix = '_posts_bridge_rest_';
+	private const REST_ALIAS_PREFIX = '_posts_bridge_rest_';
 
 	/**
 	 * Handle the controlled post type.
@@ -63,6 +64,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 		$this->rest_base = get_post_type_object( $post_type )->rest_base ?? $post_type;
 		$this->meta      = new WP_REST_Post_Meta_Fields( $this->post_type );
 		$this->register_routes();
+		$this->register_custom_routes();
 
 		add_filter(
 			"rest_pre_insert_{$post_type}",
@@ -90,6 +92,150 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 			10,
 			3
 		);
+	}
+
+	/**
+	 * Post type REST API custom routes registration.
+	 */
+	private function register_custom_routes() {
+		register_rest_route(
+			'posts-bridge/v1',
+			"/rcpt/{$this->post_type}/(?P<id>\d+)",
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => function ( $request ) {
+						return $this->fetch_remotes( $request );
+					},
+					'permission_callback' => array( '\FORMS_BRIDGE\REST_Settings_Controller', 'permission_callback' ),
+					'args'                => array(
+						'id' => array(
+							'description' => __( 'Post ID', 'posts-bridge' ),
+							'type'        => 'integer',
+							'required'    => true,
+						),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Remote CPT fetch proxy method as callback to the RCPT API custom endpoint.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 *
+	 * @return array|WP_Error
+	 */
+	private function fetch_remotes( $request ) {
+		$id = $request['id'];
+
+		$post = get_post( $id );
+		if ( ! $post ) {
+			return new WP_Error( 'not_found', 'Post not found', array( 'status' => 404 ) );
+		}
+
+		$rcpt = new Remote_CPT( $post );
+		$data = $rcpt->fetch();
+
+		if ( ! is_array( $data ) ) {
+			return array();
+		}
+
+		$fields = $this->data_to_fields( $data );
+		return OpenAPI::expand_fields_schema( $fields );
+	}
+
+	/**
+	 * Format RCPT fetch response data to a list of json schema fields.
+	 *
+	 * @param mixed  $data Loaded data.
+	 * @param string $prefix Prefix for field names.
+	 *
+	 * @return array
+	 */
+	private function data_to_fields( $data, $prefix = '' ) {
+		if ( ! $data ) {
+			return array();
+		}
+
+		if ( wp_is_numeric_array( $data ) ) {
+			$fields = $this->data_to_fields( $data[0], '[0].' );
+
+			if ( ! $fields ) {
+				return $fields;
+			}
+
+			$schema = array(
+				'type'  => 'array',
+				'items' => array(
+					'type'       => 'object',
+					'properties' => array(),
+				),
+			);
+
+			foreach ( $fields as $field ) {
+				$schema['items']['properties'][ $prefix . $field['name'] ] = $field['schema'];
+			}
+
+			$field = array(
+				'name'   => '[0]',
+				'schema' => $schema,
+			);
+
+			array_unshift( $field, $fields );
+			return $fields;
+		} elseif ( is_array( $data ) ) {
+			foreach ( $data as $key => $val ) {
+				$fields[] = array(
+					'name'   => $prefix . $key,
+					'schema' => $this->value_to_schema( $val ),
+				);
+			}
+		} else {
+			$fields[] = array(
+				'name'   => $prefix,
+				'schema' => $this->value_to_schema( $data ),
+			);
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * Returns the json schema of a given value.
+	 *
+	 * @param mixed $val Target value.
+	 *
+	 * @return array
+	 */
+	private function value_to_schema( $val ) {
+		// phpcs:disable Universal.Operators.StrictComparisons
+		if ( intval( $val ) == $val ) {
+			return array( 'type' => 'integer' );
+		} elseif ( floatval( $val ) == $val ) {
+			return array( 'type' => 'number' );
+		} elseif ( is_string( $val ) ) {
+			return array( 'type' => 'string' );
+		} elseif ( is_bool( $val ) ) {
+			return array( 'type' => 'boolean' );
+		} elseif ( wp_is_numeric_array( $val ) ) {
+			$fields = $this->data_to_fields( $val );
+		} elseif ( is_array( $val ) || is_object( $val ) ) {
+			$fields = $this->data_to_fields( (array) $val );
+			$props  = array();
+			foreach ( $fields as $field ) {
+				$props[ $field['name'] ] = $field['schema'];
+			}
+
+			return array(
+				'type'       => 'object',
+				'properties' => $props,
+			);
+		}
+		// phpcs:enable
+
+		return array( 'type' => 'string' );
 	}
 
 	/**
@@ -151,29 +297,29 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 
 		$bridge = PBAPI::get_bridge( $this->post_type );
 
-		// Map custom featured media to the request before media handler execution
+		// Map custom featured media to the request before media handler execution.
 		foreach ( $bridge->remote_post_fields() as $foreign => $name ) {
-			if ( $name === 'featured_media' ) {
+			if ( 'featured_media' === $name ) {
 				try {
 					$keys = JSON_Finger::parse( $foreign );
 				} catch ( Error ) {
 					$keys = array();
 				}
 
-				// Checks if foreign is a json finger
+				// Checks if foreign is a json finger.
 				if ( count( $keys ) > 1 ) {
 					$key   = $keys[0];
 					$alias = $this->alias( $key );
-					// Checks if foreing field is aliased
+					// Checks if foreing field is aliased.
 					if ( isset( $request[ $alias ] ) ) {
-						// fix foreign key
+						// fix foreign key.
 						$foreign = str_replace( $key, $alias, $foreign );
 					}
 				} else {
-					// Checks if foreing field is aliased
+					// Checks if foreing field is aliased.
 					$alias = $this->alias( $foreign );
 					if ( isset( $request[ $alias ] ) ) {
-						// Overwrite foreig with alias
+						// Overwrite foreig with alias.
 						$foreign = $alias;
 					}
 				}
@@ -186,14 +332,14 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 			}
 		}
 
-		// Set default featured if empty
+		// Set default featured if empty.
 		if ( empty( $request['featured_media'] ) ) {
 			$request['featured_media'] = Remote_Featured_Media::default_thumbnail_id();
 		}
 
 		$foreign_key = $bridge->foreign_key;
 
-		// Unalias foreign key on the request
+		// Unalias foreign key on the request.
 		$schema_properties = $this->get_item_schema()['properties'];
 		if ( isset( $schema_properties[ $foreign_key ] ) ) {
 			$foreign_key = $this->alias( $foreign_key );
@@ -221,17 +367,17 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 			return $result;
 		}
 
-		// Exits if request is not for the own remote cpt
+		// Exits if request is not for the own remote cpt.
 		if ( ! $this->is_own_route( $request ) ) {
 			return $result;
 		}
 
-		// Exits on read requests
+		// Exits on read requests.
 		if ( ! strstr( $server::EDITABLE, $request->get_method() ) ) {
 			return $result;
 		}
 
-		// check schema conflict ressolutions
+		// check schema conflict ressolutions.
 		$schema_properties = array_keys( $this->get_item_schema()['properties'] );
 		$is_processed      = array_reduce(
 			$schema_properties,
@@ -242,20 +388,20 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 			false
 		);
 
-		// Exits if request has been processed
+		// Exits if request has been processed.
 		if ( $is_processed ) {
 			return $result;
 		}
 
 		$bridge = PBAPI::get_bridge( $this->post_type );
 
-		// Use json fingers to get foreign key value from the request
+		// Use json fingers to get foreign key value from the request.
 		$foreign_key = $bridge->foreign_key;
 		$foreign_id  = ( new JSON_Finger( $request->get_params() ) )->get(
 			$foreign_key
 		);
 
-		// Exits if no foreign key on the payload
+		// Exits if no foreign key on the payload.
 		if ( empty( $foreign_id ) ) {
 			return new WP_Error(
 				'required_foreign_key',
@@ -263,7 +409,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 			);
 		}
 
-		// Resolve schema conflicts
+		// Resolve schema conflicts.
 		foreach ( $schema_properties as $property ) {
 			if ( ! empty( $request[ $property ] ) ) {
 				$value = $request[ $property ];
@@ -272,7 +418,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 			}
 		}
 
-		// Restore request id if comes from the URL
+		// Restore request id if comes from the URL.
 		if ( preg_match( '/\d+$/', $request->get_route(), $matches ) ) {
 			$wp_id = $matches[0];
 			$request->set_param( 'id', (int) $wp_id );
@@ -289,8 +435,8 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 	 *
 	 * @return string Aliased field name.
 	 */
-	private function alias( $field ) {
-		return self::_rest_alias_prefix . $field;
+	private function alias( $name ) {
+		return self::REST_ALIAS_PREFIX . $name;
 	}
 
 	/**
@@ -301,7 +447,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 	 * @return string Original field name.
 	 */
 	private function unalias( $alias ) {
-		return str_replace( self::_rest_alias_prefix, '', $alias );
+		return str_replace( self::REST_ALIAS_PREFIX, '', $alias );
 	}
 
 	/**
@@ -312,7 +458,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 	 * return boolean True if name is an alias.
 	 */
 	private function is_alias( $name ) {
-		return (bool) strstr( $name, self::_rest_alias_prefix );
+		return (bool) strstr( $name, self::REST_ALIAS_PREFIX );
 	}
 
 	/**

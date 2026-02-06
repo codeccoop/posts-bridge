@@ -287,7 +287,7 @@ class REST_Settings_Controller extends Base_Controller {
 				'name'   => $name,
 				'schema' => array(
 					'type'    => $defn['type'],
-					'default' => $defn['default'],
+					'default' => $defn['default'] ?? '',
 				),
 			);
 		}
