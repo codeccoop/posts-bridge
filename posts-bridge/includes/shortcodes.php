@@ -15,14 +15,8 @@ add_action(
 			return;
 		}
 
-		add_shortcode(
-			'posts_bridge_remote_fields',
-			'posts_bridge_remote_fields'
-		);
-		add_shortcode(
-			'posts_bridge_remote_callback',
-			'posts_bridge_remote_callback'
-		);
+		add_shortcode( 'posts_bridge_remote_fields', 'posts_bridge_remote_fields' );
+		add_shortcode( 'posts_bridge_remote_callback', 'posts_bridge_remote_callback' );
 	},
 	10,
 	0
@@ -41,68 +35,44 @@ function posts_bridge_remote_fields( $atts, $content = '' ) {
 
 	// Exit if global post is not Remote CPT.
 	if ( empty( $posts_bridge_remote_cpt ) ) {
-		Logger::log(
-			'Skip remote fields render for non remote post types',
-			Logger::DEBUG
-		);
+		Logger::log( 'Skip remote fields render for non remote post types', Logger::DEBUG );
 		return $content;
 	}
 
 	// Gets replacement marks and exit if not found.
 	preg_match_all( '/{{([^}]+)}}/', $content, $matches );
 	if ( empty( $matches ) ) {
-		Logger::log(
-			'No replace marks found on remote fields shortcode content',
-			Logger::DEBUG
-		);
+		Logger::log( 'No replace marks found on remote fields shortcode content', Logger::DEBUG );
 		return $content;
 	}
 
 	// Filters empty replace marks and trim its content.
-	$fields = array_values(
-		array_filter(
-			array_map(
-				static function ( $match ) {
-					return trim( $match );
-				},
-				$matches[1]
-			),
-			static function ( $field ) {
-				return $field;
-			}
-		)
-	);
+	$fields = array();
+	foreach ( $matches[1] as $match ) {
+		$field = trim( $match );
+		if ( $field ) {
+			$fields[] = $field;
+		}
+	}
 
 	// Exit if no fields is defined.
 	if ( empty( $fields ) ) {
-		Logger::log(
-			'Replace marks not matches any remote field',
-			Logger::DEBUG
-		);
+		Logger::log( 'Replace marks not matches any remote field', Logger::DEBUG );
 		return $content;
 	}
 
 	// Checks if there are values for the fields and exits if it isn't.
-	$is_empty = array_reduce(
-		$fields,
-		static function ( $handle, $field ) {
-			global $posts_bridge_remote_cpt;
-			return $handle && $posts_bridge_remote_cpt->get( $field ) === null;
-		},
-		false
-	);
-	if ( $is_empty ) {
-		return $content;
+	$values = array();
+	foreach ( $fields as $field ) {
+		$value = $posts_bridge_remote_cpt->get( $field );
+		if ( null !== $value ) {
+			$values[] = $value;
+		}
 	}
 
-	// Get remote field values.
-	$values = array_map(
-		static function ( $field ) {
-			global $posts_bridge_remote_cpt;
-			return $posts_bridge_remote_cpt->get( $field, '' );
-		},
-		$fields
-	);
+	if ( empty( $values ) ) {
+		return $content;
+	}
 
 	try {
 		// Replace anchors on the shortcode content with values.
@@ -110,19 +80,12 @@ function posts_bridge_remote_fields( $atts, $content = '' ) {
 		for ( $i = 0; $i < $l; $i++ ) {
 			$field   = $fields[ $i ];
 			$value   = (string) $values[ $i ];
-			$content = preg_replace(
-				'/{{' . preg_quote( $field, '/' ) . '}}/',
-				$value,
-				$content
-			);
+			$content = preg_replace( '/{{' . preg_quote( $field, '/' ) . '}}/', $value, $content );
 		}
 
 		return wp_kses_post( $content );
 	} catch ( ValueError $e ) {
-		Logger::log(
-			'Remote fields render error: ' . $e->getMessage(),
-			Logger::ERROR
-		);
+		Logger::log( 'Remote fields render error: ' . $e->getMessage(), Logger::ERROR );
 		return $e->getMessage();
 	}
 }
@@ -141,10 +104,7 @@ function posts_bridge_remote_callback( $atts, $content = '' ) {
 
 	// Exit if global post is not Remote CPT.
 	if ( empty( $posts_bridge_remote_cpt ) ) {
-		Logger::log(
-			'Skip remote callback for non remote post types',
-			Logger::DEBUG
-		);
+		Logger::log( 'Skip remote callback for non remote post types', Logger::DEBUG );
 		return $content;
 	} else {
 		$rcpt = $posts_bridge_remote_cpt;
@@ -159,20 +119,14 @@ function posts_bridge_remote_callback( $atts, $content = '' ) {
 	}
 
 	if ( ! function_exists( $callback ) ) {
-		Logger::log(
-			"Remote callback {$callback} does not exists",
-			Logger::DEBUG
-		);
+		Logger::log( "Remote callback {$callback} does not exists", Logger::DEBUG );
 		return $content;
 	}
 
 	$render = $callback( $rcpt, $atts, $content );
 
 	if ( empty( $render ) ) {
-		Logger::log(
-			'Remote callback returns an empty rendered content',
-			Logger::DEBUG
-		);
+		Logger::log( 'Remote callback returns an empty rendered content', Logger::DEBUG );
 		return $content;
 	}
 
