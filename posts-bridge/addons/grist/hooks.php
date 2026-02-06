@@ -28,47 +28,89 @@ add_filter(
 	2
 );
 
-add_filter(
-	'option_posts-bridge_http',
-	function ( $data ) {
-		if ( ! is_array( $data ) ) {
-			return $data;
+/**
+ * Registers Grist http defaults.
+ *
+ * @param array $setting Http setting data.
+ *
+ * @return array
+ */
+function posts_bridge_grist_register_http_defaults( $setting ) {
+	$addon = PBAPI::get_addon( 'grist' );
+	if ( ! $addon->enabled ) {
+		return $setting;
+	}
+
+	$backend_name = 'Grist API';
+	$backend_url  = 'https://docs.getgrist.com';
+
+	$credential_name   = 'Grist API key';
+	$credential_schema = 'Bearer';
+
+	$backends    = $setting['backends'] ?? array();
+	$credentials = $setting['credentials'] ?? array();
+
+	$urls   = array_column( $backends, 'base_url' );
+	$exists = array_search( $backend_url, $urls, true );
+
+	if ( false === $exists ) {
+		$names = array_column( $backends, 'base_url' );
+
+		if ( ! in_array( $backend_name, $names, true ) ) {
+			$backends[] = array(
+				'name'       => $backend_name,
+				'base_url'   => $backend_url,
+				'credential' => $credential_name,
+				'headers'    => array(
+					array(
+						'name'  => 'Content-Type',
+						'value' => 'application/json',
+					),
+				),
+			);
+
+			$setting['backends'] = $backends;
 		}
 
-		if ( ! PBAPI::get_addon( 'grist' ) ) {
-			return $data;
-		}
-
-		$backends = $data['backends'] ?? array();
-
-		$urls   = array_column( $backends, 'base_url' );
-		$exists = array_search( 'https://docs.getgrist.com', $urls, true );
+		$schemas = array_column( $credentials, 'schema' );
+		$exists  = array_search( $credential_schema, $schemas, true );
 
 		if ( false === $exists ) {
-			$name  = 'Grist API';
-			$names = array_column( $backends, 'name' );
+			$names = array_column( $credentials, 'name' );
 
-			if ( ! in_array( $name, $names, true ) ) {
-				$backends[] = array(
-					'name'       => $name,
-					'base_url'   => 'https://docs.getgrist.com',
-					'credential' => 'Grist API key',
-					'headers'    => array(
-						array(
-							'name'  => 'Content-Type',
-							'value' => 'application/json',
-						),
-					),
+			if ( ! in_array( $credential_name, $names, true ) ) {
+				$credentials[] = array(
+					'name'         => $credential_name,
+					'schema'       => $credential_schema,
+					'access_token' => 'your-api-key',
+					'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
 				);
 
-				$data['backends'] = $backends;
+				$setting['credentials'] = $credentials;
+			}
+		}
+	}
+
+	return $setting;
+}
+
+add_filter(
+	'wpct_plugin_register_settings',
+	function ( $settings, $group ) {
+		if ( 'posts-bridge' !== $group ) {
+			return $settings;
+		}
+
+		foreach ( $settings as &$setting ) {
+			if ( 'http' === $setting['name'] ) {
+				$setting['default'] = posts_bridge_grist_register_http_defaults( $setting['default'] );
 			}
 		}
 
-		return $data;
+		return $settings;
 	},
 	20,
-	1,
+	2
 );
 
 add_filter(
@@ -78,33 +120,8 @@ add_filter(
 			return $data;
 		}
 
-		if ( ! PBAPI::get_addon( 'grist' ) ) {
-			return $data;
-		}
-
-		$credentials = $data['credentials'] ?? array();
-
-		$schemas = array_column( $credentials, 'schema' );
-		$exists  = array_search( 'Bearer', $schemas, true );
-
-		if ( false === $exists ) {
-			$name  = 'Grist API key';
-			$names = array_column( $credentials, 'name' );
-
-			if ( ! in_array( $name, $names, true ) ) {
-				$credentials[] = array(
-					'name'         => $name,
-					'schema'       => 'Bearer',
-					'access_token' => 'your-api-key',
-					'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
-				);
-
-				$data['credentials'] = $credentials;
-			}
-		}
-
-		return $data;
+		return posts_bridge_grist_register_http_defaults( $data );
 	},
 	20,
-	1
+	1,
 );

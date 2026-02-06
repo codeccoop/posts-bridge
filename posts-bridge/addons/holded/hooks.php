@@ -28,6 +28,74 @@ add_filter(
 	2
 );
 
+/**
+ * Default Holded http defaults.
+ *
+ * @param array $setting Http setting data.
+ *
+ * @return array
+ */
+function posts_bridge_holded_register_http_defaults( $setting ) {
+	$addon = PBAPI::get_addon( 'holded' );
+	if ( ! $addon->enabled ) {
+		return $setting;
+	}
+
+	$backend_name = 'Holded API';
+	$backend_url  = 'https://api.holded.com';
+
+	$backends = $setting['backends'] ?? array();
+
+	$urls   = array_column( $backends, 'base_url' );
+	$exists = array_search( $backend_url, $urls, true );
+
+	if ( false === $exists ) {
+		$names = array_column( $backends, 'name' );
+
+		if ( ! in_array( $backend_name, $names, true ) ) {
+			$backends[] = array(
+				'name'     => $backend_name,
+				'base_url' => $backend_url,
+				'headers'  => array(
+					array(
+						'name'  => 'Content-Type',
+						'value' => 'application/json',
+					),
+					array(
+						'name'  => 'key',
+						'value' => 'your-holded-api-key',
+					),
+				),
+			);
+
+			$setting['backends'] = $backends;
+		}
+	}
+
+	return $setting;
+}
+
+add_filter(
+	'wpct_plugin_register_settings',
+	function ( $settings, $group ) {
+		if ( 'posts-bridge' !== $group ) {
+			return $settings;
+		}
+
+		foreach ( $settings as &$setting ) {
+			if ( 'http' === $setting['name'] ) {
+				$setting['default'] = posts_bridge_holded_register_http_defaults( $setting['default'] );
+				break;
+			}
+		}
+
+		return $settings;
+	},
+	20,
+	2,
+);
+
+
 add_filter(
 	'option_posts-bridge_http',
 	function ( $data ) {
@@ -35,39 +103,7 @@ add_filter(
 			return $data;
 		}
 
-		if ( ! PBAPI::get_addon( 'holded' ) ) {
-			return $data;
-		}
-
-		$backends = $data['backends'] ?? array();
-
-		$urls   = array_column( $backends, 'base_url' );
-		$exists = array_search( 'https://api.holded.com', $urls, true );
-
-		if ( false === $exists ) {
-			$name  = 'Holded API';
-			$names = array_column( $backends, 'name' );
-
-			if ( ! in_array( $name, $names, true ) ) {
-				$backends[] = array(
-					'name'     => $name,
-					'base_url' => 'https://api.holded.com',
-					'headers'  => array(
-						array(
-							'name'  => 'Content-Type',
-							'value' => 'application/json',
-						),
-						array(
-							'name'  => 'key',
-							'value' => 'your-holded-api-key',
-						),
-					),
-				);
-
-				$data['backends'] = $backends;
-			}
-		}
-
+		$data = posts_bridge_holded_register_http_defaults( $data ?? array() );
 		return $data;
 	},
 	20,
