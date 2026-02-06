@@ -266,7 +266,12 @@ class GCalendar_Addon extends Addon {
 						'properties' => array(
 							'requestId'             => array( 'type' => 'string' ),
 							'conferenceSolutionKey' => array( 'type' => array( 'type' => 'string' ) ),
-							'status'                => array( 'statusCode' => array( 'type' => 'string' ) ),
+							'status'                => array(
+								'type'       => 'object',
+								'properties' => array(
+									'statusCode' => array( 'type' => 'string' ),
+								),
+							),
 						),
 					),
 					'entryPoints'        => array(
