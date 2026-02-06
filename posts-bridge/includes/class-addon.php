@@ -554,13 +554,14 @@ class Addon extends Singleton {
 	 *
 	 * @return array
 	 */
-	protected function expand_endpoint_schema( $fields ) {
+	protected static function expand_endpoint_schema( $fields ) {
 		$schema = array();
 		foreach ( $fields as $field ) {
 			$finger = array( $field['name'] );
 
 			if ( 'array' === $field['schema']['type'] ) {
-				$field['schema']['type'] = $field['schema']['items']['type'] . '[]';
+				$items                   = $field['schema']['items'] ?? array( 'type' => 'string' );
+				$field['schema']['type'] = $items['type'] . '[]';
 
 				$finger[] = 0;
 				$schema[] = $field;
@@ -571,8 +572,15 @@ class Addon extends Singleton {
 			}
 
 			if ( 'object' === $field['schema']['type'] ) {
-				$props = $field['schema']['properties'];
+				$props = $field['schema']['properties'] ?? array();
 				$queue = array();
+
+				if ( true === ( $field['schema']['additionalProperties'] ?? false ) ) {
+					$schema[] = array(
+						'name'   => JSON_Finger::pointer( array_merge( $finger, array( '*' ) ) ),
+						'schema' => array( 'type' => 'mixed' ),
+					);
+				}
 
 				while ( $props ) {
 					foreach ( $props as $key => $prop_schema ) {

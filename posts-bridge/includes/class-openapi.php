@@ -185,25 +185,19 @@ class OpenAPI {
 			}
 
 			if ( 'body' === $param['in'] && isset( $param['schema'] ) ) {
-				if ( isset( $param['schema']['properties'] ) && is_array( $param['schema']['properties'] ) ) {
+				if ( isset( $param['schema']['properties'] ) ) {
 					array_splice( $parameters, $i, 1 );
 
-					foreach ( $param['schema']['properties'] as $prop => $prop_schema ) {
-						$parameters[] = array_merge(
-							$prop_schema,
-							array(
-								'name' => $prop,
-								'in'   => 'body',
-							),
+					$properties = $param['schema']['properties'] ?? array();
+					foreach ( $properties as $prop => $prop_schema ) {
+						$parameters[] = array(
+							'name'   => $prop,
+							'in'     => 'body',
+							'schema' => $prop_schema,
 						);
 					}
 				}
 			}
-		}
-
-		$body = $method_obj['requestBody'] ?? null;
-		if ( $body ) {
-			$parameters = array_merge( $parameters, $this->body_to_params( $body ) );
 		}
 
 		$l = count( $parameters );
@@ -213,6 +207,11 @@ class OpenAPI {
 				$param['schema'] = array( 'type' => $param['type'] );
 				unset( $param['type'] );
 			}
+		}
+
+		$body = $method_obj['requestBody'] ?? null;
+		if ( $body ) {
+			$parameters = array_merge( $parameters, $this->body_to_params( $body ) );
 		}
 
 		if ( $source ) {
@@ -271,6 +270,56 @@ class OpenAPI {
 	}
 
 	/**
+	 * Checks if an object has a composition policy declared.
+	 *
+	 * @param array $obj Target object.
+	 *
+	 * @return string|null Composition policy.
+	 */
+	private function is_composite( $obj ) {
+		return isset( $obj['anyOf'] )
+			? 'anyOf'
+			: (
+				isset( $obj['oneOf'] )
+				? 'oneOf'
+					: (
+						isset( $obj['allOf'] )
+						? 'allOf'
+						: null
+					)
+			);
+	}
+
+	/**
+	 * Resolve the object composition based on the compoisition policy.
+	 *
+	 * @param array  $obj Target object.
+	 * @param string $policy Composition policy.
+	 *
+	 * @return array
+	 */
+	private function compose( $obj, $policy ) {
+		switch ( $policy ) {
+			case 'oneOf':
+			case 'anyOf':
+				$obj = $this->expand_refs( $obj[ $policy ][0] );
+				unset( $obj[ $policy ] );
+				return $obj;
+			case 'allOf':
+				$schema = array();
+				foreach ( $obj[ $policy ] as $partial ) {
+					$schema = array_merge( $schema, $partial );
+				}
+
+				unset( $schema[ $policy ] );
+				$obj = $this->expand_refs( $schema );
+				return $obj;
+		}
+
+		return $obj;
+	}
+
+	/**
 	 * Replace refs and non deterministic schemas.
 	 *
 	 * @param array $obj Schema of the param.
@@ -283,42 +332,48 @@ class OpenAPI {
 			unset( $obj['$ref'] );
 		}
 
-		if ( isset( $obj['anyOf'] ) ) {
-			$obj = $this->expand_refs( $obj['anyOf'][0] );
-			unset( $obj['anyOf'] );
-		} elseif ( isset( $obj['oneOf'] ) ) {
-			$obj = $this->expand_refs( $obj['oneOf'][0] );
-			unset( $obj['oneOf'] );
-		} elseif ( isset( $obj['allOf'] ) ) {
-			$schema = array();
-			foreach ( $obj['allOf'] as $partial ) {
-				$schema = array_merge( $schema, $partial );
-			}
-
-			$obj = $schema;
-			unset( $obj['allOf'] );
-
-			$obj = $this->expand_refs( $obj );
-		}
-
-		$schema = $obj['schema'] ?? $obj;
-
-		if ( 'object' === $schema['type'] ) {
-			foreach ( $schema['properties'] as $name => $prop_schema ) {
-				$schema[ $name ] = $this->expand_refs( $prop_schema );
-			}
-		} elseif ( 'array' === $schema['type'] ) {
-			if ( wp_is_numeric_array( $schema['items'] ) ) {
-				return $obj;
-			}
-
-			$schema['items'] = $this->expand_refs( $schema['items'] );
+		$compose_policy = $this->is_composite( $obj );
+		if ( $compose_policy ) {
+			return $this->compose( $obj, $compose_policy );
 		}
 
 		if ( isset( $obj['schema'] ) ) {
-			$obj['schema'] = $schema;
-		} else {
-			$obj = $schema;
+			$obj['schema'] = $this->expand_refs( $obj['schema'] );
+			return $obj;
+		}
+
+		if ( ! isset( $obj['type'] ) ) {
+			return $obj;
+		}
+
+		if ( 'object' === $obj['type'] ) {
+			$properties = $obj['properties'] ?? array();
+			foreach ( $properties as $name => $prop_schema ) {
+				$properties[ $name ] = $this->expand_refs( $prop_schema );
+			}
+
+			if ( isset( $obj['additionalProperties'] ) && is_array( $obj['additionalProperties'] ) ) {
+				$additionals = $this->expand_refs( $obj['additionalProperties'] );
+
+				if ( isset( $additionals['type'] ) ) {
+					$properties['*'] = $additionals;
+				}
+
+				$obj['additionalProperties'] = false;
+			} elseif ( empty( $properties ) ) {
+				$obj['additionalProperties'] = true;
+			} else {
+				$obj['additionalProperties'] = false;
+			}
+
+			$obj['properties'] = $properties;
+		} elseif ( 'array' === $obj['type'] ) {
+			$items = $obj['items'] ?? array();
+			if ( wp_is_numeric_array( $items ) ) {
+				return $obj;
+			}
+
+			$obj['items'] = $this->expand_refs( $items );
 		}
 
 		return $obj;
@@ -360,22 +415,23 @@ class OpenAPI {
 			$obj = $this->expand_refs( $obj );
 
 			if ( 'object' === $obj['schema']['type'] ) {
-				foreach ( $obj['schema']['properties'] as $name => $defn ) {
-					$parameters[] = array_merge(
-						array(
-							'name'     => $name,
-							'encoding' => $encoding,
-							'in'       => 'body',
-						),
-						$defn
+				$properties = $obj['schema']['properties'] ?? array();
+				foreach ( $properties as $name => $prop_schema ) {
+					$parameters[] = array(
+						'name'     => $name,
+						'encoding' => $encoding,
+						'in'       => 'body',
+						'schema'   => $prop_schema,
 					);
 				}
 			} elseif ( 'array' === $obj['schema']['type'] ) {
-				if ( wp_is_numeric_array( $obj['schema']['items'] ) ) {
+				$items = $obj['schema']['items'] ?? array();
+				if ( wp_is_numeric_array( $items ) ) {
 					continue;
 				}
 
-				$parameters[] = array(
+				$obj['schema']['items'] = $items;
+				$parameters[]           = array(
 					'name'     => '',
 					'encoding' => $encoding,
 					'in'       => 'body',
