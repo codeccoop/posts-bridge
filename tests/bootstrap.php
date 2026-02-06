@@ -43,6 +43,9 @@ function _manually_load_plugin() {
 	);
 
 	require dirname( __DIR__ ) . '/posts-bridge/posts-bridge.php';
+
+	/* Plugin tests */
+	require dirname( __DIR__ ) . '/posts-bridge/deps/plugin/tests/bootstrap.php';
 }
 
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
