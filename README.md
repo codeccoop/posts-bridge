@@ -68,6 +68,10 @@ With mappers you can map backend data to post fields, custom fields and into tax
 
 If you want your backend data loaded dynamically on each render, you can use the **Remote Field** custom block. This block lets you designate parts of your post templates as remote content. On render time, replace makrs in this blocks content will be replaced with data fetched from the backend.
 
+### Custom types
+
+Posts Bridge allows you to register custom post types from the plugin settings with visual and intuitive way, register post meta fields and bind post type to taxonomies.
+
 ### REST API Endpoints
 
 Forms Bridge registers custom REST API endpoints for each bridge to easily connect to WordPress from your backend over HTTP requests.

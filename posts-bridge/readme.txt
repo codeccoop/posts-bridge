@@ -65,6 +65,9 @@ Rename and mutate your backend API responses to match the WordPress post model (
 **Remote fields**
 Dynamically load backend data on render time and substitute replacement marks in the post HTML with remote data.
 
+**Custom types**
+Posts Bridge allows you to register custom post types from the plugin settings with visual and intuitive way, register post meta fields and bind post type to taxonomies.
+
 **REST API endpoints**
 Forms Bridge registers custom REST API endpoints for each bridge to easily connect to WordPress from your backend over HTTP requests.
 
