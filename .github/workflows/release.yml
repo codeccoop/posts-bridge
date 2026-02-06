@@ -46,14 +46,17 @@ jobs:
       - name: Upload plugin bundle
         uses: actions/upload-artifact@v4
         with:
-          name: plugin bundle
+          name: plugin-bundle
           path: posts-bridge/assets/plugin.bundle.js
+
+      - name: Package custom blocks
+        run: zip -r custom-blocks.zip posts-bridge/custom-blocks -x '*/src/*' -x '*/node_modules/*' -x '*/esbuild/*'
 
       - name: Upload custom blocks
         uses: actions/upload-artifact@v4
         with:
-          name: custom blocks
-          path: posts-bridge/custom-blocks/*/build
+          name: custom-blocks
+          path: custom-blocks.zip
 
   package:
     name: Prepare package
@@ -75,8 +78,17 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: build
+          name: plugin-bundle
           path: posts-bridge/assets
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: custom-blocks
+          path: custom-blocks.zip
+
+      - name: Unpackage custom blocks
+        run: unzip custom-blocks.zip
 
       - name: Install dist archive
         run: wp package install wp-cli/dist-archive-command:@stable
