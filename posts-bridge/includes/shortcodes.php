@@ -51,7 +51,7 @@ function posts_bridge_remote_fields( $atts, $content = '' ) {
 	foreach ( $matches[1] as $match ) {
 		$field = trim( $match );
 		if ( $field ) {
-			$fields[] = $field;
+			$fields[] = html_entity_decode( $field, ENT_QUOTES, 'UTF-8' );
 		}
 	}
 
@@ -78,8 +78,13 @@ function posts_bridge_remote_fields( $atts, $content = '' ) {
 		// Replace anchors on the shortcode content with values.
 		$l = count( $fields );
 		for ( $i = 0; $i < $l; $i++ ) {
-			$field   = $fields[ $i ];
-			$value   = (string) $values[ $i ];
+			$field = $fields[ $i ];
+			$value = $values[ $i ] ?? '';
+
+			if ( is_array( $value ) || is_object( $value ) ) {
+				$value = '<pre>' . esc_html( wp_json_encode( $value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) ) . '</pre>';
+			}
+
 			$content = preg_replace( '/{{' . preg_quote( $field, '/' ) . '}}/', $value, $content );
 		}
 
