@@ -162,7 +162,7 @@ class Airtable_Addon extends Addon {
 			return array();
 		}
 
-		return self::expand_endpoint_schema( $fields );
+		return OpenAPI::expand_fields_schema( $fields );
 	}
 }
 
