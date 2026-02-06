@@ -59,13 +59,11 @@ class Nextcloud_Addon extends Addon {
 		}
 
 		$credential = $backend->credential;
-		if ( ! $credential ) {
+		if ( ! $credential || 'Basic' !== $credential->schema ) {
 			return false;
 		}
 
-		$response = $backend->get(
-			'/remote.php/dav/files/' . rawurlencode( $credential->client_id )
-		);
+		$response = $backend->get( '/remote.php/dav/files/' . rawurlencode( $credential->client_id ) );
 
 		if ( is_wp_error( $response ) ) {
 			Logger::log( 'Nextcloud backend ping error response', Logger::ERROR );
@@ -126,9 +124,9 @@ class Nextcloud_Addon extends Addon {
 			return $response;
 		}
 
-		if ( $response['response']['code'] ) {
+		if ( 300 >= $response['response']['code'] ) {
 			$error = new WP_Error( 'bad_request', 'Can not conenct to the backend' );
-			$error->add_data( $response );
+			$error->add_data( array( 'response' => $response ) );
 			return $error;
 		}
 
