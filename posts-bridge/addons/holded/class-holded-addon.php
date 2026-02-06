@@ -231,7 +231,7 @@ class Holded_Addon extends Addon {
 			}
 		}
 
-		return $this->expand_endpoint_schema( $fields );
+		return self::expand_endpoint_schema( $fields );
 	}
 }
 

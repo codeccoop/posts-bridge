@@ -190,7 +190,7 @@ class Grist_Addon extends Addon {
 			return array();
 		}
 
-		return $this->expand_endpoint_schema( $fields );
+		return self::expand_endpoint_schema( $fields );
 	}
 }
 

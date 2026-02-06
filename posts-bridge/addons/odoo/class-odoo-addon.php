@@ -171,22 +171,24 @@ class Odoo_Addon extends Addon {
 				continue;
 			}
 
-			if ( 'char' === $spec['type'] || 'html' === $spec['type'] ) {
+			if (
+				in_array(
+					$spec['type'],
+					array( 'char', 'html', 'selection', 'date', 'datetime' ),
+					true,
+				)
+			) {
 				$schema = array( 'type' => 'string' );
 			} elseif ( 'float' === $spec['type'] ) {
 				$schema = array( 'type' => 'number' );
-			} elseif (
-				in_array(
-					$spec['type'],
-					array( 'one2many', 'many2one', 'many2many' ),
-					true
-				)
-			) {
+			} elseif ( in_array( $spec['type'], array( 'one2many', 'many2many' ), true ) ) {
 				$schema = array(
 					'type'            => 'array',
 					'items'           => array( array( 'type' => 'integer' ), array( 'type' => 'string' ) ),
 					'additionalItems' => false,
 				);
+			} elseif ( in_array( $spec['type'], array( 'many2one', 'many2one_reference' ), true ) ) {
+				$schema = array( 'type' => 'integer' );
 			} else {
 				$schema = array( 'type' => $spec['type'] );
 			}
