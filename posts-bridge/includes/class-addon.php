@@ -559,9 +559,11 @@ class Addon extends Singleton {
 		foreach ( $fields as $field ) {
 			$finger = array( $field['name'] );
 
-			if ( 'array' === $field['schema']['type'] ) {
-				$items                   = $field['schema']['items'] ?? array( 'type' => 'string' );
-				$field['schema']['type'] = $items['type'] . '[]';
+			$type = $field['schema']['type'] ?? null;
+			if ( 'array' === $type ) {
+				$items                    = $field['schema']['items'] ?? array( 'type' => 'string' );
+				$field['schema']['items'] = $items;
+				$field['schema']['type']  = $items['type'] . '[]';
 
 				$finger[] = 0;
 				$schema[] = $field;
@@ -571,7 +573,7 @@ class Addon extends Singleton {
 				$schema[] = $field;
 			}
 
-			if ( 'object' === $field['schema']['type'] ) {
+			if ( 'object' === $type ) {
 				$props = $field['schema']['properties'] ?? array();
 				$queue = array();
 

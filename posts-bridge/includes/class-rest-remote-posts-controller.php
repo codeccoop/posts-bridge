@@ -60,8 +60,7 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 	 */
 	public function __construct( $post_type ) {
 		$this->post_type = $post_type;
-		$this->rest_base =
-			get_post_type_object( $post_type )->rest_base ?? $post_type;
+		$this->rest_base = get_post_type_object( $post_type )->rest_base ?? $post_type;
 		$this->meta      = new WP_REST_Post_Meta_Fields( $this->post_type );
 		$this->register_routes();
 
