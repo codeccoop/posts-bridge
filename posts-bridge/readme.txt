@@ -63,7 +63,7 @@ Authenticate your HTTP requests using API keys, Basic Auth, Bearer Tokens, OAuth
 Rename and mutate your backend API responses to match the WordPress post model (e.g., `post_title`, `post_content`, `post_name`, etc.) and taxonomies.
 
 **Remote fields**
-Dynamically load backend data on render time and replace the post HTML with remote data.
+Dynamically load backend data on render time and substitute replacement marks in the post HTML with remote data.
 
 **REST API endpoints**
 Forms Bridge registers custom REST API endpoints for each bridge to easily connect to WordPress from your backend over HTTP requests.

@@ -66,7 +66,7 @@ With mappers you can map backend data to post fields, custom fields and into tax
 
 ### Remote Field
 
-If you want your backend data loaded dynamically on each render, you can use the **Remote Field** custom block. This block lets you designate parts of your post templates as remote content. On render time, this blocks will be replaced with the data fetched from the backend.
+If you want your backend data loaded dynamically on each render, you can use the **Remote Field** custom block. This block lets you designate parts of your post templates as remote content. On render time, replace makrs in this blocks content will be replaced with data fetched from the backend.
 
 ### REST API Endpoints
 
