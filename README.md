@@ -9,11 +9,7 @@ With **Posts Bridge** you can move your workspace from the WordPress admin to co
 
 ## How it works
 
-Posts Bridge treats post collections as indexes that represents your backend data and allows you to use Gutenberg, WordPress' powerful page builder, as the frontend editor of your backend. Whether through manual or automatic synchronization —using ahead-of-time or live fetches— Posts Bridge fully integrates your backend data into the WordPress CMS system.
-
-## Bridges
-
-Think of a bridge as a mapping that links your backend data with a post type collection from your WordPress web page. Each item on your backend database can be converted to a post, and each field on your backend tables can be mapped to a post field or taxonomy. Once a bridge is configured, you can trigger manual synchronizations, or let Posts Bridge automatically synchronize content between the two sides in the background.
+Posts Bridge treats post collections as indexes that represents your backend data and allows you to use Gutenberg, WordPress' powerful page builder, as the frontend editor of your backend. Either by manually triggering bulk synchronizations, by scheduling automatic background jobs, or dynamically loading data on renders, Posts Bridge fully integrates your backend data into the WordPress CMS system.
 
 ## Add-ons
 
@@ -44,6 +40,10 @@ Posts Bridge has the following add-ons:
 Connect to any custom API using standard HTTP methods and authentication using the abstract **REST API** add-on. Perfect for integrating with proprietary or less common systems.
 
 ## Features
+
+### Bridges
+
+Think of a bridge as a mapping that links your backend data with a post type collection from your WordPress web page. Each item on your backend database can be converted to a post, and each field on your backend tables can be mapped to a post field, post meta or taxonomy terms.
 
 ### Backends
 
