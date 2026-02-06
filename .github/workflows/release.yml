@@ -85,7 +85,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: custom-blocks
-          path: custom-blocks.zip
 
       - name: Unpackage custom blocks
         run: unzip custom-blocks.zip
