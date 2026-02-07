@@ -551,12 +551,10 @@ class Posts_Synchronizer extends Singleton {
 
 			$post_data = $bridge->apply_mappers( $data );
 
-			$post_data['post_title'] = $post_data['post_title']
-				?? $post_data['post_name']
-				?? "Remote CPT({$post_type}) #{$foreign_id}";
+			$post_title = $post_data['post_title'] ?? "Remote CPT({$post_type}) #{$foreign_id}";
 
-			if ( empty( $post_data['post_name'] ) ) {
-				$post_data['post_name'] = sanitize_title( $post_data['post_title'] );
+			if ( empty( $post_data['post_title'] ) ) {
+				$post_data['post_title'] = $post_data['post_name'] ?? $post_data['post_name'] ?: $post_title;
 			}
 
 			$post_data['post_type'] = $post_type;

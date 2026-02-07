@@ -203,6 +203,7 @@ class Custom_Post_Type {
 					),
 					'default'     => array(
 						'title',
+						'editor',
 						'thumbnail',
 						'excerpt',
 						'custom-fields',
