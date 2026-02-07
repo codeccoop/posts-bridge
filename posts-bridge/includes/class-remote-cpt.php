@@ -76,7 +76,12 @@ class Remote_CPT {
 			return $this->remote_data;
 		}
 
-		$data = $this->bridge()->fetch_one( $this->foreign_id() );
+		$bridge = $this->bridge();
+		if ( ! $bridge ) {
+			return array();
+		}
+
+		$data = $bridge->fetch_one( $this->foreign_id() );
 
 		if ( is_wp_error( $data ) ) {
 			Logger::log( "Remote CPT({$this->post_type}) #{$this->ID} fetch error", Logger::ERROR );

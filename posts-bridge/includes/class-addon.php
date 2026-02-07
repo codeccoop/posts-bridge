@@ -428,6 +428,10 @@ class Addon extends Singleton {
 				}
 
 				foreach ( $setting->bridges ?: array() as $bridge_data ) {
+					if ( ! $bridge_data['is_valid'] || ! $bridge_data['enabled'] ) {
+						continue;
+					}
+
 					$post_types[] = $bridge_data['post_type'];
 				}
 

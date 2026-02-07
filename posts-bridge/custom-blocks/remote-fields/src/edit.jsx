@@ -2,35 +2,150 @@ import "./editor.css";
 
 const { __ } = wp.i18n;
 const { useBlockProps, InspectorControls, InnerBlocks } = wp.blockEditor;
-const { useState, useEffect, useRef } = wp.element;
-const { PanelBody } = wp.components;
+const { useState, useEffect, useRef, useMemo } = wp.element;
+const { PanelBody, SelectControl } = wp.components;
 const apiFetch = wp.apiFetch;
+const { useSelect } = wp.data;
 
-export default function Edit({ context: { postType, postId } }) {
+if (!window.postsBridge) {
+  let remoteCpt = null;
+  window.postsBridge = {};
+  Object.defineProperty(window.postsBridge, "remoteCpt", {
+    get: () => remoteCpt,
+    set: (val) => {
+      remoteCpt = val;
+      while (listeners.length) {
+        listener = listeners.shift();
+        listener(val);
+      }
+    },
+  });
+
+  const listeners = [];
+  window.postsBridge.useRemoteCpt = (listener) => {
+    listeners.push(listener);
+    remoteCpt && listener(remoteCpt);
+  };
+}
+
+const postsBridge = window.postsBridge;
+
+export default function Edit({
+  context: { postType: editorPostType, postId },
+}) {
   const blockProps = useBlockProps();
 
   const remotesList = useRef();
 
+  const [isTemplate, setIsTemplate] = useState(false);
   const [remoteFields, setRemoteFields] = useState([]);
+  const [remoteCpts, setRemoteCpts] = useState(null);
+  const [remoteCpt, setRemoteCpt] = useState(null);
 
   useEffect(() => {
-    if (!postId || !postType) return;
+    postsBridge.useRemoteCpt((newRemoteCpt) => {
+      if (newRemoteCpt !== remoteCpt) {
+        setRemoteCpt(newRemoteCpt);
+      }
+    });
+  }, [remoteCpt]);
 
-    let done = false;
-    const abortController = new AbortController();
-    apiFetch({
-      path: `posts-bridge/v1/rcpt/${postType}/${postId}`,
-      method: "GET",
-      signal: abortController.signal,
-    })
-      .then((fields) => {
-        setRemoteFields(fields);
-      })
-      .catch(() => setRemoteFields([]))
-      .finally(() => (done = true));
+  useSelect((select) => {
+    const { getCurrentPostType } = select(wp.editor.store);
+    const currentPostType = getCurrentPostType();
+    if (currentPostType === "wp_template" && !isTemplate) {
+      setIsTemplate(true);
+    } else if (currentPostType !== "template" && isTemplate) {
+      setIsTemplate(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let abortController,
+      done = false;
+
+    if (isTemplate && remoteCpts === null) {
+      if (postsBridge.remoteCpts) {
+        Promise.resolve(postsBridge.remoteCpts).then((remoteCpts) => {
+          setRemoteCpts(remoteCpts);
+        });
+      } else {
+        abortController = new AbortController();
+        postsBridge.remoteCpts = apiFetch({
+          path: "posts-bridge/v1/post_types/remotes",
+          signal: abortController.signal,
+        })
+          .then((remoteCpts) => {
+            if (remoteCpts === undefined) return [];
+            postsBridge.remoteCpts = remoteCpts;
+            setRemoteCpts(postsBridge.remoteCpts);
+            return postsBridge.remoteCpts;
+          })
+          .catch(() => {
+            postsBridge.remoteCpts = [];
+            setRemoteCpts(postsBridge.remoteCpts);
+            return postsBridge.remoteCpts;
+          })
+          .finally(() => (done = true));
+      }
+    }
 
     return () => {
-      !done && abortController.abort();
+      if (!done && abortController) {
+        abortController.abort();
+      }
+    };
+  }, [isTemplate, remoteCpts]);
+
+  const rcptOptions = useMemo(() => {
+    const options = [{ label: "", value: "" }];
+    if (remoteCpts === null) return options;
+    return options.concat(
+      remoteCpts.map((rcpt) => ({
+        value: rcpt,
+        label: rcpt,
+      }))
+    );
+  }, [remoteCpts]);
+
+  const postType = remoteCpt || editorPostType;
+
+  useEffect(() => {
+    let abortController,
+      done = false;
+
+    if (!postType) return;
+
+    if (postsBridge.remoteFields) {
+      Promise.resolve(postsBridge.remoteFields).then((remoteFields) => {
+        setRemoteFields(remoteFields);
+      });
+    } else {
+      postId = postId || 0;
+      abortController = new AbortController();
+      postsBridge.remoteFields = apiFetch({
+        path: `posts-bridge/v1/rcpt/${postType}/${postId}`,
+        method: "GET",
+        signal: abortController.signal,
+      })
+        .then((remoteFields) => {
+          if (remoteFields === undefined) return [];
+          postsBridge.remoteFields = remoteFields;
+          setRemoteFields(postsBridge.remoteFields);
+          return postsBridge.remoteFields;
+        })
+        .catch(() => {
+          postsBridge.remoteFields = [];
+          setRemoteFields(postsBridge.remoteFields);
+          return postsBridge.remoteFields;
+        })
+        .finally(() => (done = true));
+    }
+
+    return () => {
+      if (!done && abortController) {
+        abortController.abort();
+      }
     };
   }, [postId, postType]);
 
@@ -66,7 +181,7 @@ export default function Edit({ context: { postType, postId } }) {
           </p>
           <p>
             {__(
-              "There where you want to place some remote value, use the `{{fieldName}}` marks. It doesn't matter where do you place marks, inside a paragraph, or maybe in a link, feel free to play with it.",
+              "There where you want to place some remote value, use the `{{fieldName}}` marks. Use the list below to see available fields.",
               "posts-bridge"
             )}
           </p>
@@ -81,6 +196,19 @@ export default function Edit({ context: { postType, postId } }) {
           title={__("Remote fields", "posts-bridge")}
           initialOpen={false}
         >
+          {isTemplate && (
+            <SelectControl
+              label={__("Select a remote CPT", "posts-bridge")}
+              value={remoteCpt}
+              onChange={(remoteCpt) => {
+                delete postsBridge.remoteFields;
+                postsBridge.remoteCpt = remoteCpt;
+              }}
+              options={rcptOptions}
+              __next40pxDefaultSize
+              __nextHasNoMarginBottom
+            />
+          )}
           <ul ref={remotesList}>
             {remoteFields.map((field, index) => (
               <li className="remote-field" style={{ position: "relative" }}>

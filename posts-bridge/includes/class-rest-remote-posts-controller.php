@@ -132,7 +132,18 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 
 		$post = get_post( $id );
 		if ( ! $post ) {
-			return new WP_Error( 'not_found', 'Post not found', array( 'status' => 404 ) );
+			$posts = get_posts(
+				array(
+					'post_type'      => $this->post_type,
+					'posts_per_page' => 1,
+				)
+			);
+
+			if ( ! $posts ) {
+				return new WP_Error( 'not_found', 'Post not found', array( 'status' => 404 ) );
+			}
+
+			$post = $posts[0];
 		}
 
 		$rcpt = new Remote_CPT( $post );

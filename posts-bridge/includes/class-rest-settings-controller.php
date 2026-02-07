@@ -55,6 +55,18 @@ class REST_Settings_Controller extends Base_Controller {
 
 		register_rest_route(
 			"{$namespace}/v{$version}",
+			'/post_types/remotes',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => static function () {
+					return self::get_remote_cpts();
+				},
+				'permission_callback' => array( self::class, 'permission_callback' ),
+			)
+		);
+
+		register_rest_route(
+			"{$namespace}/v{$version}",
 			'/post_types/(?P<name>[a-zA-Z0-9-_]+)',
 			array(
 				array(
@@ -239,6 +251,15 @@ class REST_Settings_Controller extends Base_Controller {
 	 */
 	private static function get_post_types() {
 		return array_keys( PBAPI::get_custom_post_types() );
+	}
+
+	/**
+	 * Callback for GET requests to the post_types endpoint.
+	 *
+	 * @return array|WP_Error Post type data.
+	 */
+	private static function get_remote_cpts() {
+		return PBAPI::get_remote_cpts();
 	}
 
 	/**
