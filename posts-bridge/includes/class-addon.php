@@ -497,8 +497,7 @@ class Addon extends Singleton {
 	 * @return boolean|WP_Error
 	 */
 	public function ping( $backend ) {
-		Logger::log( 'This adddon bridges has not known ping endpoint', Logger::ERROR );
-		return true;
+		return apply_filters( 'posts_bridge_backend_ping', true, $backend, self::NAME );
 	}
 
 	/**
@@ -535,7 +534,7 @@ class Addon extends Singleton {
 	 * @return array|WP_Error
 	 */
 	public function get_endpoint_schema( $endpoint, $backend, $method = 'GET' ) {
-		return array();
+		return apply_filters( 'posts_bridge_get_endpoint_schma', array(), $endpoint, $backend, $method, self::NAME );
 	}
 
 	/**
@@ -547,7 +546,7 @@ class Addon extends Singleton {
 	 * @return array|WP_Error
 	 */
 	public function get_endpoints( $backend, $method = null ) {
-		return array();
+		return apply_filters( 'posts_bridge_get_endpoints', array(), $backend, $method, self::NAME );
 	}
 
 	/**
@@ -559,6 +558,6 @@ class Addon extends Singleton {
 	 * @return int Time in seconds.
 	 */
 	public function introspection_cache_expiration( $method ) {
-		return 0;
+		return apply_filters( 'posts_bridge_introspection_cache_expiration', 0, $method, self::NAME );
 	}
 }
