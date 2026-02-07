@@ -224,8 +224,12 @@ class Odoo_Post_Bridge extends Post_Bridge {
 			return $session;
 		}
 
-		[$sid, $uid] = $session;
-		$login[1]    = $uid;
+		if ( 'login' === $model ) {
+			return $session;
+		}
+
+		list($sid, $uid) = $session;
+		$login[1]        = $uid;
 
 		$foreigns = array_keys( $this->remote_fields() );
 		$foreigns = array_merge( $foreigns, array_keys( $this->remote_taxonomies() ) );
