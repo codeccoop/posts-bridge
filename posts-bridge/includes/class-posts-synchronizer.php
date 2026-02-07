@@ -299,27 +299,19 @@ class Posts_Synchronizer extends Singleton {
 					$bridges = PBAPI::get_bridges();
 					foreach ( $bridges as $bridge ) {
 						if ( ! $bridge->is_valid ) {
-							Logger::log(
-								"Skip synchronization for invalid {$bridge->post_type} bridge"
-							);
+							Logger::log( "Skip synchronization for invalid {$bridge->post_type} bridge" );
 							continue;
 						}
 
 						if ( ! $bridge->enabled ) {
-							Logger::log(
-								"Skip synchronization for invalid {$bridge->post_type} bridge"
-							);
+							Logger::log( "Skip synchronization for invalid {$bridge->post_type} bridge" );
 							continue;
 						}
 
 						try {
 							self::sync( $bridge );
 						} catch ( Error | Exception $e ) {
-							Logger::log(
-								"Scheduled synchronization error on {$bridge->post_type} bridge",
-								Logger::ERROR
-							);
-
+							Logger::log( "Scheduled synchronization error on {$bridge->post_type} bridge", Logger::ERROR );
 							Logger::log( $e, Logger::ERROR );
 						}
 					}
@@ -557,20 +549,28 @@ class Posts_Synchronizer extends Singleton {
 				continue;
 			}
 
-			$data = $bridge->apply_mappers( $data );
+			$post_data = $bridge->apply_mappers( $data );
 
-			$data['post_type'] = $post_type;
+			$post_data['post_title'] = $post_data['post_title']
+				?? $post_data['post_name']
+				?? "Remote CPT({$post_type}) #{$foreign_id}";
 
-			if ( 0 !== $rcpt->ID ) {
-				$data['ID'] = $rcpt->ID;
+			if ( empty( $post_data['post_name'] ) ) {
+				$post_data['post_name'] = sanitize_title( $post_data['post_title'] );
 			}
 
-			do_action( 'posts_bridge_before_synchronization', $rcpt, $data );
+			$post_data['post_type'] = $post_type;
 
-			Logger::log( "Remote CPT({$post_type}) #{$rcpt->ID} remote data after mappers" );
-			Logger::log( $data );
+			if ( 0 !== $rcpt->ID ) {
+				$post_data['ID'] = $rcpt->ID;
+			}
 
-			$post_id = wp_insert_post( $data );
+			do_action( 'posts_bridge_before_synchronization', $rcpt, $post_data );
+
+			Logger::log( "Remote CPT({$post_type}) #{$foreign_id} remote data after mappers" );
+			Logger::log( $post_data );
+
+			$post_id = wp_insert_post( $post_data );
 
 			if ( is_wp_error( $post_id ) || ! $post_id ) {
 				Logger::log( 'Post creation error on synchronization', Logger::ERROR );
@@ -580,8 +580,8 @@ class Posts_Synchronizer extends Singleton {
 
 			update_post_meta( $post_id, Remote_CPT::FOREIGN_KEY_HANDLE, $foreign_id );
 
-			if ( isset( $data['featured_media'] ) ) {
-				$featured_media = Remote_Featured_Media::handle( $data['featured_media'], null, $bridge->backend );
+			if ( isset( $post_data['featured_media'] ) ) {
+				$featured_media = Remote_Featured_Media::handle( $post_data['featured_media'], null, $bridge->backend );
 			} else {
 				$featured_media = Remote_Featured_Media::default_thumbnail_id();
 			}
@@ -590,9 +590,9 @@ class Posts_Synchronizer extends Singleton {
 				set_post_thumbnail( $post_id, $featured_media );
 			}
 
-			$rcpt = new Remote_CPT( $post_id, $foreign_id, $data );
+			$rcpt = new Remote_CPT( $post_id, $foreign_id, $post_data );
 
-			do_action( 'posts_bridge_synchronization', $rcpt, $data );
+			do_action( 'posts_bridge_synchronization', $rcpt, $post_data );
 		}
 
 		Logger::log( "Ends remote posts synchronization for {$post_type} bridge" );
