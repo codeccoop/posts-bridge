@@ -30,9 +30,7 @@ if (!window.postsBridge) {
 
 const postsBridge = window.postsBridge;
 
-export default function Edit({
-  context: { postType: editorPostType, postId },
-}) {
+export default function Edit({ context: { postType: editorPostType } }) {
   const blockProps = useBlockProps();
 
   const remotesList = useRef();
@@ -121,10 +119,9 @@ export default function Edit({
         setRemoteFields(remoteFields);
       });
     } else {
-      postId = postId || 0;
       abortController = new AbortController();
       postsBridge.remoteFields = apiFetch({
-        path: `posts-bridge/v1/rcpt/${postType}/${postId}`,
+        path: `posts-bridge/v1/rcpt/${postType}/schema`,
         method: "GET",
         signal: abortController.signal,
       })
@@ -147,7 +144,7 @@ export default function Edit({
         abortController.abort();
       }
     };
-  }, [postId, postType]);
+  }, [postType]);
 
   const copyFieldName = (index) => {
     const field = remoteFields[index];

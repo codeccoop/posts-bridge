@@ -100,21 +100,14 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 	private function register_custom_routes() {
 		register_rest_route(
 			'posts-bridge/v1',
-			"/rcpt/{$this->post_type}/(?P<id>\d+)",
+			"/rcpt/{$this->post_type}/schema",
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => function ( $request ) {
-						return $this->fetch_remotes( $request );
+						return $this->fetch_fields_schema( $request );
 					},
 					'permission_callback' => array( '\FORMS_BRIDGE\REST_Settings_Controller', 'permission_callback' ),
-					'args'                => array(
-						'id' => array(
-							'description' => __( 'Post ID', 'posts-bridge' ),
-							'type'        => 'integer',
-							'required'    => true,
-						),
-					),
 				),
 			),
 		);
@@ -127,126 +120,15 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 	 *
 	 * @return array|WP_Error
 	 */
-	private function fetch_remotes( $request ) {
-		$id = $request['id'];
+	private function fetch_fields_schema( $request ) {
+		$bridge = PBAPI::get_bridge( $this->post_type );
 
-		$post = get_post( $id );
-		if ( ! $post ) {
-			$posts = get_posts(
-				array(
-					'post_type'      => $this->post_type,
-					'posts_per_page' => 1,
-				)
-			);
-
-			if ( ! $posts ) {
-				return new WP_Error( 'not_found', 'Post not found', array( 'status' => 404 ) );
-			}
-
-			$post = $posts[0];
-		}
-
-		$rcpt = new Remote_CPT( $post );
-		$data = $rcpt->fetch();
-
-		if ( ! is_array( $data ) ) {
+		if ( ! $bridge ) {
 			return array();
 		}
 
-		$fields = $this->data_to_fields( $data );
-		return OpenAPI::expand_fields_schema( $fields );
-	}
-
-	/**
-	 * Format RCPT fetch response data to a list of json schema fields.
-	 *
-	 * @param mixed  $data Loaded data.
-	 * @param string $prefix Prefix for field names.
-	 *
-	 * @return array
-	 */
-	private function data_to_fields( $data, $prefix = '' ) {
-		if ( ! $data ) {
-			return array();
-		}
-
-		if ( wp_is_numeric_array( $data ) ) {
-			$fields = $this->data_to_fields( $data[0], '[0].' );
-
-			if ( ! $fields ) {
-				return $fields;
-			}
-
-			$schema = array(
-				'type'  => 'array',
-				'items' => array(
-					'type'       => 'object',
-					'properties' => array(),
-				),
-			);
-
-			foreach ( $fields as $field ) {
-				$schema['items']['properties'][ $prefix . $field['name'] ] = $field['schema'];
-			}
-
-			$field = array(
-				'name'   => '[0]',
-				'schema' => $schema,
-			);
-
-			array_unshift( $field, $fields );
-			return $fields;
-		} elseif ( is_array( $data ) ) {
-			foreach ( $data as $key => $val ) {
-				$fields[] = array(
-					'name'   => $prefix . $key,
-					'schema' => $this->value_to_schema( $val ),
-				);
-			}
-		} else {
-			$fields[] = array(
-				'name'   => $prefix,
-				'schema' => $this->value_to_schema( $data ),
-			);
-		}
-
-		return $fields;
-	}
-
-	/**
-	 * Returns the json schema of a given value.
-	 *
-	 * @param mixed $val Target value.
-	 *
-	 * @return array
-	 */
-	private function value_to_schema( $val ) {
-		// phpcs:disable Universal.Operators.StrictComparisons
-		if ( intval( $val ) == $val ) {
-			return array( 'type' => 'integer' );
-		} elseif ( floatval( $val ) == $val ) {
-			return array( 'type' => 'number' );
-		} elseif ( is_string( $val ) ) {
-			return array( 'type' => 'string' );
-		} elseif ( is_bool( $val ) ) {
-			return array( 'type' => 'boolean' );
-		} elseif ( wp_is_numeric_array( $val ) ) {
-			$fields = $this->data_to_fields( $val );
-		} elseif ( is_array( $val ) || is_object( $val ) ) {
-			$fields = $this->data_to_fields( (array) $val );
-			$props  = array();
-			foreach ( $fields as $field ) {
-				$props[ $field['name'] ] = $field['schema'];
-			}
-
-			return array(
-				'type'       => 'object',
-				'properties' => $props,
-			);
-		}
-		// phpcs:enable
-
-		return array( 'type' => 'string' );
+		$addon = PBAPI::get_addon( $bridge->addon );
+		return $addon->get_endpoint_schema( $bridge->endpoint, $bridge->backend, $bridge->method );
 	}
 
 	/**
