@@ -134,7 +134,12 @@ class Nextcloud_Post_Bridge extends Post_Bridge {
 			return $filepath;
 		}
 
-		if ( $touched ) {
+		$dav_modified = $touched ? time() + 3600 : $this->get_dav_modified_date();
+		if ( is_wp_error( $dav_modified ) ) {
+			return $dav_modified;
+		}
+
+		if ( $touched || filemtime( $filepath ) < $dav_modified ) {
 			$filepath = $this->download_file();
 
 			if ( is_wp_error( $filepath ) ) {
@@ -160,7 +165,11 @@ class Nextcloud_Post_Bridge extends Post_Bridge {
 	 *
 	 * @return integer|null
 	 */
-	private function get_dav_modified_date( $backend ) {
+	private function get_dav_modified_date( $backend = null ) {
+		if ( ! $backend ) {
+			$backend = $this->backend;
+		}
+
 		$response = $backend->head( rawurlencode( $this->endpoint ) );
 
 		if ( is_wp_error( $response ) ) {
@@ -327,11 +336,6 @@ class Nextcloud_Post_Bridge extends Post_Bridge {
 			);
 		}
 
-		$dav_modified = $this->get_dav_modified_date( $backend );
-		if ( is_wp_error( $dav_modified ) ) {
-			return $dav_modified;
-		}
-
 		if ( isset( $params['_touched'] ) ) {
 			$touched = $params['_touched'];
 			unset( $params['_touched'] );
@@ -339,9 +343,12 @@ class Nextcloud_Post_Bridge extends Post_Bridge {
 			$filepath = $this->filepath( $touched );
 		}
 
-		$local_modified = filemtime( $filepath );
+		$dav_modified = $touched ? time() + 3600 : $this->get_dav_modified_date( $backend );
+		if ( is_wp_error( $dav_modified ) ) {
+			return $dav_modified;
+		}
 
-		if ( $touched || $dav_modified > $local_modified ) {
+		if ( $touched || filemtime( $filepath ) < $dav_modified ) {
 			$filepath = $this->download_file( $backend );
 
 			if ( is_wp_error( $filepath ) ) {

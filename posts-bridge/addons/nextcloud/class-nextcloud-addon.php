@@ -243,7 +243,7 @@ class Nextcloud_Addon extends Addon {
 			case 'endpoints':
 				return 60 * 10;
 			case 'schema':
-				return 60;
+				return 60 * 5;
 			default:
 				return 0;
 		}
