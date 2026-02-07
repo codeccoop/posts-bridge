@@ -549,4 +549,16 @@ class Addon extends Singleton {
 	public function get_endpoints( $backend, $method = null ) {
 		return array();
 	}
+
+	/**
+	 * Gets expiration time for introspection cache based on the introspection
+	 * method.
+	 *
+	 * @param string $method Introspection method (ping, endpoints, schema).
+	 *
+	 * @return int Time in seconds.
+	 */
+	public function introspection_cache_expiration( $method ) {
+		return 0;
+	}
 }
