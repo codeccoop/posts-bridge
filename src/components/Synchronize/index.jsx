@@ -14,10 +14,6 @@ const { __ } = wp.i18n;
 
 const recurrenceOptions = [
   {
-    label: __("Minutly", "posts-bridge"),
-    value: "every_minute",
-  },
-  {
     label: __("Quarterly", "posts-bridge"),
     value: "pb-quarterly",
   },
