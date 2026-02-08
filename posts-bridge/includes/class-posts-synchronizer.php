@@ -173,6 +173,8 @@ class Posts_Synchronizer extends Singleton {
 		if ( false !== $timestamp ) {
 			wp_unschedule_event( $timestamp, self::SCHEDULE_HOOK );
 		}
+
+		delete_option( self::DETACHED_QUEUE );
 	}
 
 	/**
