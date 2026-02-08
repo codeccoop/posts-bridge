@@ -104,8 +104,8 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => function ( $request ) {
-						return $this->fetch_fields_schema( $request );
+					'callback'            => function () {
+						return $this->fetch_fields_schema();
 					},
 					'permission_callback' => array( '\FORMS_BRIDGE\REST_Settings_Controller', 'permission_callback' ),
 				),
@@ -116,11 +116,9 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 	/**
 	 * Remote CPT fetch proxy method as callback to the RCPT API custom endpoint.
 	 *
-	 * @param WP_REST_Request $request Request object.
-	 *
 	 * @return array|WP_Error
 	 */
-	private function fetch_fields_schema( $request ) {
+	private function fetch_fields_schema() {
 		$bridge = PBAPI::get_bridge( $this->post_type );
 
 		if ( ! $bridge ) {
@@ -128,7 +126,12 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 		}
 
 		$addon = PBAPI::get_addon( $bridge->addon );
-		return $addon->get_endpoint_schema( $bridge->endpoint, $bridge->backend, $bridge->method );
+
+		$bridge_data = $bridge->data();
+		$backend     = $bridge_data['backend'] ?? null;
+		$method      = $bridge_data['method'] ?? null;
+
+		return $addon->get_endpoint_schema( $bridge->endpoint, $backend, $method );
 	}
 
 	/**

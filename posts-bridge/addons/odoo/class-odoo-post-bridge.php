@@ -178,9 +178,9 @@ class Odoo_Post_Bridge extends Post_Bridge {
 	/**
 	 * Performs an RPC call to the Odoo API.
 	 *
-	 * @param string $model Model name.
-	 * @param array  $params RPC args.
-	 * @param array  $headers HTTP headers.
+	 * @param string    $model Model name.
+	 * @param array|int $params RPC args.
+	 * @param array     $headers HTTP headers.
 	 *
 	 * @return array|WP_Error
 	 */
@@ -242,10 +242,21 @@ class Odoo_Post_Bridge extends Post_Bridge {
 			}
 		}
 
-		$args   = array_merge( $login, array( $model, $this->method ) );
-		$args[] = $params;
+		$args = array_merge( $login, array( $model, $this->method ) );
 
-		$fields  = false !== strpos( $this->method, 'read' ) ? $fields : null;
+		if ( false !== strpos( $this->method, 'read' ) ) {
+			if ( is_scalar( $params ) ) {
+				$params = (int) $params;
+
+				if ( 'search_read' === $this->method ) {
+					$params = array( $params );
+				}
+			}
+		} else {
+			$fields = null;
+		}
+
+		$args[]  = $params;
 		$payload = self::rpc_payload( $sid, 'object', 'execute', $args, $fields );
 
 		$response = $backend->post( self::ENDPOINT, $payload, $headers );

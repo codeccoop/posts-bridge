@@ -159,6 +159,7 @@ export default function Edit({ context: { postType: editorPostType } }) {
     });
 
     setTimeout(() => {
+      if (!remotesList.current) return;
       const child = remotesList.current.children[index];
       if (!child) return;
       child.children[0].style.display = "none";
