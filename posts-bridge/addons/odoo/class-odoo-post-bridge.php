@@ -247,10 +247,6 @@ class Odoo_Post_Bridge extends Post_Bridge {
 		if ( false !== strpos( $this->method, 'read' ) ) {
 			if ( is_scalar( $params ) ) {
 				$params = (int) $params;
-
-				if ( 'search_read' === $this->method ) {
-					$params = array( $params );
-				}
 			}
 		} else {
 			$fields = null;
