@@ -754,29 +754,35 @@ class Posts_Synchronizer extends Singleton {
 
 			$rcpt = new Remote_CPT( $post, $foreign_id );
 
-			$data = $rcpt->fetch();
+			$remote_fields = $bridge->remote_fields();
 
-			if ( is_wp_error( $data ) || empty( $data ) ) {
-				Logger::log( 'Exit synchronization after a fetch error', Logger::ERROR );
-				Logger::log( $data, Logger::ERROR );
-				throw new Exception( 'sync_error', 500 );
+			if ( $remote_fields ) {
+				$data = $rcpt->fetch();
+
+				if ( is_wp_error( $data ) || empty( $data ) ) {
+					Logger::log( 'Exit synchronization after a fetch error', Logger::ERROR );
+					Logger::log( $data, Logger::ERROR );
+					throw new Exception( 'sync_error', 500 );
+				}
+
+				$skip = apply_filters(
+					'posts_bridge_skip_synchronization',
+					false,
+					$rcpt,
+					$data
+				);
+
+				if ( $skip ) {
+					Logger::log( "Skip synchrionization for Remote CPT({$post_type}) with foreign id {$foreign_id}" );
+
+					$rcpt->ID && wp_delete_post( $rcpt->ID );
+					continue;
+				}
+
+				$post_data = $bridge->apply_mappers( $data );
+			} else {
+				$post_data = array( 'post_status' => 'publish' );
 			}
-
-			$skip = apply_filters(
-				'posts_bridge_skip_synchronization',
-				false,
-				$rcpt,
-				$data
-			);
-
-			if ( $skip ) {
-				Logger::log( "Skip synchrionization for Remote CPT({$post_type}) with foreign id {$foreign_id}" );
-
-				$rcpt->ID && wp_delete_post( $rcpt->ID );
-				continue;
-			}
-
-			$post_data = $bridge->apply_mappers( $data );
 
 			$post_title = $post_data['post_title'] ?? "Remote CPT({$post_type}) #{$foreign_id}";
 
