@@ -5,7 +5,7 @@ Tags: posts integration, remote cms, synchronization, http api, automation
 Donate link: https://buymeacoffee.com/codeccoop
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable Tag: 4.1.0
+Stable Tag: 4.1.1
 Tested up to: 6.9
 
 Synchronize backend data with WordPress post collections over HTTP APIs, enabling remote and automated web content management.
@@ -119,6 +119,39 @@ You can get support from Còdec using the [Posts Bridge support forum](https://w
 4. Debug console – Monitor and troubleshoot requests.
 
 == Changelog ==
+
+= 4.1.1 =
+* feat: full live fetch strategy with automatic post titles
+* feat: detached synchronizations
+* feat: introspection api cache
+* feat: introspection filters on generic addon
+* feat: remote fields schema as addon introspection requests
+* feat: remote fields post type selector for site editor
+* feat: check dav modified on nextcloud table headers requests
+* feat: odoo pings as login requests
+
+= 4.1.0 =
+feat: apply wp coding standards
+feat: plugin repo directory refactor
+feat: http deps as library
+feat: grist addon
+feat: airtable addon
+feat: holded addon
+feat: google calendar addon
+feat: nextcloud addon refactor
+feat: odoo addon refactor
+feat: dolibarr addon refactor
+feat: openapi response introspections
+feat: new cpts settings tab and support for custom fields
+feat: addon endpoints and introspection
+feat: bridge single_endpoint pattern
+feat: move lock files to uploads
+feat: mappers api fields datalists
+feat: post custom fields and taxonomies datalists
+feat: attachments requested with backends
+feat: addons http defaults registration
+feat: dropdown select search input
+fix: gsheets value range url encoding
 
 = 4.0.1 =
 * feat: odoo add-on jobs template
