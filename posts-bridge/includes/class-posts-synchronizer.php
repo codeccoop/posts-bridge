@@ -26,7 +26,7 @@ class Posts_Synchronizer extends Singleton {
 	/**
 	 * Handle synchronization ajax nonce name.
 	 *
-	 * @var string ajax_none
+	 * @var string
 	 */
 	private const AJAX_NONCE = 'posts-bridge-ajax-sync';
 
@@ -47,17 +47,23 @@ class Posts_Synchronizer extends Singleton {
 	/**
 	 * Handles synchronization schedule hook name.
 	 *
-	 * @var string Synchronization schedule hook name.
+	 * @var string
 	 */
 	private const SCHEDULE_HOOK = '_posts_bridge_sync_schedule';
 
 	/**
-	 * Handle full synchronization mode. Full synchronization will fetch remote data of all remote models.
-	 * Light mode does only fetch differences between the posts collection and the foreign ids.
+	 * Handles detached queue option name.
 	 *
-	 * @var string $sync_mode Full or light mode.
+	 * @var string
 	 */
-	private static $sync_mode = 'light';
+	private const DETACHED_QUEUE = '_posts_bridge_detach_queue';
+
+	/**
+	 * Handles detached queue data.
+	 *
+	 * @var array
+	 */
+	private static $detached_queue = array();
 
 	/**
 	 * Public class initializer.
@@ -73,20 +79,15 @@ class Posts_Synchronizer extends Singleton {
 	 *
 	 * @param array<string, array> $schedules New schedules to register.
 	 *
-	 * @return Array with custom schedules registerefs.
+	 * @return array
 	 */
 	private static function register_custom_schedules( $schedules ) {
-		$schedules['minutly'] = array(
-			'interval' => 60,
-			'display'  => __( 'Minutly', 'posts-bridge' ),
-		);
-
-		$schedules['quarterly'] = array(
+		$schedules['pb-quarterly'] = array(
 			'interval' => 60 * 15,
 			'display'  => __( 'Quarterly', 'posts-bridge' ),
 		);
 
-		$schedules['twicehourly'] = array(
+		$schedules['pb-twicehourly'] = array(
 			'interval' => 60 * 30,
 			'display'  => __( 'Twice Hourly', 'posts-bridge' ),
 		);
@@ -107,21 +108,42 @@ class Posts_Synchronizer extends Singleton {
 		if ( $next_schedule ) {
 			// if new timestamp is nearer than the existing one, replace it.
 			if ( $next_schedule > $timestamp ) {
-				wp_unschedule_event(
+				$result = wp_unschedule_event(
 					$next_schedule,
 					self::SCHEDULE_HOOK,
 					$payload
 				);
+
+				if ( ! $result ) {
+					Logger::log(
+						"Can not unschedule synchronize hook with recurrence {$recurrence}",
+						Logger::ERROR,
+					);
+
+					return;
+				}
+
 				$next_schedule = null;
 			} else {
 				// if recurrence from the existing schedule is different from the new one, replace it.
-				$schedule = wp_get_schedule( self::SCHEDULE_HOOK, $payload );
-				if ( $schedule !== $recurrence ) {
-					wp_unschedule_event(
+				$scheduled_recurrencte = wp_get_schedule( self::SCHEDULE_HOOK, $payload );
+
+				if ( $scheduled_recurrencte !== $recurrence ) {
+					$result = wp_unschedule_event(
 						$next_schedule,
 						self::SCHEDULE_HOOK,
 						$payload
 					);
+
+					if ( ! $result ) {
+						Logger::log(
+							"Can not unschedule synchronize hook with recurrence {$scheduled_recurrencte}",
+							Logger::ERROR,
+						);
+
+						return;
+					}
+
 					$next_schedule = null;
 				}
 			}
@@ -129,12 +151,16 @@ class Posts_Synchronizer extends Singleton {
 
 		// creates a new schedule if it doesn't exists.
 		if ( ! $next_schedule ) {
-			wp_schedule_event(
+			$result = wp_schedule_event(
 				$timestamp,
 				$recurrence,
 				self::SCHEDULE_HOOK,
 				$payload
 			);
+
+			if ( ! $result ) {
+				Logger::log( 'Can not schedule synchronize hook', Logger::ERROR );
+			}
 		}
 	}
 
@@ -150,30 +176,31 @@ class Posts_Synchronizer extends Singleton {
 
 	/**
 	 * Gets synchronize general setting field and toggles schedule state.
+	 *
+	 * @param array $general General setting data.
 	 */
-	public static function schedule() {
-		$general    = Posts_Bridge::setting( 'general' );
-		$enabled    = $general->synchronize['enabled'] ?? false;
-		$recurrence = $general->synchronize['recurrence'] ?? null;
+	public static function schedule( $general ) {
+		$enabled    = $general['synchronize']['enabled'] ?? false;
+		$recurrence = $general['synchronize']['recurrence'] ?? null;
 
-		if ( empty( $enabled ) || empty( $recurrence ) ) {
+		if ( ! $enabled || ! $recurrence ) {
 			self::unschedule();
 		} else {
 			$next_run = time();
 			switch ( $recurrence ) {
-				case 'minutly':
+				case 'every_minute':
 					$next_run += 60;
 					break;
-				case 'quarterly':
+				case 'pb-quarterly':
 					$next_run += 60 * 15;
 					break;
-				case 'twicehourly':
+				case 'pb-twicehourly':
 					$next_run += 60 * 30;
 					break;
 				case 'hourly':
 					$next_run += 60 * 60;
 					break;
-				case 'twicedaily':
+				case 'pb-twicedaily':
 					$next_run += 60 * 60 * 12;
 					break;
 				case 'daily':
@@ -188,6 +215,27 @@ class Posts_Synchronizer extends Singleton {
 
 			self::add_schedule( $next_run, $recurrence, array() );
 		}
+	}
+
+	/**
+	 * Enqueues detached synchronizations ping script.
+	 */
+	private static function enqueue_ping_script() {
+		$handle = 'posts-bridge-sync-ping';
+
+		wp_enqueue_script(
+			$handle,
+			plugin_dir_url( __DIR__ ) . '/assets/sync-ping.js',
+			array(),
+			Posts_Bridge::version(),
+			array( 'strategy' => 'defer' ),
+		);
+
+		wp_localize_script(
+			$handle,
+			'postsBridgeSyncPing',
+			array( 'siteUrl' => site_url() ),
+		);
 	}
 
 	/**
@@ -216,25 +264,82 @@ class Posts_Synchronizer extends Singleton {
 	protected function construct( ...$args ) {
 		add_action(
 			'updated_option',
-			static function ( $option ) {
+			static function ( $option, $from, $to ) {
 				if ( 'posts-bridge_general' === $option ) {
-					self::schedule();
+					self::schedule( $to );
 				}
 			},
 			90,
-			1
+			3,
+		);
+
+		add_action(
+			'added_option',
+			static function ( $option, $value ) {
+				if ( 'posts-bridge_general' === $option ) {
+					self::schedule( $value );
+				}
+			},
+			90,
+			2,
+		);
+
+		add_filter(
+			'cron_schedules',
+			static function ( $schedules ) {
+				return self::register_custom_schedules( $schedules );
+			}
 		);
 
 		add_action(
 			'admin_enqueue_scripts',
 			static function ( $admin_page ) {
-				if ( 'settings_page_posts-bridge' !== $admin_page ) {
-					return;
+				if ( 'settings_page_posts-bridge' === $admin_page ) {
+					self::ajax_localization();
 				}
 
-				self::ajax_localization();
+				self::enqueue_ping_script();
 			},
 			11
+		);
+
+		add_action(
+			'wp_enqueue_scripts',
+			static function () {
+				self::enqueue_ping_script();
+			},
+			10,
+			0,
+		);
+
+		add_filter(
+			'query_vars',
+			function ( $query_vars ) {
+				$query_vars[] = 'pb-sync-ping';
+				return $query_vars;
+			}
+		);
+
+		add_action(
+			'init',
+			static function () {
+				// phpcs:disable WordPress.Security.NonceVerification
+				if ( isset( $_GET['pb-sync-ping'] ) ) {
+					self::detached_sync();
+				}
+				// phpcs:enable
+			},
+			20,
+			0,
+		);
+
+		add_action(
+			self::SCHEDULE_HOOK,
+			static function () {
+				self::scheduled_sync();
+			},
+			10,
+			0,
 		);
 
 		add_action(
@@ -250,87 +355,11 @@ class Posts_Synchronizer extends Singleton {
 				self::ping_callback();
 			}
 		);
-
-		add_filter(
-			'cron_schedules',
-			static function ( $schedules ) {
-				return self::register_custom_schedules( $schedules );
-			}
-		);
-
-		add_action(
-			self::SCHEDULE_HOOK,
-			static function () {
-				$upload_dir = Posts_Bridge::upload_dir();
-				if ( $upload_dir && is_file( $upload_dir . '/sync-lock' ) ) {
-					Logger::log( 'Skip scheduled synchronization due to sync lock conflicts', Logger::ERROR );
-					return;
-				}
-
-				Logger::log( 'Start scheduled synchronization' );
-
-				$upload_dir = Posts_Bridge::upload_dir();
-				if ( $upload_dir ) {
-					touch( $upload_dir . '/sync-lock' );
-				}
-
-				set_error_handler(
-					function ( $code, $message, $file, $line ) {
-						Logger::log(
-							array(
-								'code'    => $code,
-								'message' => $message,
-								'file'    => $file,
-								'line'    => $line,
-							),
-							Logger::ERROR
-						);
-
-						$upload_dir = Posts_Bridge::upload_dir();
-						if ( $upload_dir ) {
-							wp_delete_file( $upload_dir . '/sync-lock' );
-						}
-
-						wp_die( esc_html( $message ) );
-					}
-				);
-
-				try {
-					$bridges = PBAPI::get_bridges();
-					foreach ( $bridges as $bridge ) {
-						if ( ! $bridge->is_valid ) {
-							Logger::log( "Skip synchronization for invalid {$bridge->post_type} bridge" );
-							continue;
-						}
-
-						if ( ! $bridge->enabled ) {
-							Logger::log( "Skip synchronization for invalid {$bridge->post_type} bridge" );
-							continue;
-						}
-
-						try {
-							self::sync( $bridge );
-						} catch ( Error | Exception $e ) {
-							Logger::log( "Scheduled synchronization error on {$bridge->post_type} bridge", Logger::ERROR );
-							Logger::log( $e, Logger::ERROR );
-						}
-					}
-				} finally {
-					Logger::log( 'End scheduled synchronization' );
-
-					restore_error_handler();
-
-					$upload_dir = Posts_Bridge::upload_dir();
-					if ( $upload_dir && is_file( $upload_dir . '/sync-lock' ) ) {
-						wp_delete_file( $upload_dir . '/sync-lock' );
-					}
-				}
-			}
-		);
 	}
 
 	/**
-	 * Callback to the ping ajax action. Checks if a synchronization is running in the background.
+	 * Callback to the ping ajax action. Checks if a synchronization is running
+	 * in the background.
 	 */
 	private static function ping_callback() {
 		check_ajax_referer( self::AJAX_NONCE );
@@ -357,70 +386,77 @@ class Posts_Synchronizer extends Singleton {
 	private static function ajax_callback() {
 		check_ajax_referer( self::AJAX_NONCE );
 
-		try {
-			if ( ! current_user_can( 'manage_options' ) ) {
-				throw new Exception( 'ajax_unauthorized', 401 );
-			}
-
-			$upload_dir = Posts_Bridge::upload_dir();
-			if ( $upload_dir && is_file( $upload_dir . '/sync-lock' ) ) {
-				wp_send_json(
-					array(
-						'success' => false,
-						'error'   => 'ajax_lock',
-					),
-					409
-				);
-			}
-
-			$mode = isset( $_POST['mode'] )
-				? sanitize_text_field( wp_unslash( $_POST['mode'] ) )
-				: null;
-
-			$post_type = isset( $_POST['post_type'] )
-				? sanitize_text_field( wp_unslash( $_POST['post_type'] ) )
-				: null;
-
-			if ( ! in_array( $mode, array( 'light', 'full' ), true ) ) {
-				throw new Exception( 'bad_request', 400 );
-			}
-
-			Logger::log( 'Start ajax synchronization' );
-
-			$upload_dir = Posts_Bridge::upload_dir();
-			if ( $upload_dir ) {
-				touch( $upload_dir . '/sync-lock' );
-			}
-
-			set_error_handler(
-				function ( $code, $message, $file, $line ) {
-					Logger::log(
-						array(
-							'code'    => $code,
-							'message' => $message,
-							'file'    => $file,
-							'line'    => $line,
-						),
-						Logger::ERROR
-					);
-
-					$upload_dir = Posts_Bridge::upload_dir();
-					if ( $upload_dir ) {
-						wp_delete_file( $upload_dir . '/sync-lock' );
-					}
-
-					wp_die( esc_html( $message ) );
-				}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json(
+				array(
+					'success' => false,
+					'error'   => 'ajax_unauthorized',
+				),
+				401,
 			);
+		}
 
-			self::$sync_mode = $mode;
-			if ( $post_type ) {
-				$bridge  = PBAPI::get_bridge( $post_type );
-				$bridges = array_filter( array( $bridge ) );
-			} else {
-				$bridges = PBAPI::get_bridges();
-			}
+		$upload_dir = Posts_Bridge::upload_dir() ?: '';
+		if ( ! $upload_dir ) {
+			Logger::log( 'Can not create plugin internal folders', Logger::ERROR );
 
+			wp_send_json(
+				array(
+					'success' => false,
+					'error'   => 'internal_server_error',
+				),
+				500,
+			);
+		}
+
+		$lock_file = $upload_dir . '/sync-lock';
+		if ( is_file( $lock_file ) ) {
+			Logger::log( 'Skip synchronization, lock file found', Logger::ERROR );
+
+			wp_send_json(
+				array(
+					'success' => false,
+					'error'   => 'ajax_lock',
+				),
+				409
+			);
+		}
+
+		$post_type = isset( $_POST['post_type'] )
+			? sanitize_text_field( wp_unslash( $_POST['post_type'] ) )
+			: null;
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions
+		$result = touch( $lock_file );
+		// phpcs:enable
+
+		if ( ! $result ) {
+			Logger::log( 'Unable to create the syncrhonization lock file', Logger::ERROR );
+
+			wp_send_json(
+				array(
+					'success' => false,
+					'error'   => 'internal_server_error',
+				),
+				500,
+			);
+		}
+
+		$error_message = 'Ajax synchronization error';
+		self::setup_error_handler( $error_message );
+
+		Logger::log( 'Start ajax synchronization' );
+
+		if ( $post_type ) {
+			$bridge  = PBAPI::get_bridge( $post_type );
+			$bridges = array_filter( array( $bridge ) );
+		} else {
+			$bridges = PBAPI::get_bridges();
+		}
+
+		$result = true;
+
+		try {
 			foreach ( $bridges as $bridge ) {
 				if ( ! $bridge->is_valid ) {
 					Logger::log( "Skip synchronization for invalid {$bridge->post_type} bridge" );
@@ -428,50 +464,241 @@ class Posts_Synchronizer extends Singleton {
 				}
 
 				if ( ! $bridge->enabled ) {
-					Logger::log( "Skip synchronization for invalid {$bridge->post_type} bridge" );
+					Logger::log( "Skip synchronization for disabled {$bridge->post_type} bridge" );
 					continue;
 				}
 
-				self::sync( $bridge );
+				$result = $result && self::sync( $bridge, false );
 			}
 		} catch ( Error | Exception $e ) {
-			Logger::log( "Ajax synchronization error on {$bridge->post_type} bridge", Logger::ERROR );
+			Logger::log( "Error on ajax synchronization for post type {$bridge->post_type}", Logger::ERROR );
 			Logger::log( $e, Logger::ERROR );
-			$error = $e;
-		} finally {
-			Logger::log( 'Ajax synchronization completed' );
 
-			restore_error_handler();
-
-			$upload_dir = Posts_Bridge::upload_dir();
-			if ( $upload_dir && is_file( $upload_dir . '/sync-lock' ) ) {
-				wp_delete_file( $upload_dir . '/sync-lock' );
+			if ( is_file( $lock_file ) ) {
+				wp_delete_file( $lock_file );
 			}
 
-			if ( isset( $error ) ) {
-				wp_send_json(
-					array(
-						'success' => false,
-						'error'   => $error->getMessage(),
-					),
-					$error->getCode(),
-					400,
-				);
-			}
-
-			wp_send_json( array( 'success' => true ), 200 );
+			$result = false;
 		}
+
+		if ( $result ) {
+			Logger::log( 'Ajax synchronization completed' );
+		}
+
+		restore_error_handler();
+
+		wp_delete_file( $lock_file );
+
+		wp_send_json( array( 'success' => true ), 200 );
 	}
 
 	/**
-	 * Synchronize post types collections.
+	 * Dispatch scheduled synchronizations.
+	 */
+	private static function scheduled_sync() {
+		$bridges = PBAPI::get_bridges();
+
+		self::$detached_queue = get_option( self::DETACHED_QUEUE, array() ) ?: array();
+
+		$upload_dir = Posts_Bridge::upload_dir() ?: '';
+		if ( ! $upload_dir ) {
+			Logger::log( 'Can not create plugin internal folders', Logger::ERROR );
+			return;
+		}
+
+		$lock_file = $upload_dir . '/sync-lock';
+		if ( is_file( $lock_file ) ) {
+			Logger::log( 'Skip synchronization, lock file found', Logger::ERROR );
+			return;
+		}
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions
+		$result = touch( $lock_file );
+		// phpcs:enable
+
+		if ( ! $result ) {
+			Logger::log( 'Unable to create the syncrhonization lock file', Logger::ERROR );
+			return;
+		}
+
+		$error_message = 'Detached synchronization error';
+		self::setup_error_handler( $error_message );
+
+		Logger::log( 'Start scheduled synchronization' );
+
+		$result = true;
+		try {
+			foreach ( $bridges as $bridge ) {
+				if ( ! $bridge->is_valid ) {
+					Logger::log( "Skip synchronization for invalid {$bridge->post_type} bridge" );
+					unset( self::$detached_queue[ $bridge->post_type ] );
+					continue;
+				}
+
+				if ( ! $bridge->enabled ) {
+					Logger::log( "Skip synchronization for disabled {$bridge->post_type} bridge" );
+					unset( self::$detached_queue[ $bridge->post_type ] );
+					continue;
+				}
+
+				$done = self::sync(
+					$bridge,
+					true,
+					self::$detached_queue[ $bridge->post_type ] ?? null,
+				);
+
+				if ( $done ) {
+					unset( self::$detached_queue[ $bridge->post_type ] );
+				}
+
+				$result = $result && $done;
+			}
+		} catch ( Error | Exception $e ) {
+			Logger::log( "Scheduled synchronization error on post type {$bridge->post_type}", Logger::ERROR );
+			Logger::log( $e, Logger::ERROR );
+
+			$result = false;
+		}
+
+		if ( $result ) {
+			Logger::log( 'Scheduled synchronization completed' );
+		}
+
+		update_option( self::DETACHED_QUEUE, self::$detached_queue, false );
+
+		restore_error_handler();
+
+		wp_delete_file( $lock_file );
+	}
+
+	/**
+	 * Dispatch detached synchronizations.
+	 */
+	private static function detached_sync() {
+		self::$detached_queue = get_option( self::DETACHED_QUEUE, array() ) ?: array();
+
+		$upload_dir = Posts_Bridge::upload_dir() ?: '';
+		if ( ! $upload_dir ) {
+			Logger::log( 'Can not create plugin internal folders', Logger::ERROR );
+
+			wp_send_json(
+				array(
+					'success' => false,
+					'error'   => 'internal_server_error',
+				),
+				500,
+			);
+		}
+
+		$lock_file = $upload_dir . '/sync-lock';
+		if ( is_file( $lock_file ) ) {
+			Logger::log( 'Skip synchronization, lock file found', Logger::ERROR );
+
+			wp_send_json(
+				array(
+					'success' => false,
+					'error'   => 'ajax_lock',
+				),
+				409
+			);
+		}
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions
+		$result = touch( $lock_file );
+		// phpcs:enable
+
+		if ( ! $result ) {
+			Logger::log( 'Unable to create the syncrhonization lock file', Logger::ERROR );
+
+			wp_send_json(
+				array(
+					'success' => false,
+					'error'   => 'internal_server_error',
+				),
+				500,
+			);
+		}
+
+		$error_message = 'Detached synchronization error';
+		self::setup_error_handler( $error_message );
+
+		Logger::log( 'Start detached synchronization' );
+
+		$post_types = array_keys( self::$detached_queue );
+
+		$result = true;
+
+		try {
+			foreach ( $post_types  as $post_type ) {
+				$bridge = PBAPI::get_bridge( $post_type );
+
+				if ( ! $bridge || ! $bridge->is_valid ) {
+					Logger::log( "Skip detached synchronization for invalid {$post_type} bridge" );
+					unset( self::$detached_queue[ $post_type ] );
+					continue;
+				}
+
+				if ( ! $bridge->enabled ) {
+					Logger::log( "Skip detached synchronization for disabled {$post_type} bridge" );
+					unset( self::$detached_queue[ $post_type ] );
+					continue;
+				}
+
+				$done = self::sync( $bridge, false, self::$detached_queue[ $post_type ] );
+
+				if ( $done ) {
+					unset( self::$detached_queue[ $post_type ] );
+				}
+
+				$result = $result && $done;
+			}
+		} catch ( Error | Exception $e ) {
+			Logger::log( "Error on detached synchronization for post type {$post_type}", Logger::ERROR );
+			Logger::log( $e, Logger::ERROR );
+
+			if ( is_file( $lock_file ) ) {
+				wp_delete_file( $lock_file );
+			}
+
+			$result = false;
+		}
+
+		if ( $result ) {
+			Logger::log( 'Detached synchronization completed' );
+		}
+
+		update_option( self::DETACHED_QUEUE, self::$detached_queue, false );
+
+		restore_error_handler();
+
+		wp_delete_file( $lock_file );
+
+		wp_send_json( array( 'success' => true ) );
+	}
+
+	/**
+	 * Synchronize post type collections.
 	 *
 	 * @param Post_Bridge $bridge Remote relation instance.
+	 * @param bool        $scheduled Weather the syncrhonization is scheduled or not.
+	 * @param array|null  $queue Bridge foreign ids list inherit queue.
+	 *
+	 * @return bool Synchronization done.
 	 *
 	 * @throws Exception On HTTP error response or inert post errors.
 	 */
-	private static function sync( $bridge ) {
-		$foreign_ids = $bridge->foreign_ids();
+	private static function sync( $bridge, $scheduled = false, $queue = null ) {
+		$start_at = time();
+
+		if ( null === $queue ) {
+			$foreign_ids = $bridge->foreign_ids();
+		} else {
+			$foreign_ids = $queue;
+		}
+
+		if ( ! $foreign_ids ) {
+			return true;
+		}
 
 		$remote_pairs = array();
 		foreach ( $foreign_ids as $id ) {
@@ -488,21 +715,18 @@ class Posts_Synchronizer extends Singleton {
 			)
 		);
 
-		Logger::log( "Starts synchronization clean up for {$post_type} bridge" );
+		Logger::log( "Starts synchronization clean up for post type {$post_type}" );
 
 		global $posts_bridge_remote_cpt;
 		while ( $query->have_posts() ) {
 			$query->the_post();
-			$foreign_id = $posts_bridge_remote_cpt->foreign_id;
+			$foreign_id = $posts_bridge_remote_cpt->foreign_id ?? null;
 
-			if ( ! isset( $remote_pairs[ $foreign_id ] ) ) {
+			if ( ! isset( $remote_pairs[ $foreign_id ] ) && null === $queue ) {
 				// if post does not exists on the remote backend, then remove it.
 				$post_id = get_the_ID();
 				Logger::log( "Remove post {$post_id} on synchronization clean up" );
 				wp_delete_post( $post_id );
-			} elseif ( 'light' === self::$sync_mode ) {
-					// if light mode, skip synchronization for existing ones.
-					unset( $remote_pairs[ $foreign_id ] );
 			} else {
 				$remote_pairs[ $foreign_id ] = get_post();
 			}
@@ -513,10 +737,12 @@ class Posts_Synchronizer extends Singleton {
 
 		wp_reset_postdata();
 
-		Logger::log( "Start remote posts synchronization for {$post_type} bridge" );
+		Logger::log( "Start remote posts synchronization for post type {$post_type}" );
+
+		$pending = $remote_pairs;
 
 		foreach ( $remote_pairs as $foreign_id => $post ) {
-			// if is a new remote model, mock a post as its local counterpart.
+			// if is a new remote record, mock a post as its local counterpart.
 			if ( empty( $post ) ) {
 				$post = new WP_Post(
 					(object) array(
@@ -531,7 +757,8 @@ class Posts_Synchronizer extends Singleton {
 			$data = $rcpt->fetch();
 
 			if ( is_wp_error( $data ) || empty( $data ) ) {
-				Logger::log( 'Exit synchronization on error' );
+				Logger::log( 'Exit synchronization after a fetch error', Logger::ERROR );
+				Logger::log( $data, Logger::ERROR );
 				throw new Exception( 'sync_error', 500 );
 			}
 
@@ -554,7 +781,7 @@ class Posts_Synchronizer extends Singleton {
 			$post_title = $post_data['post_title'] ?? "Remote CPT({$post_type}) #{$foreign_id}";
 
 			if ( empty( $post_data['post_title'] ) ) {
-				$post_data['post_title'] = $post_data['post_name'] ?? $post_data['post_name'] ?: $post_title;
+				$post_data['post_title'] = ! empty( $post_data['post_name'] ) ? $post_data['post_name'] : $post_title;
 			}
 
 			$post_data['post_type'] = $post_type;
@@ -572,7 +799,6 @@ class Posts_Synchronizer extends Singleton {
 
 			if ( is_wp_error( $post_id ) || ! $post_id ) {
 				Logger::log( 'Post creation error on synchronization', Logger::ERROR );
-				Logger::log( 'Exit synchronization on error' );
 				throw new Exception( 'insert_error', 500 );
 			}
 
@@ -590,10 +816,58 @@ class Posts_Synchronizer extends Singleton {
 
 			$rcpt = new Remote_CPT( $post_id, $foreign_id, $post_data );
 
-			do_action( 'posts_bridge_synchronization', $rcpt, $post_data );
+			do_action( 'posts_bridge_rcpt_synchronization', $rcpt, $post_data );
+
+			unset( $pending[ $foreign_id ] );
+
+			$ttl = $scheduled ? 1 : INF;
+			if ( $scheduled && $start_at < time() - $ttl && count( $pending ) ) {
+				Logger::log( "Detached remote posts synchronization for post type {$post_type}" );
+				self::$detached_queue[ $post_type ] = array_keys( $remote_pairs );
+				return false;
+			}
 		}
 
-		Logger::log( "Ends remote posts synchronization for {$post_type} bridge" );
+		Logger::log( "Ends remote posts synchronization for post type {$post_type}" );
+		return true;
+	}
+
+	/**
+	 * Sets up a custom error handler to remove lock files on errors.
+	 *
+	 * @param string $error_message Message to display on errors.
+	 */
+	private static function setup_error_handler( $error_message ) {
+		// phpcs:disable WordPress.PHP.DevelopmentFunctions
+		set_error_handler(
+			function ( $code, $message, $file, $line ) use ( $error_message ) {
+				Logger::log( $error_message, Logger::ERROR );
+				Logger::log(
+					array(
+						'code'    => $code,
+						'message' => $message,
+						'file'    => $file,
+						'line'    => $line,
+					),
+					Logger::ERROR
+				);
+
+				$upload_dir = Posts_Bridge::upload_dir() ?: '';
+				$lock_file  = $upload_dir . '/sync-lock';
+				if ( is_file( $lock_file ) ) {
+					wp_delete_file( $lock_file );
+				}
+
+				wp_send_json(
+					array(
+						'success' => false,
+						'error'   => 'internal_server_error',
+					),
+					500,
+				);
+			}
+		);
+		// phpcs:enable
 	}
 }
 

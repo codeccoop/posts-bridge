@@ -4,7 +4,9 @@ import { useLoading } from "../providers/Loading";
 
 const { __ } = wp.i18n;
 
-export default function useAjaxSync({ fullMode, postType }) {
+export default function useAjaxSync(props = {}) {
+  const { postType } = props;
+
   const [loading, setLoading] = useLoading();
   const [error, setError] = useError();
 
@@ -24,13 +26,10 @@ export default function useAjaxSync({ fullMode, postType }) {
               json: () => Promise.resolve(JSON.parse(this.responseText)),
             });
           } else if (this.status === 409) {
-            setTimeout(
-              () => {
-                ajax.onreadystatechange = null;
-                ping().then((response) => res(response));
-              },
-              fullMode ? 4000 : 2000
-            );
+            setTimeout(() => {
+              ajax.onreadystatechange = null;
+              ping().then((response) => res(response));
+            }, 4000);
           } else {
             rej(new Error(`HTTP error response status code: ${this.status}`));
           }
@@ -54,7 +53,6 @@ export default function useAjaxSync({ fullMode, postType }) {
     const body = new URLSearchParams();
     body.set("_ajax_nonce", window.postsBridgeAjaxSync.nonce);
     body.set("action", window.postsBridgeAjaxSync.actions.sync);
-    body.set("mode", fullMode ? "full" : "light");
 
     if (postType) {
       body.set("post_type", postType);
@@ -71,13 +69,10 @@ export default function useAjaxSync({ fullMode, postType }) {
               json: () => Promise.resolve(JSON.parse(this.responseText)),
             });
           } else if (this.status === 409 || this.status === 0) {
-            setTimeout(
-              () => {
-                ajax.onreadystatechange = () => {};
-                ping().then((response) => res(response));
-              },
-              fullMode ? 4000 : 2000
-            );
+            setTimeout(() => {
+              ajax.onreadystatechange = () => {};
+              ping().then((response) => res(response));
+            }, 4000);
           } else {
             rej(new Error(`HTTP error response status code: ${this.status}`));
           }

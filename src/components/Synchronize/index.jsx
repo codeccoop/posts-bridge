@@ -10,21 +10,20 @@ const {
   SelectControl,
   Button,
 } = wp.components;
-const { useState, useEffect } = wp.element;
 const { __ } = wp.i18n;
 
 const recurrenceOptions = [
   {
     label: __("Minutly", "posts-bridge"),
-    value: "minutly",
+    value: "every_minute",
   },
   {
     label: __("Quarterly", "posts-bridge"),
-    value: "quarterly",
+    value: "pb-quarterly",
   },
   {
     label: __("Twice Hourly", "posts-bridge"),
-    value: "twicehourly",
+    value: "pb-twicehourly",
   },
   {
     label: __("Hourly", "posts-bridge"),
@@ -32,7 +31,7 @@ const recurrenceOptions = [
   },
   {
     label: __("Twice Daily", "posts-bridge"),
-    value: "twicedaily",
+    value: "pb-twicedaily",
   },
   {
     label: __("Daily", "posts-bridge"),
@@ -50,16 +49,7 @@ export default function Synchronize({ synchronize, setSynchronize }) {
 
   const { enabled, recurrence } = synchronize;
 
-  const [fullMode, setFullMode] = useState(false);
-
-  const sync = useAjaxSync({ fullMode });
-
-  useEffect(() => {
-    if (!loading) return;
-    return () => {
-      setFullMode(false);
-    };
-  }, [loading]);
+  const sync = useAjaxSync();
 
   const update = (field) => setSynchronize({ ...synchronize, ...field });
 
@@ -76,19 +66,6 @@ export default function Synchronize({ synchronize, setSynchronize }) {
         >
           {__("Synchronize", "posts-bridge")}
         </Button>
-      </PanelRow>
-      <Spacer paddingY="calc(8px)" />
-      <PanelRow>
-        <ToggleControl
-          label={__("Run a full synchronization", "posts-bridge")}
-          help={__(
-            "Normal, or light, synchronizations only fetches new remote models data. If do you want to update all your content, you should trigger a full synchronization. This may take a while.",
-            "posts-bridge"
-          )}
-          checked={fullMode}
-          onChange={() => setFullMode(!fullMode)}
-          __nextHasNoMarginBottom
-        />
       </PanelRow>
       <Spacer paddingY="calc(8px)" />
       <hr />

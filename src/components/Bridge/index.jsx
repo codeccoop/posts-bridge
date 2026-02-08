@@ -25,8 +25,6 @@ export default function Bridge({ data, update, remove, schema, copy }) {
   const [error, setError] = useError();
   const isResponsive = useResponsive();
 
-  const [fullMode, setFullMode] = useState(false);
-
   const [backends] = useBackends();
   const backend = useMemo(() => {
     return backends.find(({ name }) => name === data.backend);
@@ -69,8 +67,7 @@ export default function Bridge({ data, update, remove, schema, copy }) {
     downloadJson(bridgeData, bridgeData.name + " bridge config");
   }, [data]);
 
-  const sync = useAjaxSync({ fullMode, postType: data.post_type });
-  const triggerSync = () => sync().finally(() => setFullMode(false));
+  const triggerSync = useAjaxSync({ postType: data.post_type });
 
   const [ping, setPing] = useState(false);
 
@@ -233,13 +230,6 @@ export default function Bridge({ data, update, remove, schema, copy }) {
             >
               {__("Syncrhonize", "posts-bridge")}
             </Button>
-            <ToggleControl
-              disabled={!isValid || !data.enabled}
-              label={__("Full sync", "posts-bridge")}
-              checked={fullMode}
-              onChange={() => setFullMode(!fullMode)}
-              __nextHasNoMarginBottom
-            />
           </div>
           <div
             style={{

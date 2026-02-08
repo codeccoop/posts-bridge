@@ -46,11 +46,11 @@ class Settings_Store extends Base_Settings_Store {
 							'recurrence' => array(
 								'type' => 'string',
 								'enum' => array(
-									'minutly',
-									'quarterly',
-									'twicehourly',
+									'every_minute',
+									'pb-quarterly',
+									'pb-twicehourly',
 									'hourly',
-									'twicedaily',
+									'pb-twicedaily',
 									'daily',
 									'weekly',
 								),
