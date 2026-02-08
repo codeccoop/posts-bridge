@@ -497,7 +497,7 @@ class Addon extends Singleton {
 	 * @return boolean|WP_Error
 	 */
 	public function ping( $backend ) {
-		return apply_filters( 'posts_bridge_backend_ping', true, $backend, self::NAME );
+		return apply_filters( 'posts_bridge_introspection_ping', true, $backend, self::NAME );
 	}
 
 	/**
@@ -534,7 +534,7 @@ class Addon extends Singleton {
 	 * @return array|WP_Error
 	 */
 	public function get_endpoint_schema( $endpoint, $backend, $method = 'GET' ) {
-		return apply_filters( 'posts_bridge_get_endpoint_schma', array(), $endpoint, $backend, $method, self::NAME );
+		return apply_filters( 'posts_bridge_introspection_schema', array(), $endpoint, $backend, $method, self::NAME );
 	}
 
 	/**
@@ -545,8 +545,8 @@ class Addon extends Singleton {
 	 *
 	 * @return array|WP_Error
 	 */
-	public function get_endpoints( $backend, $method = null ) {
-		return apply_filters( 'posts_bridge_get_endpoints', array(), $backend, $method, self::NAME );
+	public function get_endpoints( $backend, $method = 'GET' ) {
+		return apply_filters( 'posts_bridge_introspection_endpoints', array(), $backend, $method, self::NAME );
 	}
 
 	/**
