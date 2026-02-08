@@ -36,7 +36,18 @@ function posts_bridge_migration_411() {
 			break;
 	}
 
-		update_option( 'posts-bridge_general', $general );
+	update_option( 'posts-bridge_general', $general, false );
+
+	$queue_map      = get_option( '_posts_bridge_detach_queue', array() ) ?: array();
+	$detached_queue = array();
+	foreach ( $queue_map as $post_type => $foreign_ids ) {
+		$detached_queue[] = array(
+			'post_type'   => $post_type,
+			'foreign_ids' => $foreign_ids,
+		);
+	}
+
+	update_option( '_posts_bridge_detach_queue', $detached_queue, false );
 }
 
 posts_bridge_migration_411();
