@@ -171,7 +171,9 @@ class Posts_Bridge extends Base_Plugin {
 		}
 
 		Remote_Featured_Media::setup_default_thumbnail();
-		Posts_Synchronizer::schedule();
+
+		$setting_data = get_option( 'posts-bridge_general', array() ) ?: array();
+		Posts_Synchronizer::schedule( $setting_data );
 
 		$version = get_option( self::DB_VERSION );
 		if ( false === $version ) {
