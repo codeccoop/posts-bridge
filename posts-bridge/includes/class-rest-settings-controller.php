@@ -388,7 +388,7 @@ class REST_Settings_Controller extends Base_Controller {
 	 * @param string          $addon Target addon name.
 	 * @param WP_REST_Request $request Request instance.
 	 *
-	 * @return [Addon, string, string|null]|WP_Error
+	 * @return array{0:Addon, 1:string}|WP_Error
 	 */
 	private static function prepare_addon_backend_request_handler(
 		$addon,
@@ -425,6 +425,8 @@ class REST_Settings_Controller extends Base_Controller {
 
 			Credential::temp_registration( $credential );
 			$backend['credential'] = $credential['name'];
+
+			$introspection_data['credential'] = $credential;
 		} elseif ( ! empty( $backend['credential'] ) ) {
 			$credential = PBAPI::get_credential( $backend['credential'] );
 
@@ -452,7 +454,7 @@ class REST_Settings_Controller extends Base_Controller {
 			return $handler;
 		}
 
-		list($addon, $backend ) = $handler;
+		list( $addon, $backend ) = $handler;
 
 		$result = self::cache_lookup( $addon::NAME, $backend, 'ping' );
 		if ( null !== $result ) {
@@ -494,7 +496,7 @@ class REST_Settings_Controller extends Base_Controller {
 			return $handler;
 		}
 
-		list($addon, $backend) = $handler;
+		list( $addon, $backend ) = $handler;
 
 		$endpoints = self::cache_lookup( $addon::NAME, $backend, 'endpoints' );
 		if ( null !== $endpoints ) {
@@ -536,7 +538,7 @@ class REST_Settings_Controller extends Base_Controller {
 			return $handler;
 		}
 
-		list($addon, $backend) = $handler;
+		list( $addon, $backend ) = $handler;
 
 		$schema = self::cache_lookup( $addon::NAME, $backend, 'schema' );
 		if ( null !== $schema ) {
