@@ -75,7 +75,7 @@ export default function Bridge({ data, update, remove, schema, copy }) {
     if (ping) {
       setPing(false);
     }
-  }, [data.backend]);
+  }, [addon, data.backend]);
 
   const doPing = useCallback(() => {
     if (!backend) return;
