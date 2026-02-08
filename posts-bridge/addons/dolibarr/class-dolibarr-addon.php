@@ -245,9 +245,8 @@ class Dolibarr_Addon extends Addon {
 
 		switch ( $method ) {
 			case 'ping':
-				return 60 * 60 * 24;
 			case 'endpoints':
-				return 60 * 60 * 24 * 7;
+				return 60 * 60 * 24;
 			case 'schema':
 				return 60 * 30;
 			default:

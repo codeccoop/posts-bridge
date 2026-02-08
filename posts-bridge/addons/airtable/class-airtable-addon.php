@@ -180,7 +180,7 @@ class Airtable_Addon extends Addon {
 
 		switch ( $method ) {
 			case 'ping':
-				return 60 * 60 * 24 * 7;
+				return 60 * 60 * 24;
 			case 'endpoints':
 				return 60 * 10;
 			case 'schema':
