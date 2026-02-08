@@ -476,10 +476,8 @@ class OpenAPI {
 			$finger = array( $field['name'] );
 
 			$type = $field['schema']['type'] ?? null;
-			if ( 'array' === $type ) {
-				$items                    = $field['schema']['items'] ?? array( 'type' => 'string' );
-				$field['schema']['items'] = $items;
-				$field['schema']['type']  = $items['type'] . '[]';
+			if ( 'array' === $type && isset( $field['schema']['items']['type'] ) ) {
+				$field['schema']['type'] = $field['schema']['items']['type'] . '[]';
 
 				$finger[] = 0;
 				$schema[] = $field;
