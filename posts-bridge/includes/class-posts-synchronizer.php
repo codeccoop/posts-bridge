@@ -415,7 +415,7 @@ class Posts_Synchronizer extends Singleton {
 			wp_send_json( array( 'success' => true ), 200 );
 		}
 
-		$result = self::sync_bridges( $bridge, 'ajax' );
+		$result = self::sync_bridges( $bridges, 'ajax' );
 
 		if ( is_wp_error( $result ) ) {
 			wp_send_json(
