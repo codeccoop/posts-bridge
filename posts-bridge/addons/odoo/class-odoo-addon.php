@@ -56,7 +56,7 @@ class Odoo_Addon extends Addon {
 			)
 		);
 
-		$response = $bridge->request( 'login' );
+		$response = $bridge->login();
 
 		if ( is_wp_error( $response ) ) {
 			Logger::log( 'Odoo backend ping error response', Logger::ERROR );
@@ -183,9 +183,8 @@ class Odoo_Addon extends Addon {
 				$schema = array( 'type' => 'number' );
 			} elseif ( in_array( $spec['type'], array( 'one2many', 'many2many' ), true ) ) {
 				$schema = array(
-					'type'            => 'array',
-					'items'           => array( array( 'type' => 'integer' ), array( 'type' => 'string' ) ),
-					'additionalItems' => false,
+					'type'  => 'array',
+					'items' => array( 'type' => 'integer' ),
 				);
 			} elseif ( in_array( $spec['type'], array( 'many2one', 'many2one_reference' ), true ) ) {
 				$schema = array( 'type' => 'integer' );
@@ -201,7 +200,7 @@ class Odoo_Addon extends Addon {
 			);
 		}
 
-		return $fields;
+		return OpenAPI::expand_fields_schema( $fields );
 	}
 
 	/**
