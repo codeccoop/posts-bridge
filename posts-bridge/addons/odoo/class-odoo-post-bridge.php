@@ -142,10 +142,6 @@ class Odoo_Post_Bridge extends Post_Bridge {
 	 * @return array|WP_Error Tuple with RPC session id and user id.
 	 */
 	private static function rpc_login( $login, $backend ) {
-		if ( self::$session ) {
-			return self::$session;
-		}
-
 		$session_id = 'posts-bridge-' . time();
 
 		$payload = self::rpc_payload( $session_id, 'common', 'login', $login );
@@ -176,15 +172,11 @@ class Odoo_Post_Bridge extends Post_Bridge {
 	}
 
 	/**
-	 * Performs an RPC call to the Odoo API.
+	 * Performs a login call and sets up hooks to handle RPC calls over HTTP requests .
 	 *
-	 * @param string    $model Model name.
-	 * @param array|int $params RPC args.
-	 * @param array     $headers HTTP headers.
-	 *
-	 * @return array|WP_Error
+	 * @return array{0:string, 1:integer, 2:string}|WP_Error
 	 */
-	public function request( $model, $params = array(), $headers = array() ) {
+	public function login() {
 		if ( ! $this->is_valid ) {
 			return new WP_Error( 'invalid_bridge', 'Bridge is invalid', (array) $this->data );
 		}
@@ -207,29 +199,69 @@ class Odoo_Post_Bridge extends Post_Bridge {
 			);
 		}
 
-		add_filter(
-			'http_bridge_request',
-			static function ( $request ) {
-				self::$request = $request;
-				return $request;
-			},
-			10,
-			1
-		);
+		$login = $credential->authorization();
 
-		$login   = $credential->authorization();
+		if ( ! self::$session ) {
+			add_filter(
+				'http_bridge_request',
+				static function ( $request ) {
+					self::$request = $request;
+					return $request;
+				},
+				10,
+				1
+			);
+
+			$backend_name = $backend->name;
+
+			add_filter(
+				'http_bridge_backend_headers',
+				static function ( $headers, $backend ) use ( $backend_name ) {
+					if ( $backend->name !== $backend_name ) {
+						return $headers;
+					}
+
+					$locale = get_locale();
+					if ( ! $locale ) {
+						return $headers;
+					}
+
+					if ( 'ca' === $locale ) {
+						$locale = 'ca_ES';
+					}
+
+					$headers['Accept-Language'] = $locale;
+					return $headers;
+				},
+				20,
+				2
+			);
+		}
+
 		$session = self::rpc_login( $login, $backend );
-
 		if ( is_wp_error( $session ) ) {
 			return $session;
 		}
 
-		if ( 'login' === $model ) {
-			return $session;
-		}
+		$login[1] = $session[1];
+		return $login;
+	}
 
-		list($sid, $uid) = $session;
-		$login[1]        = $uid;
+	/**
+	 * Performs an RPC call to the Odoo API.
+	 *
+	 * @param string    $model Model name.
+	 * @param array|int $params RPC args.
+	 * @param array     $headers HTTP headers.
+	 *
+	 * @return array|WP_Error
+	 */
+	public function request( $model, $params = array(), $headers = array() ) {
+		$login = self::login();
+
+		if ( is_wp_error( $login ) ) {
+			return $login;
+		}
 
 		$foreigns = array_keys( $this->remote_fields() );
 		$foreigns = array_merge( $foreigns, array_keys( $this->remote_taxonomies() ) );
@@ -253,9 +285,9 @@ class Odoo_Post_Bridge extends Post_Bridge {
 		}
 
 		$args[]  = $params;
-		$payload = self::rpc_payload( $sid, 'object', 'execute', $args, $fields );
+		$payload = self::rpc_payload( self::$session[0], 'object', 'execute', $args, $fields );
 
-		$response = $backend->post( self::ENDPOINT, $payload, $headers );
+		$response = $this->backend()->post( self::ENDPOINT, $payload, $headers );
 
 		$result = self::rpc_response( $response );
 		if ( is_wp_error( $result ) ) {
