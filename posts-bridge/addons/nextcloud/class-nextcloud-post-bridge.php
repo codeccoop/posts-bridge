@@ -42,11 +42,7 @@ class Nextcloud_Post_Bridge extends Post_Bridge {
 	 *
 	 * @return string|WP_Error Filepath or error.
 	 */
-	private function download_file( $backend = null ) {
-		if ( ! $backend ) {
-			$backend = $this->backend;
-		}
-
+	private function download_file( $backend ) {
 		$filepath = $this->filepath();
 
 		$response = $backend->get(
@@ -105,8 +101,9 @@ class Nextcloud_Post_Bridge extends Post_Bridge {
 		}
 
 		if ( ! is_file( $filepath ) ) {
-			$touched = true;
-			$result  = touch( $filepath );
+			// phpcs:disable WordPress.WP.AlternativeFunctions
+			$result = touch( $filepath );
+			// phpcs:enable
 
 			if ( ! $result ) {
 				return new WP_Error(
@@ -115,6 +112,8 @@ class Nextcloud_Post_Bridge extends Post_Bridge {
 					array( 'filepath' => $filepath ),
 				);
 			}
+
+			$touched = true;
 		} else {
 			$touched = false;
 		}
@@ -128,28 +127,39 @@ class Nextcloud_Post_Bridge extends Post_Bridge {
 	 * @return array
 	 */
 	public function table_headers() {
+		if ( ! $this->is_valid ) {
+			return new WP_Error( 'invalid_bridge' );
+		}
+
+		$backend = $this->backend();
+		if ( ! $backend ) {
+			return new WP_Error( 'invalid_backend' );
+		}
+
 		$filepath = $this->filepath( $touched );
 
 		if ( is_wp_error( $filepath ) ) {
 			return $filepath;
 		}
 
-		$dav_modified = $touched ? time() + 3600 : $this->get_dav_modified_date();
+		$dav_modified = $touched ? time() + 3600 : $this->get_dav_modified_date( $backend );
 		if ( is_wp_error( $dav_modified ) ) {
 			return $dav_modified;
 		}
 
 		if ( $touched || filemtime( $filepath ) < $dav_modified ) {
-			$filepath = $this->download_file();
+			$filepath = $this->download_file( $backend );
 
 			if ( is_wp_error( $filepath ) ) {
 				return $filepath;
 			}
 		}
 
+		// phpcs:disable WordPress.WP.AlternativeFunctions
 		$stream = fopen( $filepath, 'r' );
 		$line   = fgets( $stream );
 		fclose( $stream );
+		// phpcs:enable
 
 		if ( false === $line ) {
 			return array();
@@ -165,7 +175,7 @@ class Nextcloud_Post_Bridge extends Post_Bridge {
 	 *
 	 * @return integer|null
 	 */
-	private function get_dav_modified_date( $backend = null ) {
+	private function get_dav_modified_date( $backend ) {
 		if ( ! $backend ) {
 			$backend = $this->backend;
 		}
@@ -193,7 +203,9 @@ class Nextcloud_Post_Bridge extends Post_Bridge {
 	 * @return array
 	 */
 	private function read_rows( $filepath ) {
+		// phpcs:disable WordPress.WP.AlternativeFunctions
 		$content = file_get_contents( $filepath );
+		// phpcs:enable
 
 		$bom     = pack( 'H*', 'EFBBBF' );
 		$content = preg_replace( "/^$bom/", '', trim( $content ) );

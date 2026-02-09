@@ -124,7 +124,7 @@ class Nextcloud_Addon extends Addon {
 			return $response;
 		}
 
-		if ( 300 >= $response['response']['code'] ) {
+		if ( 300 <= $response['response']['code'] ) {
 			$error = new WP_Error( 'bad_request', 'Can not conenct to the backend' );
 			$error->add_data( array( 'response' => $response ) );
 			return $error;
