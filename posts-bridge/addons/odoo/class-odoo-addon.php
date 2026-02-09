@@ -187,7 +187,13 @@ class Odoo_Addon extends Addon {
 					'items' => array( 'type' => 'integer' ),
 				);
 			} elseif ( in_array( $spec['type'], array( 'many2one', 'many2one_reference' ), true ) ) {
-				$schema = array( 'type' => 'integer' );
+				$schema = array(
+					'type'       => 'object',
+					'properties' => array(
+						'0' => array( 'type' => 'integer' ),
+						'1' => array( 'type' => 'string' ),
+					),
+				);
 			} else {
 				$schema = array( 'type' => $spec['type'] );
 			}
