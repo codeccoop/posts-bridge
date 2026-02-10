@@ -36,7 +36,7 @@ class PBAPI {
 	/**
 	 * Gets the list of registered post types.
 	 *
-	 * @return array
+	 * @return string[]
 	 */
 	public static function get_post_types() {
 		return Custom_Post_Type::post_types();
@@ -45,14 +45,14 @@ class PBAPI {
 	/**
 	 * Gets the list of registered custom post types.
 	 *
-	 * @return array
+	 * @return array[]
 	 */
 	public static function get_custom_post_types() {
 		return apply_filters( 'posts_bridge_custom_post_types', array() );
 	}
 
 	/**
-	 * Gets a custom post type definition by name.
+	 * Gets a custom post type registration data by name.
 	 *
 	 * @param string $name Post type name.
 	 *
@@ -60,6 +60,31 @@ class PBAPI {
 	 */
 	public static function get_custom_post_type( $name ) {
 		return self::get_custom_post_types()[ $name ] ?? null;
+	}
+
+	/**
+	 * Registers a new custom post type in WordPress.
+	 *
+	 * @param string $name Post type name.
+	 * @param array  $params Post type registration params.
+	 *
+	 * @return bool
+	 */
+	public static function register_custom_post_type( $name, $params ) {
+		$params['name'] = $name;
+		return Custom_Post_Type::register( $params );
+	}
+
+	/**
+	 * Unregisters a custom post type from WordPress. Only applies to the
+	 * custom post types registered with Posts Bridge.
+	 *
+	 * @param string $name Post type name.
+	 *
+	 * @return bool
+	 */
+	public static function deregister_custom_post_type( $name ) {
+		return Custom_Post_Type::unregister( $name );
 	}
 
 	/**
