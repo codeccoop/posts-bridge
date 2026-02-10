@@ -71,7 +71,7 @@ export default function Mappers({
   return (
     <div>
       <MappersTable
-        title={__("Post fields", "posts-bridge")}
+        title={__("Mappers", "posts-bridge")}
         mappers={postFields}
         setMappers={(postFields) =>
           setFieldMappers(
