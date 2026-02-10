@@ -263,8 +263,7 @@ class Odoo_Post_Bridge extends Post_Bridge {
 			return $login;
 		}
 
-		$foreigns = array_keys( $this->remote_fields() );
-		$foreigns = array_merge( $foreigns, array_keys( $this->remote_taxonomies() ) );
+		$foreigns = array_keys( $this->mappers() );
 
 		$fields = array();
 		foreach ( $foreigns as $foreign ) {

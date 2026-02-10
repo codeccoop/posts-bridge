@@ -683,9 +683,9 @@ class Posts_Synchronizer extends Singleton {
 
 			$rcpt = new Remote_CPT( $post, $foreign_id );
 
-			$remote_fields = $bridge->remote_fields();
+			$mappers = $bridge->mappers();
 
-			if ( $remote_fields ) {
+			if ( $mappers ) {
 				$data = $rcpt->fetch();
 
 				if ( is_wp_error( $data ) || empty( $data ) ) {
@@ -751,7 +751,7 @@ class Posts_Synchronizer extends Singleton {
 
 			$rcpt = new Remote_CPT( $post_id, $foreign_id, $post_data );
 
-			do_action( 'posts_bridge_rcpt_synchronization', $rcpt, $post_data );
+			do_action( 'posts_bridge_after_synchronization', $rcpt, $post_data );
 		}
 
 		Logger::log( "Ends remote posts synchronization for post type {$post_type}" );

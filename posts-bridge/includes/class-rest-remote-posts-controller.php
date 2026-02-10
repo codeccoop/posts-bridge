@@ -193,7 +193,8 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 		$bridge = PBAPI::get_bridge( $this->post_type );
 
 		// Map custom featured media to the request before media handler execution.
-		foreach ( $bridge->remote_post_fields() as $foreign => $name ) {
+		$mappers = $bridge->mappers();
+		foreach ( $mappers as $foreign => $name ) {
 			if ( 'featured_media' === $name ) {
 				try {
 					$keys = JSON_Finger::parse( $foreign );

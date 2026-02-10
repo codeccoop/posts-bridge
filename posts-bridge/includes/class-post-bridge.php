@@ -461,11 +461,20 @@ class Post_Bridge {
 	}
 
 	/**
+	 * Bridge's remote mappers getter.
+	 *
+	 * @return array<string, string>
+	 */
+	final public function mappers() {
+		return array_merge( $this->field_mappers(), $this->tax_mappers() );
+	}
+
+	/**
 	 * Returns a map with mapped remote fields to taxonomies.
 	 *
 	 * @return array<string, string>
 	 */
-	final public function remote_taxonomies() {
+	final public function tax_mappers() {
 		$taxonomies = array();
 		foreach ( $this->tax_mappers as $mapper ) {
 			if ( empty( $mapper['foreign'] ) || empty( $mapper['name'] ) ) {
@@ -483,10 +492,10 @@ class Post_Bridge {
 	 *
 	 * @return array<string, string>
 	 */
-	final public function remote_fields() {
+	final public function field_mappers() {
 		return array_merge(
-			$this->remote_post_fields(),
-			$this->remote_custom_fields()
+			$this->post_field_mappers(),
+			$this->custom_field_mappers()
 		);
 	}
 
@@ -495,7 +504,7 @@ class Post_Bridge {
 	 *
 	 * @return array<string, string>
 	 */
-	final public function remote_post_fields() {
+	final public function post_field_mappers() {
 		$fields = array();
 		foreach ( $this->field_mappers as $mapper ) {
 			if ( empty( $mapper['name'] ) || empty( $mapper['foreign'] ) ) {
@@ -515,7 +524,7 @@ class Post_Bridge {
 	 *
 	 * @return array<string, string>
 	 */
-	final public function remote_custom_fields() {
+	final public function custom_field_mappers() {
 		$fields = array();
 		foreach ( $this->field_mappers as $mapper ) {
 			if ( empty( $mapper['foreign'] ) || empty( $mapper['name'] ) ) {
@@ -542,12 +551,12 @@ class Post_Bridge {
 			return $data;
 		}
 
-		$finger        = new JSON_Finger( $data );
-		$post_fields   = $this->remote_post_fields();
-		$custom_fields = $this->remote_custom_fields();
-		$taxonomies    = $this->remote_taxonomies();
+		$finger         = new JSON_Finger( $data );
+		$post_mappers   = $this->post_field_mappers();
+		$custom_mappers = $this->custom_field_mappers();
+		$tax_mappers    = $this->tax_mappers();
 
-		foreach ( $post_fields as $foreign => $name ) {
+		foreach ( $post_mappers as $foreign => $name ) {
 			if ( $foreign === $name ) {
 				continue;
 			}
@@ -560,7 +569,7 @@ class Post_Bridge {
 			$finger->unset( $foreign );
 		}
 
-		foreach ( $custom_fields as $foreign => $name ) {
+		foreach ( $custom_mappers as $foreign => $name ) {
 			$value = $finger->get( $foreign );
 			if ( $value ) {
 				// WordPress can't serialize list arrays...
@@ -581,7 +590,7 @@ class Post_Bridge {
 		}
 
 		$tax_input = array();
-		foreach ( $taxonomies as $foreign => $name ) {
+		foreach ( $tax_mappers as $foreign => $name ) {
 			$terms = $finger->get( $foreign );
 			if ( $terms ) {
 				if ( 'tags_input' === $name ) {
