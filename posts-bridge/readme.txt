@@ -5,7 +5,7 @@ Tags: posts integration, remote cms, synchronization, http api, automation
 Donate link: https://buymeacoffee.com/codeccoop
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable Tag: 4.1.1
+Stable Tag: 4.1.2
 Tested up to: 6.9
 
 Synchronize backend data with WordPress post collections over HTTP APIs, enabling remote and automated web content management.
