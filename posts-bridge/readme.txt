@@ -114,8 +114,10 @@ You can get support from Còdec using the [Posts Bridge support forum](https://w
 
 1. Settings page – Configure global plugin options
 2. Backends – Save and reuse API connection details
-3. Bridges – Create synchronization pipelines for your post collections
-4. Debug console – Monitor and troubleshoot requests.
+3. Bridges – Create synchronization mappings for your post collections
+4. Synchronization - Dispatch manual, detached or live synchronizations
+5. Remote CPTs - Bind post collections to remote backend records
+6. Debug console – Monitor and troubleshoot requests.
 
 == Changelog ==
 
