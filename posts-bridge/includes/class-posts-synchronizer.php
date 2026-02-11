@@ -831,7 +831,7 @@ class Posts_Synchronizer extends Singleton {
 			$error_message = 'Skip synchronization, lock file found';
 			Logger::log( $error_message, Logger::ERROR );
 
-			return new WP_Error( 'conflict', $error_message, array( 'status'   => 409 ) );
+			return new WP_Error( 'conflict', $error_message, array( 'status' => 409 ) );
 		}
 
 		// phpcs:disable WordPress.WP.AlternativeFunctions
