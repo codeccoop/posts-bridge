@@ -1,7 +1,7 @@
 === Posts Bridge - Remote CMS ===
 
 Contributors: codeccoop
-Tags: synchronization, automation, integration, http api, productivty, odoo, dolibarr, airtable, grist, nextcloud, google sheets, holded
+Tags: synchronization, automation, integration, http api, productivity, odoo, dolibarr, airtable, grist, nextcloud, google sheets, holded
 Donate link: https://buymeacoffee.com/codeccoop
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
