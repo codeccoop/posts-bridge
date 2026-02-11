@@ -399,7 +399,7 @@ class Post_Bridge {
 		if ( preg_match( '/{+id}+|%s|%d/i', $endpoint, $matches ) ) {
 			$endpoint = str_replace( $matches[0], $foreign_id, $endpoint );
 		} else {
-			$endpoint = preg_replace( '/\/+$/', '', $endpoint ) . '/' . $foreign_id;
+			$endpoint = rtrim( $endpoint, '/' ) . '/' . $foreign_id;
 		}
 
 		if ( isset( $parsed['query'] ) ) {
