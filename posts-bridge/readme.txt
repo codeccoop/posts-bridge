@@ -51,31 +51,30 @@ Connect to any custom API using standard HTTP methods and authentication using t
 == Features ==
 
 **Bridges**
-Think of a bridge as a mapping that links your backend data with a post type collection from your WordPress web page. Each item on your backend database can be converted to a post, and each field on your backend tables can be mapped to a post field, post meta or taxonomy terms.
+Bridges act as dynamic mappings between your backend data and WordPress post type collections. Seamlessly convert each database item into a WordPress post, and map backend fields directly to post fields, metadata, or taxonomy terms—effortlessly synchronizing your data.
 
 **Backends**
-Think of it as a "connection profile" for your API. Save your API URL, headers, and credentials once, then reuse them across all your bridges. No need to re-enter details every time!
+Create a reusable "connection profile" for your API. Store your API URL, headers, and credentials once, and apply them across all your bridges. No repetitive setup required—just connect and go.
 
 **Credentials**
-Authenticate your HTTP requests using API keys, Basic Auth, Bearer Tokens, OAuth, RPC credentials and Digest Auth.
+Secure your HTTP requests with flexible authentication options: API keys, Basic Auth, Bearer Tokens, OAuth, RPC credentials, or Digest Auth. Choose the method that fits your needs.
 
 **Field mappers**
-Rename and mutate your backend API responses to match the WordPress post model (e.g., `post_title`, `post_content`, `post_name`, etc.) and taxonomies.
+Transform your backend API responses to align with WordPress’s post structure (e.g., post_title, post_content, post_name).
+
+With mappers you can map backend data to post fields, custom fields and into taxonomy terms (such as categories and tags).
 
 **Remote fields**
-Dynamically load backend data on render time and substitute replacement marks in the post HTML with remote data.
+Load backend data dynamically at render time. Replace placeholder marks in your post HTML with real-time remote data, ensuring your content is always up to date.
+
+**Background synchronizations**
+Automate your content workflow by scheduling synchronizations to run in the background. Keep your WordPress site fresh with minimal manual intervention.
 
 **Custom types**
-Posts Bridge allows you to register custom post types from the plugin settings with visual and intuitive way, register post meta fields and bind post type to taxonomies.
-
-**REST API endpoints**
-Forms Bridge registers custom REST API endpoints for each bridge to easily connect to WordPress from your backend over HTTP requests.
-
-**JWT authentication**
-Authenticate your HTTP requests to the WordPress REST API with JWT tokens.
+Easily register custom post types directly from the plugin settings using an intuitive visual interface. Define post meta fields and link post types to taxonomies—no coding required.
 
 **Debugging console**
-Monitor requests, responses, and errors in real time.
+Track requests, responses, and errors in real time. Diagnose issues quickly and ensure smooth integration with your backend systems.
 
 == Links ==
 

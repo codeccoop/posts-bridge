@@ -43,34 +43,33 @@ Connect to any custom API using standard HTTP methods and authentication using t
 
 ### Bridges
 
-Think of a bridge as a mapping that links your backend data with a post type collection from your WordPress web page. Each item on your backend database can be converted to a post, and each field on your backend tables can be mapped to a post field, post meta or taxonomy terms.
+Bridges act as dynamic mappings between your backend data and WordPress post type collections. Seamlessly convert each database item into a WordPress post, and map backend fields directly to post fields, metadata, or taxonomy terms—effortlessly synchronizing your data.
 
 ### Backends
 
-In Posts Bridge, a backend is a set of configurations that handles the information required to get your posts synchronized over HTTP requests with remote systems.
+Create a reusable "connection profile" for your API. Store your API URL, headers, and credentials once, and apply them across all your bridges. No repetitive setup required—just connect and go.
 
-To register a new backend you only have to set 3 fields:
+### Credentials
 
-1. A unique name for the new connection
-2. The URL of your backend
-3. An array of HTTP headers with connection metadata and credentials
-4. Optional, an HTTP authentication credential (Basic, Bearer, etc)
-
-Once registered, you can reuse your backend connection on your post bridges.
+Secure your HTTP requests with flexible authentication options: API keys, Basic Auth, Bearer Tokens, OAuth, RPC credentials, or Digest Auth. Choose the method that fits your needs.
 
 ### Field Mappers
 
-Field mappers allow you to mutate your backend API responses to match the WordPress post model (e.g., `post_title`, `post_content`, `post_name`, etc.). This enable automatic conversion of backend data into WordPress posts on each synchronization loop (ahead-of-time).
+Transform your backend API responses to align with WordPress’s post structure (e.g., post_title, post_content, post_name).
 
 With mappers you can map backend data to post fields, custom fields and into taxonomy terms (such as categories and tags).
 
 ### Remote Field
 
-If you want your backend data loaded dynamically on each render, you can use the **Remote Field** custom block. This block lets you designate parts of your post templates as remote content. On render time, replace makrs in this blocks content will be replaced with data fetched from the backend.
+Load backend data dynamically at render time. Replace placeholder marks in your post HTML with real-time remote data, ensuring your content is always up to date.
+
+## Background synchronizations
+
+Automate your content workflow by scheduling synchronizations to run in the background. Keep your WordPress site fresh with minimal manual intervention.
 
 ### Custom types
 
-Posts Bridge allows you to register custom post types from the plugin settings with visual and intuitive way, register post meta fields and bind post type to taxonomies.
+Easily register custom post types directly from the plugin settings using an intuitive visual interface. Define post meta fields and link post types to taxonomies—no coding required.
 
 ### REST API Endpoints
 
