@@ -3,6 +3,7 @@ export default function Spinner({ show }) {
 
   return (
     <div
+      id="postsBridgeSpinner"
       style={{
         position: "absolute",
         zIndex: 10,

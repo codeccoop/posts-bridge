@@ -367,12 +367,13 @@ class Posts_Synchronizer extends Singleton {
 	private static function ping_callback() {
 		check_ajax_referer( self::AJAX_NONCE );
 
-		$upload_dir = Posts_Bridge::upload_dir();
-		if ( $upload_dir && is_file( $upload_dir . '/sync-lock' ) ) {
+		$progress = self::get_progress();
+		if ( $progress ) {
 			wp_send_json(
 				array(
-					'success' => false,
-					'error'   => 'ajax_lock',
+					'success'  => false,
+					'error'    => 'ajax_lock',
+					'progress' => $progress,
 				),
 				409
 			);
@@ -396,6 +397,18 @@ class Posts_Synchronizer extends Singleton {
 					'error'   => 'ajax_unauthorized',
 				),
 				401,
+			);
+		}
+
+		$progress = self::get_progress();
+		if ( $progress ) {
+			return wp_send_json(
+				array(
+					'success'  => false,
+					'error'    => 'ajax_lock',
+					'progress' => $progress,
+				),
+				409,
 			);
 		}
 
@@ -493,28 +506,10 @@ class Posts_Synchronizer extends Singleton {
 	 * @return bool|WP_Error;
 	 */
 	private static function sync_bridges( $bridges, $mode ) {
-		$upload_dir = Posts_Bridge::upload_dir() ?: '';
-		if ( ! $upload_dir ) {
-			$error_message = 'Can not create plugin internal folders';
-			Logger::log( $error_message, Logger::ERROR );
-			return new WP_Error( 'internal_server_error', $error_message, array( 'status' => 500 ) );
-		}
+		$lock = self::claim_lock();
 
-		$lock_file = $upload_dir . '/sync-lock';
-		if ( is_file( $lock_file ) ) {
-			$error_message = 'Skip synchronization, lock file found';
-			Logger::log( $error_message, Logger::ERROR );
-			return new WP_Error( 'conflict', $error_message, array( 'status' => 409 ) );
-		}
-
-		// phpcs:disable WordPress.WP.AlternativeFunctions
-		$result = touch( $lock_file );
-		// phpcs:enable
-
-		if ( ! $result ) {
-			$error_message = 'Unable to create the syncrhonization lock file';
-			Logger::log( $error_message, Logger::ERROR );
-			return new WP_Error( 'internal_server_error', $error_message, array( 'status' => 500 ) );
+		if ( is_wp_error( $lock ) ) {
+			return $lock;
 		}
 
 		if ( null === self::$detached_queue ) {
@@ -578,7 +573,7 @@ class Posts_Synchronizer extends Singleton {
 			Logger::log( $error, Logger::ERROR );
 		}
 
-		wp_delete_file( $lock_file );
+		self::release_lock();
 
 		update_option( self::DETACHED_QUEUE, self::$detached_queue, false );
 
@@ -663,14 +658,20 @@ class Posts_Synchronizer extends Singleton {
 			wp_delete_post( $post_id );
 		}
 
+		$count = count( $remote_pairs );
 		Logger::log( "Ends synchronization clean up for post type {$post_type}" );
-		Logger::log( sprintf( 'Remote pairs count: %s', count( $remote_pairs ) ) );
+		Logger::log( "Remote pairs count: {$count}" );
 
 		wp_reset_postdata();
 
 		Logger::log( "Start remote posts synchronization for post type {$post_type}" );
 
+		$ahead_of_time = ! empty( $bridge->mappers() );
+
+		$i = 0;
 		foreach ( $remote_pairs as $foreign_id => $post ) {
+			++$i;
+
 			// if is a new remote record, mock a post as its local counterpart.
 			if ( empty( $post ) ) {
 				$post = new WP_Post(
@@ -683,9 +684,7 @@ class Posts_Synchronizer extends Singleton {
 
 			$rcpt = new Remote_CPT( $post, $foreign_id );
 
-			$mappers = $bridge->mappers();
-
-			if ( $mappers ) {
+			if ( $ahead_of_time ) {
 				$data = $rcpt->fetch();
 
 				if ( is_wp_error( $data ) || empty( $data ) ) {
@@ -705,6 +704,8 @@ class Posts_Synchronizer extends Singleton {
 					Logger::log( "Skip synchrionization for Remote CPT({$post_type}) with foreign id {$foreign_id}" );
 
 					$rcpt->ID && wp_delete_post( $rcpt->ID );
+
+					self::update_progress( $i, $count, $post_type );
 					continue;
 				}
 
@@ -752,6 +753,8 @@ class Posts_Synchronizer extends Singleton {
 			$rcpt = new Remote_CPT( $post_id, $foreign_id, $post_data );
 
 			do_action( 'posts_bridge_after_synchronization', $rcpt, $post_data );
+
+			self::update_progress( $i, $count, $post_type );
 		}
 
 		Logger::log( "Ends remote posts synchronization for post type {$post_type}" );
@@ -794,6 +797,121 @@ class Posts_Synchronizer extends Singleton {
 			}
 		);
 		// phpcs:enable
+	}
+
+	/**
+	 * Synchronization lock file path getter.
+	 *
+	 * @return string|WP_Error
+	 */
+	private static function get_lock_file() {
+		$upload_dir = Posts_Bridge::upload_dir() ?: '';
+		if ( ! $upload_dir ) {
+			$error_message = 'Can not create plugin internal folders';
+			Logger::log( $error_message, Logger::ERROR );
+			return new WP_Error( 'internal_server_error', $error_message, array( 'status' => 500 ) );
+		}
+
+		return $upload_dir . '/sync-lock';
+	}
+
+	/**
+	 * Claims for the synchronization lock ownership.
+	 *
+	 * @return bool|WP_Error
+	 */
+	private static function claim_lock() {
+		$lock_file = self::get_lock_file();
+
+		if ( is_wp_error( $lock_file ) ) {
+			return $lock_file;
+		}
+
+		if ( is_file( $lock_file ) ) {
+			$error_message = 'Skip synchronization, lock file found';
+			Logger::log( $error_message, Logger::ERROR );
+
+			return new WP_Error( 'conflict', $error_message, array( 'status'   => 409 ) );
+		}
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions
+		$result = touch( $lock_file );
+		// phpcs:enable
+
+		if ( ! $result ) {
+			$error_message = 'Unable to create the syncrhonization lock file';
+			Logger::log( $error_message, Logger::ERROR );
+			return new WP_Error( 'internal_server_error', $error_message, array( 'status' => 500 ) );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Release synchronization lock ownership.
+	 *
+	 * @return bool
+	 */
+	private static function release_lock() {
+		$lock_file = self::get_lock_file();
+
+		if ( ! is_wp_error( $lock_file ) && is_file( $lock_file ) ) {
+			return wp_delete_file( $lock_file );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Synchronization progress getter.
+	 *
+	 * @return array|null
+	 */
+	private static function get_progress() {
+		$lock_file = self::get_lock_file();
+
+		if ( is_wp_error( $lock_file ) || ! is_file( $lock_file ) ) {
+			return;
+		}
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions
+		$content = file_get_contents( $lock_file );
+		// phpcs:enable
+
+		$progress = json_decode( $content, true );
+
+		return $progress ?: null;
+	}
+
+	/**
+	 * Updates persisten and multiprocess synchronization progress.
+	 *
+	 * @param int    $index Current synchronization loop step.
+	 * @param int    $total Total amount of synchronizations in the loop.
+	 * @param string $post_type Owner post type of the synchronization loop.
+	 *
+	 * @return bool
+	 */
+	private static function update_progress( $index, $total, $post_type ) {
+		$lock_file = self::get_lock_file();
+
+		if ( is_wp_error( $lock_file ) || ! is_file( $lock_file ) ) {
+			return false;
+		}
+
+		$progress = array(
+			'index'     => $index,
+			'total'     => $total,
+			'post_type' => $post_type,
+		);
+
+		Logger::log( "Synchronization progress: {$progress['post_type']} {$progress['index']}/{$progress['total']}" );
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions
+		$result = file_put_contents( $lock_file, wp_json_encode( $progress ) );
+		// phpcs:enable
+
+		return false !== $result;
 	}
 }
 
