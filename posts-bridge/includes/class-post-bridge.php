@@ -98,7 +98,7 @@ class Post_Bridge {
 					'title'       => _x( 'Single endpoint pattern', 'Bridge schema', 'posts-bridge' ),
 					'description' => __( 'Pattern of the endpoint to fetch a single record', 'posts-bridge' ),
 					'type'        => 'string',
-					'default'     => '/{id}',
+					'default'     => '',
 				),
 				'method'          => array(
 					'title'       => _x( 'Method', 'Bridge schema', 'posts-bridge' ),
