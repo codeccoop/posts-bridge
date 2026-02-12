@@ -42,7 +42,7 @@ Posts Bridge has the following add-ons:
 
 **✏️ CMS**
 
-* [WordPress](https://postsbridge.codeccoop.org/documentation/wp/)
+* [WordPress](https://postsbridge.codeccoop.org/documentation/wordpress/)
 
 **Need a custom integration?**
 
