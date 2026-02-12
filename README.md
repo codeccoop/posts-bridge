@@ -21,7 +21,7 @@ Posts Bridge has the following add-ons:
 
 - [Airtable](https://postsbridge.codeccoop.org/documentation/airtable/)
 - [Google Calendar](https://postsbridge.codeccoop.org/documentation/google-calendar/)
-- [Google Sheets](https://workspace.google.com/products/sheets/)
+- [Google Sheets](https://postsbridge.codeccoop.org/documentation/google-sheets/)
 - [Grist](https://postsbridge.codeccoop.org/documentation/grist/)
 - [Nextcloud](https://postsbridge.codeccoop.org/documentation/nextcloud/)
 
