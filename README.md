@@ -63,7 +63,7 @@ With mappers you can map backend data to post fields, custom fields and into tax
 
 Load backend data dynamically at render time. Replace placeholder marks in your post HTML with real-time remote data, ensuring your content is always up to date.
 
-## Background synchronizations
+### Background synchronizations
 
 Automate your content workflow by scheduling synchronizations to run in the background. Keep your WordPress site fresh with minimal manual intervention.
 
