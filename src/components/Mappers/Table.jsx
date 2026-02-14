@@ -70,6 +70,7 @@ export default function MappersTable({ title, mappers, setMappers }) {
 
   let customOffset = 0;
 
+  const tableName = title.toLowerCase().replace(" ", "-");
   return (
     <>
       <div style={{ display: "flex" }}>
@@ -85,9 +86,9 @@ export default function MappersTable({ title, mappers, setMappers }) {
           {title}
         </label>
       </div>
-      <datalist id="datalist-mappers-api-fields">
+      <datalist id={tableName + "-datalist-mappers-api-fields"}>
         {apiFields.map((f) => (
-          <option key={f.name} value={f.name} />
+          <option key={tableName + f.name} value={f.name} />
         ))}
       </datalist>
 
@@ -116,7 +117,7 @@ export default function MappersTable({ title, mappers, setMappers }) {
                       <>
                         <datalist id={"datalist-" + name + "-" + index}>
                           {datalist.map((val) => (
-                            <option key={val} value={val} />
+                            <option key={tableName + val} value={val} />
                           ))}
                         </datalist>
                         <TextControl
@@ -145,7 +146,7 @@ export default function MappersTable({ title, mappers, setMappers }) {
                               setMapper(index, "foreign", ev.target.value)
                             }
                             style={useInputStyle(foreign)}
-                            list="datalist-mappers-api-fields"
+                            list={tableName + "-datalist-mappers-api-fields"}
                           />
                         </BaseControl>
                       </div>
