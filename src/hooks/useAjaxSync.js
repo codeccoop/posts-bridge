@@ -152,6 +152,11 @@ function showProgress(status) {
     el.innerHTML = `<label for="ajaxProgress">${__("Synchronizing", "posts-bridge")} <b>${status.post_type}</b> post type</label><progress name="ajaxProgress"></progress>`;
 
     root.appendChild(el);
+    el.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "center",
+    });
 
     const spinner = document.getElementById("postsBridgeSpinner");
     if (spinner) {
