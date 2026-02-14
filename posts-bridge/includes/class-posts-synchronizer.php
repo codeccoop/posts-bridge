@@ -466,7 +466,7 @@ class Posts_Synchronizer extends Singleton {
 		self::$detached_queue = get_option( self::DETACHED_QUEUE, array() ) ?: array();
 
 		if ( ! self::$detached_queue ) {
-			return;
+			wp_send_json( array( 'success' => true ) );
 		}
 
 		$queue = self::$detached_queue[0];
