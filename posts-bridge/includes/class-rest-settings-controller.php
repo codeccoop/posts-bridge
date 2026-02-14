@@ -303,11 +303,7 @@ class REST_Settings_Controller extends Base_Controller {
 		$key = sanitize_key( $request['name'] );
 
 		global $wp_meta_keys;
-		$meta = $wp_meta_keys['post'][ $key ] ?? null;
-
-		if ( ! $meta ) {
-			return array();
-		}
+		$meta = $wp_meta_keys['post'][ $key ] ?? array();
 
 		$custom_fields = array();
 		foreach ( $meta as $name => $defn ) {
@@ -318,6 +314,27 @@ class REST_Settings_Controller extends Base_Controller {
 					'default' => $defn['default'] ?? '',
 				),
 			);
+		}
+
+		global $wpdb;
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery
+		$result = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT DISTINCT pm.meta_key FROM {$wpdb->postmeta} pm LEFT JOIN {$wpdb->posts} p ON pm.post_id = p.ID WHERE p.post_type = %s",
+				$key,
+			),
+			ARRAY_A,
+		);
+		// phpcs:enable
+
+		foreach ( $result as $record ) {
+			if ( ! isset( $meta[ $record['meta_key'] ] ) ) {
+				$custom_fields[] = array(
+					'name'   => $record['meta_key'],
+					'schema' => array( 'type' => 'string' ),
+				);
+			}
 		}
 
 		return $custom_fields;

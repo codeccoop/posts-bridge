@@ -593,13 +593,13 @@ class Post_Bridge {
 		foreach ( $tax_mappers as $foreign => $name ) {
 			$terms = $finger->get( $foreign );
 			if ( $terms ) {
-				if ( 'tags_input' === $name ) {
+				if ( 'tags_input' === $name || 'post_tag' === $name ) {
 					$terms = $this->get_post_tags( $terms );
 
 					if ( count( $terms ) ) {
 						$finger->set( 'tags_input', $terms );
 					}
-				} elseif ( 'post_category' === $name ) {
+				} elseif ( 'post_category' === $name || 'category' === $name ) {
 					$terms = $this->get_post_terms( $terms );
 
 					if ( count( $terms ) ) {
