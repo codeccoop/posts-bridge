@@ -193,6 +193,7 @@ class Odoo_Addon extends Addon {
 						'0' => array( 'type' => 'integer' ),
 						'1' => array( 'type' => 'string' ),
 					),
+					'$comment'   => 'many2one',
 				);
 			} else {
 				$schema = array( 'type' => $spec['type'] );

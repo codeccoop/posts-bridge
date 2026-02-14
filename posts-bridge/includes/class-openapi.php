@@ -484,6 +484,8 @@ class OpenAPI {
 			$type   = $schema['type'] ?? null;
 
 			if ( 'array' === $type && isset( $field['schema']['items']['type'] ) ) {
+				$is_item = true;
+
 				$field['schema']['type'] = $field['schema']['items']['type'] . '[]';
 
 				$field['name'] = JSON_Finger::pointer( $field_pointer );
@@ -494,8 +496,16 @@ class OpenAPI {
 				$schema          = $field['schema'];
 				$type            = $schema['type'];
 			} else {
+				$is_item       = false;
 				$field['name'] = JSON_Finger::pointer( $field_pointer );
-				$expansion[]   = $field;
+
+				// capuzilla para representar correctamente el esquema de los campos many2one de Odoo.
+				$comment = $schema['$comment'] ?? null;
+				if ( 'many2one' === $comment ) {
+					$field['schema']['type'] = 'array';
+				}
+
+				$expansion[] = $field;
 			}
 
 			if ( 'object' === $type ) {
@@ -518,7 +528,7 @@ class OpenAPI {
 
 				$object_fields = self::expand_fields_schema( $object_fields, $field_pointer );
 				$expansion     = array_merge( $expansion, $object_fields );
-			} elseif ( $type && is_int( $field_pointer[ count( $field_pointer ) - 1 ] ) ) {
+			} elseif ( $type && $is_item ) {
 				$field['name'] = JSON_Finger::pointer( $field_pointer );
 				$expansion[]   = $field;
 			}
