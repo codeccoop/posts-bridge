@@ -156,7 +156,7 @@ export default function MappersTable({ title, mappers, setMappers }) {
                           justifyContent: "center",
                           marginLeft: "2px",
                         }}
-                        disabled={!name || apiFieldOptions.length === 0}
+                        disabled={apiFieldOptions.length === 0}
                         variant="secondary"
                         onClick={() => setFieldSelector(index)}
                         __next40pxDefaultSize

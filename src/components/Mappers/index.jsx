@@ -15,6 +15,9 @@ const MODEL = {
   post_status: __("Status", "posts-bridge"),
   featured_media: __("Featured media", "posts-bridge"),
   post_date: __("Date", "posts-bridge"),
+  post_date_gmt: __("Date GMT", "posts-bridge"),
+  post_modified: __("Modified", "posts-bridge"),
+  post_modified_gmt: __("Modified GMT", "posts-bridge"),
 };
 
 export default function Mappers({
