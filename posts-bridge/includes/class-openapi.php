@@ -459,7 +459,7 @@ class OpenAPI {
 		}
 
 		$path = strpos( $path, '/' ) !== 0 ? '/' . $path : $path;
-		return preg_replace( '/\/+$/', '', $path );
+		return rtrim( $path, '/' );
 	}
 
 	/**

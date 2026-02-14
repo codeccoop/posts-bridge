@@ -29,7 +29,7 @@ class Addon extends Singleton {
 	/**
 	 * Handles addon's registry option name.
 	 *
-	 * @var string registry
+	 * @var string
 	 */
 	private const REGISTRY = 'posts_bridge_addons';
 
@@ -107,7 +107,7 @@ class Addon extends Singleton {
 	 * @return array Addons registry state.
 	 */
 	final public static function registry() {
-		$state      = get_option( self::REGISTRY, array( 'rest' => true ) ) ?: array();
+		$state      = get_option( self::REGISTRY, array( 'rest' => true ) ) ?: array( 'rest' => true );
 		$addons_dir = POSTS_BRIDGE_ADDONS_DIR;
 		$addons     = array_diff( scandir( $addons_dir ), array( '.', '..' ) );
 
@@ -370,10 +370,7 @@ class Addon extends Singleton {
 	protected function construct( ...$args ) {
 		if ( empty( static::NAME ) || empty( static::TITLE ) ) {
 			Logger::log( 'Skip invalid addon registration', Logger::DEBUG );
-			Logger::log(
-				'Addon name and title const are required',
-				Logger::ERROR
-			);
+			Logger::log( 'Addon name and title const are required', Logger::ERROR );
 			return;
 		}
 

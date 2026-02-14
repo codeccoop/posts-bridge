@@ -1,4 +1,9 @@
 <?php
+/**
+ * Remote Field custom block registration.
+ * 
+ * @package postsbridge
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit();

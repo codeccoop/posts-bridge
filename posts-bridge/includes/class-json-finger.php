@@ -82,7 +82,7 @@ class JSON_Finger {
 					++$i;
 				}
 
-				if ( strlen( $key ) === 0 ) {
+				if ( 0 === strlen( $key ) ) {
 					$key = INF;
 				} elseif ( intval( $key ) != $key ) {
 					if ( ! preg_match( '/^"[^"]+"$/', $key, $matches ) ) {
@@ -267,7 +267,7 @@ class JSON_Finger {
 			return $this->data[ $pointer ];
 		}
 
-		if ( strstr( $pointer, '[]' ) !== false ) {
+		if ( false !== strstr( $pointer, '[]' ) ) {
 			return $this->get_expanded( $pointer, $expansion );
 		}
 

@@ -37,7 +37,7 @@ export default function Edit({ context: { postType: editorPostType } }) {
 
   const [isTemplate, setIsTemplate] = useState(false);
   const [remoteFields, setRemoteFields] = useState([]);
-  const [remoteCpts, setRemoteCpts] = useState(null);
+  const [remoteCpts, setRemoteCpts] = useState([]);
   const [remoteCpt, setRemoteCpt] = useState(null);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function Edit({ context: { postType: editorPostType } }) {
     const currentPostType = getCurrentPostType();
     if (currentPostType === "wp_template" && !isTemplate) {
       setIsTemplate(true);
-    } else if (currentPostType !== "template" && isTemplate) {
+    } else if (currentPostType !== "wp_template" && isTemplate) {
       setIsTemplate(false);
     }
   }, []);
@@ -96,9 +96,7 @@ export default function Edit({ context: { postType: editorPostType } }) {
   }, [isTemplate, remoteCpts]);
 
   const rcptOptions = useMemo(() => {
-    const options = [{ label: "", value: "" }];
-    if (remoteCpts === null) return options;
-    return options.concat(
+    return [{ label: "", value: "" }].concat(
       remoteCpts.map((rcpt) => ({
         value: rcpt,
         label: rcpt,
@@ -179,13 +177,13 @@ export default function Edit({ context: { postType: editorPostType } }) {
           </p>
           <p>
             {__(
-              "There where you want to place some remote value, use the `{{fieldName}}` marks. Use the list below to see available fields.",
+              "There where you want to show some remote value, use the `{{fieldName}}` marks. Use the list below to see available fields.",
               "posts-bridge"
             )}
           </p>
           <p>
             {__(
-              "Then, when the block is rendered, this marks will be replaced with its corresponding remote value.",
+              "Then, when the block is rendered, this placeholder marks will be replaced with its corresponding remote value.",
               "posts-bridge"
             )}
           </p>
@@ -253,7 +251,7 @@ const TEMPLATE = [
   [
     "core/paragraph",
     {
-      placeholder: __("Setup your remote field template"),
+      placeholder: __("Inside this block, placeholder marks will be replaced by remote values!", "posts-bridge"),
     },
   ],
 ];

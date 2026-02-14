@@ -240,16 +240,17 @@ class Posts_Bridge extends Base_Plugin {
 	 */
 	private static function the_post( $post ) {
 		global $posts_bridge_remote_cpt;
+		$posts_bridge_remote_cpt = null;
 
-		if ( ! empty( $post ) && ! empty( $post->ID ) ) {
-			$post_types = PBAPI::get_remote_cpts();
-
-			if ( in_array( $post->post_type, $post_types, true ) ) {
-				$posts_bridge_remote_cpt = new Remote_CPT( $post );
-			}
-		} else {
-			$posts_bridge_remote_cpt = null;
+		if ( empty( $post ) || empty( $post-ID ) ) {
+			return;
 		}
+
+		if ( ! in_array( $post->post_type, $post_types, true ) ) {
+			return;
+		}
+
+		$posts_brdge_remote_cpt = new Remote_CPT( $post );
 	}
 
 	/**
