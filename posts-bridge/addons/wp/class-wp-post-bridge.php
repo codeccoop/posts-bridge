@@ -120,45 +120,41 @@ class WP_Post_Bridge extends Post_Bridge {
 	private function remote_data( $data ) {
 		$backend = $this->backend();
 
-		unset( $data['id'] );
 		unset( $data['guid'] );
-		unset( $data['author'] );
 
-		$aliases = array( 'date_gmt', 'modified', 'modified_gmt', 'password' );
-		foreach ( $aliases as $alias ) {
-			$data[ 'post_' . $alias ] = $data[ $alias ] ?? null;
-			unset( $data[ $alias ] );
+		if ( wp_is_rest_endpoint() ) {
+			unset( $data['id'] );
 		}
 
-		foreach ( $data as $key => $value ) {
-			if ( is_array( $value ) && isset( $data[ $key ]['raw'] ) ) {
-				$data[ $key ] = $data[ $key ]['raw'];
-			}
-		}
-
+		// Replace attachment URLs from post content by local attachment URLs.
 		$attachments = $data['_links']['wp:attachments'] ?? array();
 		foreach ( $attachments as $attachment ) {
-			$res         = $backend->get( $attachment['href'] );
+			$res = $backend->get( $attachment['href'] );
+			if ( is_wp_error( $res ) ) {
+				continue;
+			}
+
 			$attachments = $res['data'];
 
 			foreach ( $attachments as $attachment ) {
-				$attachment_id = Remote_Featured_Media::handle(
-					$attachment['source_url']
-				);
+				$attachment_id = Remote_Featured_Media::handle( $attachment['source_url'] );
 
-				$url                  = wp_get_attachment_url( $attachment_id );
-				$data['post_content'] = str_replace(
-					$attachment['source_url'],
-					$url,
-					$data['post_content']
-				);
+				if ( $attachment_id ) {
+					$url = wp_get_attachment_url( $attachment_id );
+
+					$data['post_content'] = str_replace(
+						$attachment['source_url'],
+						$url,
+						$data['post_content']
+					);
+				}
 			}
 		}
 
-		if ( isset( $data['_links']['wp:featuredmedia'][0]['href'] ) ) {
-			$res = $backend->get(
-				$data['_links']['wp:featuredmedia'][0]['href']
-			);
+		// Replace featured_media ID by its remote URL.
+		$featured_media_href = $data['_links']['wp:featuredmedia'][0]['href'] ?? null;
+		if ( $featured_media_href ) {
+			$res = $backend->get( $featured_media_href );
 
 			if ( ! is_wp_error( $res ) ) {
 				$attachment             = $res['data'];
@@ -166,9 +162,9 @@ class WP_Post_Bridge extends Post_Bridge {
 			}
 		}
 
+		// Fetch remote taxonomy terms and replace IDs by names.
 		$taxonomies       = $data['_links']['wp:term'] ?? array();
-		$known_taxonomies = array_keys( get_taxonomies() );
-
+		$known_taxonomies = $taxonomies ? array_keys( get_taxonomies() ) : array();
 		foreach ( $taxonomies as $tax ) {
 			if ( ! in_array( $tax['taxonomy'], $known_taxonomies, true ) ) {
 				continue;
