@@ -5,7 +5,7 @@ Tags: synchronization, automation, integration, http api, productivity, odoo, do
 Donate link: https://buymeacoffee.com/codeccoop
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable Tag: 4.1.2
+Stable Tag: 4.1.3
 Tested up to: 6.9
 
 Synchronize backend data with WordPress post collections over HTTP APIs, enabling remote and automated web content management.
@@ -121,6 +121,19 @@ You can get support from Còdec using the [Posts Bridge support forum](https://w
 
 == Changelog ==
 
+= 4.1.3 =
+* feat: add gmt date fields in bridge mappers
+* feat: scroll into view after ajax progress display
+* feat: wordpress schema introspection as data to json loops
+* fix: sync ping json returns
+* fix: openapi expand fields schema loop
+
+= 4.1.2 =
+* feat: display ajax synchronization progress
+* feat: always support default wp taxonomies
+* feat: cpt registration api public methods
+* fix: cache introspection transient names
+
 = 4.1.1 =
 * feat: full live fetch strategy with automatic post titles
 * feat: detached synchronizations
@@ -132,27 +145,27 @@ You can get support from Còdec using the [Posts Bridge support forum](https://w
 * feat: odoo pings as login requests
 
 = 4.1.0 =
-feat: apply wp coding standards
-feat: plugin repo directory refactor
-feat: http deps as library
-feat: grist addon
-feat: airtable addon
-feat: holded addon
-feat: google calendar addon
-feat: nextcloud addon refactor
-feat: odoo addon refactor
-feat: dolibarr addon refactor
-feat: openapi response introspections
-feat: new cpts settings tab and support for custom fields
-feat: addon endpoints and introspection
-feat: bridge single_endpoint pattern
-feat: move lock files to uploads
-feat: mappers api fields datalists
-feat: post custom fields and taxonomies datalists
-feat: attachments requested with backends
-feat: addons http defaults registration
-feat: dropdown select search input
-fix: gsheets value range url encoding
+* feat: apply wp coding standards
+* feat: plugin repo directory refactor
+* feat: http deps as library
+* feat: grist addon
+* feat: airtable addon
+* feat: holded addon
+* feat: google calendar addon
+* feat: nextcloud addon refactor
+* feat: odoo addon refactor
+* feat: dolibarr addon refactor
+* feat: openapi response introspections
+* feat: new cpts settings tab and support for custom fields
+* feat: addon endpoints and introspection
+* feat: bridge single_endpoint pattern
+* feat: move lock files to uploads
+* feat: mappers api fields datalists
+* feat: post custom fields and taxonomies datalists
+* feat: attachments requested with backends
+* feat: addons http defaults registration
+* feat: dropdown select search input
+* fix: gsheets value range url encoding
 
 = 4.0.1 =
 * feat: odoo add-on jobs template
