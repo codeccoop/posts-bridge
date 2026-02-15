@@ -62,7 +62,7 @@ export default function ApiSchemaProvider({ children, bridge }) {
 
   const endpointsTimeout = useRef();
   useEffect(() => {
-    if (!backend || !bridge.method || endpoints.get(endpointsKey)) {
+    if (!backend || !bridge?.method || endpoints.get(endpointsKey)) {
       return;
     }
 
@@ -75,7 +75,7 @@ export default function ApiSchemaProvider({ children, bridge }) {
       clearTimeout(endpointsTimeout.current);
       abort && abort();
     };
-  }, [endpointsKey, backend, bridge.method]);
+  }, [endpointsKey, backend, bridge?.method]);
 
   const schemaKey = useMemo(() => {
     if (!bridge?.method || !backend?.name) return "";
