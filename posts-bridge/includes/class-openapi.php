@@ -411,6 +411,10 @@ class OpenAPI {
 	private function body_to_params( $body ) {
 		$parameters = array();
 
+		if ( isset( $body['$ref'] ) ) {
+			$body = $this->expand_refs( $body );
+		}
+
 		foreach ( $body['content'] as $encoding => $obj ) {
 			$obj = $this->expand_refs( $obj );
 
