@@ -1,7 +1,7 @@
 <?php
 /**
  * Remote Field custom block registration.
- * 
+ *
  * @package postsbridge
  */
 
