@@ -441,6 +441,8 @@ class REST_Settings_Controller extends Base_Controller {
 			$backend['credential']            = $credential['name'];
 			$introspection_data['backend']    = $backend;
 			$introspection_data['credential'] = $credential;
+
+			Credential::temp_registration( $credential );
 		} elseif ( ! empty( $backend['credential'] ) ) {
 			$credential = PBAPI::get_credential( $backend['credential'] );
 
@@ -450,7 +452,6 @@ class REST_Settings_Controller extends Base_Controller {
 		}
 
 		Backend::temp_registration( $backend );
-		Credential::temp_registration( $credential );
 
 		self::$introspection_data = wp_json_encode( $introspection_data );
 		return array( $addon, $backend['name'] );
