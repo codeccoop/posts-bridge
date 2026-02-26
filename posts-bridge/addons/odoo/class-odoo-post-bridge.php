@@ -142,6 +142,10 @@ class Odoo_Post_Bridge extends Post_Bridge {
 	 * @return array|WP_Error Tuple with RPC session id and user id.
 	 */
 	private static function rpc_login( $login, $backend ) {
+		if ( self::$session ) {
+			return self::$session;
+		}
+
 		$session_id = 'posts-bridge-' . time();
 
 		$payload = self::rpc_payload( $session_id, 'common', 'login', $login );
@@ -177,12 +181,12 @@ class Odoo_Post_Bridge extends Post_Bridge {
 	 * @return array{0:string, 1:integer, 2:string}|WP_Error
 	 */
 	public function login() {
-		if ( self::$session ) {
-			return self::$session;
-		}
-
 		if ( ! $this->is_valid ) {
-			return new WP_Error( 'invalid_bridge', 'Bridge is invalid', (array) $this->data );
+			return new WP_Error(
+				'invalid_bridge',
+				'Bridge is invalid',
+				(array) $this->data,
+			);
 		}
 
 		$backend = $this->backend();
