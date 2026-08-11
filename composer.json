@@ -1,5 +1,6 @@
 {
   "name": "codeccoop/posts-bridge",
+  "version": "4.2.0",
   "scripts": {
     "test": "vendor/bin/phpunit -c phpunit.xml.dist",
     "lint": "vendor/bin/phpcs",

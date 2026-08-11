@@ -5,8 +5,8 @@ Tags: synchronization, automation, integration, http api, productivity, odoo, do
 Donate link: https://buymeacoffee.com/codeccoop
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Stable Tag: 4.1.3
-Tested up to: 6.9
+Stable Tag: 4.2.0
+Tested up to: 7.0
 
 Synchronize backend data with WordPress post collections over HTTP APIs, enabling remote and automated web content management.
 
@@ -120,6 +120,12 @@ You can get support from Còdec using the [Posts Bridge support forum](https://w
 6. Debug console – Monitor and troubleshoot requests.
 
 == Changelog ==
+
+= 4.2.0 =
+* feat: acf custom fields introspection by post type
+* feat: handle acf custom fields on rcpt synchronizations
+* feat: add new hidden post types and postmeta keys
+* fix: grist and airtable http defaults
 
 = 4.1.3 =
 * feat: add gmt date fields in bridge mappers
