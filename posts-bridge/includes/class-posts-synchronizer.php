@@ -624,6 +624,8 @@ class Posts_Synchronizer extends Singleton {
 			return false;
 		}
 
+		$custom_fields = Remote_CPT::custom_fields( $post_type );
+
 		$remote_pairs = array();
 		foreach ( $foreign_ids as $id ) {
 			$remote_pairs[ $id ] = 0;
@@ -731,11 +733,27 @@ class Posts_Synchronizer extends Singleton {
 			Logger::log( "Remote CPT({$post_type}) #{$foreign_id} remote data after mappers" );
 			Logger::log( $post_data );
 
+			$meta_input = &$post_data['meta_input'];
+			$acf_fields = array();
+
+			foreach ( $custom_fields as $cf ) {
+				if ( ! $cf['_acf'] || ! isset( $meta_input[ $cf['name'] ] ) ) {
+					continue;
+				}
+
+				$acf_fields[ $cf['name'] ] = $meta_input[ $cf['name'] ];
+				unset( $meta_input[ $cf['name'] ] );
+			}
+
 			$post_id = wp_insert_post( $post_data );
 
 			if ( is_wp_error( $post_id ) || ! $post_id ) {
 				Logger::log( 'Post creation error on synchronization', Logger::ERROR );
 				throw new Exception( 'insert_error', 500 );
+			}
+
+			foreach ( $acf_fields as $field_name => $field_value ) {
+				update_field( $field_name, $field_value, $post_id );
 			}
 
 			update_post_meta( $post_id, Remote_CPT::FOREIGN_KEY_HANDLE, $foreign_id );
@@ -748,17 +766,6 @@ class Posts_Synchronizer extends Singleton {
 
 			if ( $featured_media ) {
 				set_post_thumbnail( $post_id, $featured_media );
-			}
-
-			if ( ! empty( $post_data['meta_input'] ) && Posts_Bridge::acf_support() ) {
-				foreach ( $post_data['meta_input'] as $field_name => $field_value ) {
-					// $field = acf_maybe_get_field( $field_name, $post_id, false );
-					// if ( ! $field ) {
-					// continue;
-					// }
-
-					update_field( $field_name, $field_value, $post_id );
-				}
 			}
 
 			$rcpt = new Remote_CPT( $post_id, $foreign_id, $post_data );

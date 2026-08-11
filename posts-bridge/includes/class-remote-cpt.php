@@ -193,4 +193,141 @@ class Remote_CPT {
 	public function meta( $field, $single = true ) {
 		return get_post_meta( $this->ID, $field, $single );
 	}
+
+	/**
+	 * Returns the collection of known custom fields related to a given post type.
+	 * Known custom fields includes the global $wp_meta_keys object, ACF field groups
+	 * and the meta_key column of the wp_postmeta db table.
+	 *
+	 * @param string $post_type Post type key.
+	 *
+	 * @return array
+	 */
+	public static function custom_fields( $post_type ) {
+		global $wp_meta_keys;
+		$pt_meta = $wp_meta_keys['post'][ $post_type ] ?? array();
+
+		$custom_fields = array();
+
+		foreach ( $pt_meta as $name => $defn ) {
+			$custom_fields[] = array(
+				'name'   => $name,
+				'schema' => array(
+					'type'    => $defn['type'],
+					'default' => $defn['default'] ?? '',
+				),
+				'_acf'   => false,
+			);
+		}
+
+		if ( Posts_Bridge::acf_support() ) {
+			$groups = acf_get_field_groups();
+
+			foreach ( $groups as $group ) {
+				if ( ! is_array( $group['location'] ?? false ) ) {
+					continue;
+				}
+
+				$match = true;
+
+				// Iterate over a list of location rule_groups and evaluate
+				// with or operators: a match in any of the groups results
+				// in a positive output.
+				foreach ( $group['location'] as $rule_group ) {
+					// Iterate over a list of location rules for each rule_group
+					// and evaluate with and operators: all rules must be passed
+					// in order to result in a positive output.
+					foreach ( $rule_group as $rule ) {
+						$rule = acf_validate_location_rule( $rule );
+
+						if ( 'post_type' !== $rule['param'] ) {
+							continue;
+						}
+
+						if ( '==' === $rule['operator'] && $rule['value'] !== $post_type ) {
+							$match = false;
+						} elseif ( '!=' === $rule['operator'] && $rule['value'] === $post_type ) {
+							$match = false;
+						}
+
+						if ( ! $match ) {
+							break;
+						}
+					}
+
+					if ( ! $match ) {
+						break;
+					}
+				}
+
+				if ( $match ) {
+					$fields = acf_get_fields( $group['ID'] );
+
+					foreach ( $fields as $field ) {
+						switch ( $field['type'] ) {
+							case 'number':
+							case 'boolean':
+								$field_type = $field['type'];
+								break;
+							case 'text':
+							case 'select':
+							default:
+								$field_type = 'string';
+								break;
+						}
+
+						$pt_meta[ $field['name'] ] = array(
+							'type'              => $field_type,
+							'label'             => $field['label'],
+							'description'       => '',
+							'single'            => true,
+							'sanitize_callback' => null,
+							'auth_callback'     => '__return_true',
+							'show_in_rest'      => true,
+							'revisions_enabled' => true,
+							'_name'             => $field['_name'],
+						);
+
+						$pt_meta[ '_' . $field['name'] ] = $pt_meta[ $field['name'] ];
+
+						$custom_fields[] = array(
+							'name'   => $field['name'],
+							'schema' => array( 'type' => $field_type ),
+							'_acf'   => true,
+						);
+					}
+				}
+			}
+		}
+
+		global $wpdb;
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery
+		$result = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT DISTINCT pm.meta_key FROM {$wpdb->postmeta} pm LEFT JOIN {$wpdb->posts} p ON pm.post_id = p.ID WHERE p.post_type = %s",
+				$post_type,
+			),
+			ARRAY_A,
+		);
+		// phpcs:enable
+
+		$internal_fields = array( '_edit_lock', '_posts_bridge_foreign_key', '_thumbnail_id' );
+
+		foreach ( $result as $record ) {
+			if ( in_array( $record['meta_key'], $internal_fields, true ) ) {
+				continue;
+			}
+
+			if ( ! isset( $pt_meta[ $record['meta_key'] ] ) ) {
+				$custom_fields[] = array(
+					'name'   => $record['meta_key'],
+					'schema' => array( 'type' => 'string' ),
+					'_acf'   => false,
+				);
+			}
+		}
+
+		return $custom_fields;
+	}
 }

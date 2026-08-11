@@ -165,7 +165,8 @@ class Posts_Bridge extends Base_Plugin {
 			'init',
 			static function () {
 				if ( defined( 'ACF_VERSION' ) ) {
-					self::$acf_support = true;
+					self::$acf_support = function_exists( 'acf_get_field_groups' )
+						&& function_exists( 'acf_get_fields' );
 				}
 			},
 			9,
