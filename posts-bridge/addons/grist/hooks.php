@@ -17,8 +17,8 @@ add_filter(
 		}
 
 		$schema['properties']['foreign_key']['const']     = 'id';
-		$schema['properties']['endpoint']['default']      = '/v0/{baseId}/{tableName}/records';
-		$schema['properties']['single_endpoint']['const'] = '/v0/{baseId}/{tableName}/records';
+		$schema['properties']['endpoint']['default']      = '/api/docs/{docId}/tables/{tableId}/records';
+		$schema['properties']['single_endpoint']['const'] = '/api/docs/{docId}/tables/{tableId}/records';
 		$schema['properties']['backend']['default']       = 'Grist API';
 		$schema['properties']['method']['const']          = 'GET';
 
@@ -54,7 +54,7 @@ function posts_bridge_grist_register_http_defaults( $setting ) {
 	$exists = array_search( $backend_url, $urls, true );
 
 	if ( false === $exists ) {
-		$names = array_column( $backends, 'base_url' );
+		$names = array_column( $backends, 'name' );
 
 		if ( ! in_array( $backend_name, $names, true ) ) {
 			$backends[] = array(
@@ -72,22 +72,17 @@ function posts_bridge_grist_register_http_defaults( $setting ) {
 			$setting['backends'] = $backends;
 		}
 
-		$schemas = array_column( $credentials, 'schema' );
-		$exists  = array_search( $credential_schema, $schemas, true );
+		$names = array_column( $credentials, 'name' );
 
-		if ( false === $exists ) {
-			$names = array_column( $credentials, 'name' );
+		if ( ! in_array( $credential_name, $names, true ) ) {
+			$credentials[] = array(
+				'name'         => $credential_name,
+				'schema'       => $credential_schema,
+				'access_token' => 'your-api-key',
+				'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
+			);
 
-			if ( ! in_array( $credential_name, $names, true ) ) {
-				$credentials[] = array(
-					'name'         => $credential_name,
-					'schema'       => $credential_schema,
-					'access_token' => 'your-api-key',
-					'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
-				);
-
-				$setting['credentials'] = $credentials;
-			}
+			$setting['credentials'] = $credentials;
 		}
 	}
 

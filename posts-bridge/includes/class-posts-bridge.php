@@ -43,9 +43,17 @@ class Posts_Bridge extends Base_Plugin {
 	/**
 	 * Handle post types REST Controller instances
 	 *
-	 * @var array<REST_Controller> $rest_controllers Array of active REST_Controller instances
+	 * @var array<\WP_REST_Controller>
 	 */
 	private static $rest_controllers = array();
+
+	/**
+	 * Handle a boolean value indicating if Posts Bridge should support ACF custom fields and
+	 * post types.
+	 *
+	 * @var bool
+	 */
+	private static $acf_support = false;
 
 	/**
 	 * Initialized addons, sets up plugin hooks and run db migrations if db version mismatches
@@ -152,6 +160,27 @@ class Posts_Bridge extends Base_Plugin {
 			10,
 			2
 		);
+
+		add_action(
+			'init',
+			static function () {
+				if ( defined( 'ACF_VERSION' ) ) {
+					self::$acf_support = function_exists( 'acf_get_field_groups' )
+						&& function_exists( 'acf_get_fields' );
+				}
+			},
+			9,
+			0,
+		);
+	}
+
+	/**
+	 * Public proxy to the static acf_support attribute.
+	 *
+	 * @return bool
+	 */
+	public static function acf_support() {
+		return self::$acf_support;
 	}
 
 	/**
@@ -201,7 +230,7 @@ class Posts_Bridge extends Base_Plugin {
 	}
 
 	/**
-	 * Enqueue admin client scripts
+	 * Enqueue admin client scripts.
 	 */
 	private static function admin_enqueue_scripts() {
 		$version = self::version();

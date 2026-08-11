@@ -36,6 +36,21 @@ class Custom_Post_Type {
 		'wp_navigation',
 		'wp_font_family',
 		'wp_font_face',
+		/* ACF */
+		'acf-field',
+		'acf-field-group',
+		'acf-post-type',
+		'acf-taxonomy',
+		/* WPForms */
+		'wpforms',
+		'wpforms-template',
+		/* Contact Form 7 */
+		'wpcf7_contact_form',
+		/* Forminator */
+		'frm_form_actions',
+		'frm_styles',
+		/* Ninja forms */
+		'nf_sub',
 	);
 
 	/**
@@ -407,7 +422,9 @@ class Custom_Post_Type {
 			return self::$registry;
 		}
 
-		self::$registry = (array) get_option( self::OPTION_NAME, array() );
+		$post_types     = (array) get_option( self::OPTION_NAME, array() );
+		self::$registry = $post_types;
+
 		return self::$registry;
 	}
 
@@ -436,14 +453,14 @@ class Custom_Post_Type {
 	public static function post_types() {
 		$post_types = array_keys( get_post_types() );
 
-		return array_values(
-			array_filter(
-				$post_types,
-				static function ( $post_type ) {
-					return ! in_array( $post_type, self::INTERNAL_TYPES, true );
-				}
-			)
-		);
+		$public_post_types = array();
+		foreach ( $post_types as $pt ) {
+			if ( ! in_array( $pt, self::INTERNAL_TYPES, true ) ) {
+				$public_post_types[] = $pt;
+			}
+		}
+
+		return $public_post_types;
 	}
 
 	/**
@@ -452,7 +469,7 @@ class Custom_Post_Type {
 	 * @param string $name Type name.
 	 * @param array  $args Registration arguments.
 	 *
-	 * @return WP_Post_Type|WP_Error
+	 * @return \WP_Post_Type|\WP_Error
 	 */
 	private static function register_post_type( $name, $args ) {
 		$args['labels'] = array(
@@ -504,6 +521,7 @@ class Custom_Post_Type {
 					'general',
 					static function ( $data ) {
 						$data['post_types'] = self::post_types();
+
 						return $data;
 					}
 				);
@@ -514,12 +532,57 @@ class Custom_Post_Type {
 						if ( isset( $data['post_types'] ) ) {
 							unset( $data['post_types'] );
 						}
+
 						return $data;
 					},
 					9
 				);
 			}
 		);
+	}
+
+	private static function get_acf_cpts( $filter = null ) {
+		if ( ! function_exists( 'acf_get_raw_post_types' ) ) {
+			return array();
+		}
+
+		$acf_raw_cpts = acf_get_raw_post_types();
+
+		$acf_cpts = array();
+		foreach ( $acf_raw_cpts as $acf_raw_cpt ) {
+			$name = $acf_raw_cpt['post_type'];
+
+			if ( is_array( $filter ) && ! in_array( $name, $filter, true ) ) {
+				continue;
+			}
+
+			$acf_cpts[] = array(
+				'name'                => $name,
+				'label'               => $acf_raw_cpt['labels']['name'],
+				'singular_label'      => $acf_raw_cpt['labels']['singular_label'],
+				'description'         => $acf_raw_cpt['description'],
+				'public'              => $acf_raw_cpt['public'],
+				'exclude_from_search' => $acf_raw_cpt['exclude_from_search'],
+				'publicly_queryable'  => $acf_raw_cpt['publicly_queryable'],
+				'show_ui'             => $acf_raw_cpt['show_ui'],
+				'show_in_menu'        => $acf_raw_cpt['show_in_menu'],
+				'show_in_nav_menus'   => $acf_raw_cpt['show_in_nav_menus'],
+				'show_in_rest'        => $acf_raw_cpt['show_in_rest'],
+				'rest_base'           => $acf_raw_cpt['rest_base'],
+				'menu_position'       => $acf_raw_cpt['menu_position'],
+				'capability_type'     => $acf_raw_cpt['singular_capability_name'],
+				'map_meta_cap'        => true,
+				'supports'            => $acf_raw_cpt['supports'],
+				'taxonomies'          => $acf_raw_cpt['taxonomies'],
+				'has_archive'         => $acf_raw_cpt['has_archive'],
+				'rewrite'             => $acf_raw_cpt['rewrite']['permalink_rewrite'] ?? false,
+				'query_var'           => $acf_raw_cpt['query_var'],
+				'meta'                => array(),
+				'_acf'                => true,
+			);
+		}
+
+		return $acf_cpts;
 	}
 
 	/**
@@ -561,34 +624,34 @@ class Custom_Post_Type {
 				: 'post',
 			'map_meta_cap'        => boolval( $args['map_meta_cap'] ?? true ),
 			'supports'            => isset( $args['supports'] ) && is_array( $args['supports'] )
-				? array_map(
-					function ( $token ) {
-						return trim( $token );
-					},
-					array_filter(
-						$args['supports'],
-						static function (
-							$token
-						) {
-							$token  = trim( $token );
-							$tokens = self::schema()['properties']['supports']['enum'];
+			? array_map(
+				function ( $token ) {
+					return trim( $token );
+				},
+				array_filter(
+					$args['supports'],
+					static function (
+						$token
+					) {
+						$token  = trim( $token );
+						$tokens = self::schema()['properties']['supports']['enum'];
 
-							return in_array( $token, $tokens, true );
-						}
-					)
+						return in_array( $token, $tokens, true );
+					}
 				)
-				: self::schema()['properties']['supports']['default'],
+			)
+			: self::schema()['properties']['supports']['default'],
 			'taxonomies'          => isset( $args['taxonomies'] ) && is_string( $args['taxonomies'] )
-				? implode(
-					',',
-					array_map(
-						function ( $tax ) {
-							return sanitize_text_field( trim( $tax ) );
-						},
-						explode( ',', $args['taxonomies'] )
-					)
+			? implode(
+				',',
+				array_map(
+					function ( $tax ) {
+						return sanitize_text_field( trim( $tax ) );
+					},
+					explode( ',', $args['taxonomies'] )
 				)
-				: array(),
+			)
+			: array(),
 			'has_archive'         => boolval( $args['has_archive'] ?? false ),
 			'rewrite'             => ! empty( $args['rewrite'] ) && is_string( $args['rewrite'] )
 				? sanitize_title( $args['rest_base'] )

@@ -272,7 +272,7 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Callback for GET requests to the post_types endpoint.
 	 *
-	 * @param REST_Request $request Request instance.
+	 * @param \WP_REST_Request $request Request instance.
 	 *
 	 * @return array|WP_Error Post type data.
 	 */
@@ -295,55 +295,19 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Callback for the GET request to the post meta endpoint.
 	 *
-	 * @param REST_Request $request Request object.
+	 * @param \WP_REST_Request $request Request object.
 	 *
 	 * @return array|WP_Error
 	 */
 	private static function get_post_type_meta( $request ) {
 		$key = sanitize_key( $request['name'] );
-
-		global $wp_meta_keys;
-		$meta = $wp_meta_keys['post'][ $key ] ?? array();
-
-		$custom_fields = array();
-		foreach ( $meta as $name => $defn ) {
-			$custom_fields[] = array(
-				'name'   => $name,
-				'schema' => array(
-					'type'    => $defn['type'],
-					'default' => $defn['default'] ?? '',
-				),
-			);
-		}
-
-		global $wpdb;
-
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery
-		$result = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT DISTINCT pm.meta_key FROM {$wpdb->postmeta} pm LEFT JOIN {$wpdb->posts} p ON pm.post_id = p.ID WHERE p.post_type = %s",
-				$key,
-			),
-			ARRAY_A,
-		);
-		// phpcs:enable
-
-		foreach ( $result as $record ) {
-			if ( ! isset( $meta[ $record['meta_key'] ] ) ) {
-				$custom_fields[] = array(
-					'name'   => $record['meta_key'],
-					'schema' => array( 'type' => 'string' ),
-				);
-			}
-		}
-
-		return $custom_fields;
+		return Remote_CPT::custom_fields( $key );
 	}
 
 	/**
 	 * Callback for POST requests to the post types endpoint.
 	 *
-	 * @param REST_Request $request Request instance.
+	 * @param \WP_REST_Request $request Request instance.
 	 *
 	 * @return array|WP_Error Registration result.
 	 */
@@ -377,7 +341,7 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Callback for DELETE requests to the post types endpoint.
 	 *
-	 * @param REST_Request $request Request instance.
+	 * @param \WP_REST_Request $request Request instance.
 	 *
 	 * @return array|WP_Error Removal result.
 	 */
@@ -402,8 +366,8 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Performs a request validation and sanitization
 	 *
-	 * @param string          $addon Target addon name.
-	 * @param WP_REST_Request $request Request instance.
+	 * @param string           $addon Target addon name.
+	 * @param \WP_REST_Request $request Request instance.
 	 *
 	 * @return array{0:Addon, 1:string}|WP_Error
 	 */
@@ -460,8 +424,8 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Callback to the backend ping endpoint.
 	 *
-	 * @param string          $addon Addon name.
-	 * @param WP_REST_Request $request Request object.
+	 * @param string           $addon Addon name.
+	 * @param \WP_REST_Request $request Request object.
 	 *
 	 * @return array|WP_Error
 	 */
@@ -502,8 +466,8 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Backend endpoints route callback.
 	 *
-	 * @param string          $addon Addon name.
-	 * @param WP_REST_Request $request Request object.
+	 * @param string           $addon Addon name.
+	 * @param \WP_REST_Request $request Request object.
 	 *
 	 * @return array|WP_Error
 	 */
@@ -544,8 +508,8 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Backend endpoint schema route callback.
 	 *
-	 * @param string          $addon Addon name.
-	 * @param WP_REST_Request $request Request object.
+	 * @param string           $addon Addon name.
+	 * @param \WP_REST_Request $request Request object.
 	 *
 	 * @return array|WP_Error
 	 */

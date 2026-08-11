@@ -72,22 +72,17 @@ function posts_bridge_airtable_register_http_defaults( $setting ) {
 			$setting['backends'] = $backends;
 		}
 
-		$schemas = array_column( $credentials, 'schema' );
-		$exists  = array_search( $credential_schema, $schemas, true );
+		$names = array_column( $credentials, 'name' );
 
-		if ( false === $exists ) {
-			$names = array_column( $credentials, 'name' );
+		if ( ! in_array( $credential_name, $names, true ) ) {
+			$credentials[] = array(
+				'name'         => $credential_name,
+				'schema'       => $credential_schema,
+				'access_token' => 'your-api-key',
+				'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
+			);
 
-			if ( ! in_array( $credential_name, $names, true ) ) {
-				$credentials[] = array(
-					'name'         => $credential_name,
-					'schema'       => $credential_schema,
-					'access_token' => 'your-api-key',
-					'expires_at'   => time() + 60 * 60 * 24 * 365 * 100,
-				);
-
-				$setting['credentials'] = $credentials;
-			}
+			$setting['credentials'] = $credentials;
 		}
 	}
 
