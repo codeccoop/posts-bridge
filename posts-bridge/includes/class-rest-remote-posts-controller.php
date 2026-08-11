@@ -181,9 +181,9 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 	 * Updates post custom fields after REST API inserts based on bridge custom fields and
 	 * maps featured_media custom fields to the request params.
 	 *
-	 * @param WP_Post         $post Writed post.
-	 * @param WP_REST_Request $request Current request.
-	 * @param boolean         $is_new True if is a newly created post.
+	 * @param \WP_Post         $post Writed post.
+	 * @param \WP_REST_Request $request Current request.
+	 * @param boolean          $is_new True if is a newly created post.
 	 */
 	private function on_rest_insert( $post, $request, $is_new ) {
 		if ( ! $this->is_own_route( $request ) ) {
@@ -246,9 +246,9 @@ class REST_Remote_Posts_Controller extends WP_REST_Posts_Controller {
 	 * Sanitize and validates request params before rest dispatches to prevent schema conflicts and uncompleted
 	 * payloads.
 	 *
-	 * @param mixed           $result Response to replace the requested version with.
-	 * @param WP_REST_Server  $server Server instance.
-	 * @param WP_REST_Request $request Request instance.
+	 * @param mixed            $result Response to replace the requested version with.
+	 * @param \WP_REST_Server  $server Server instance.
+	 * @param \WP_REST_Request $request Request instance.
 	 *
 	 * @return mixed Unaltered result.
 	 */
