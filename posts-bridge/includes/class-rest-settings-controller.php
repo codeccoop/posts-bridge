@@ -272,7 +272,7 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Callback for GET requests to the post_types endpoint.
 	 *
-	 * @param REST_Request $request Request instance.
+	 * @param \WP_REST_Request $request Request instance.
 	 *
 	 * @return array|WP_Error Post type data.
 	 */
@@ -295,7 +295,7 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Callback for the GET request to the post meta endpoint.
 	 *
-	 * @param REST_Request $request Request object.
+	 * @param \WP_REST_Request $request Request object.
 	 *
 	 * @return array|WP_Error
 	 */
@@ -337,13 +337,62 @@ class REST_Settings_Controller extends Base_Controller {
 			}
 		}
 
+		if ( Posts_Bridge::acf_support() ) {
+			$groups = acf_get_field_groups();
+
+			foreach ( $groups as $group ) {
+				if ( ! is_array( $group['location'] ?? false ) ) {
+					continue;
+				}
+
+				$match = false;
+
+				foreach ( $group['location'] as $rule_group ) {
+					$match = false;
+
+					foreach ( $rule_group as $rule ) {
+						$rule = acf_validate_location_rule( $rule );
+
+						if ( 'post_type' !== $rule['param'] ) {
+							continue;
+						}
+
+						if ( '==' === $rule['operator'] && $rule['value'] !== $key ) {
+							continue;
+						}
+						if ( '!=' === $rule['operator'] && $rule['value'] === $key ) {
+							continue;
+						}
+
+						$match = true;
+						break;
+					}
+
+					if ( $match ) {
+						break;
+					}
+				}
+
+				if ( $match ) {
+					$fields = acf_get_fields( $group['ID'] );
+
+					foreach ( $fields as $field ) {
+						$custom_fields[] = array(
+							'name'   => $field['name'],
+							'schema' => array( 'type' => 'string' ),
+						);
+					}
+				}
+			}
+		}
+
 		return $custom_fields;
 	}
 
 	/**
 	 * Callback for POST requests to the post types endpoint.
 	 *
-	 * @param REST_Request $request Request instance.
+	 * @param \WP_REST_Request $request Request instance.
 	 *
 	 * @return array|WP_Error Registration result.
 	 */
@@ -377,7 +426,7 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Callback for DELETE requests to the post types endpoint.
 	 *
-	 * @param REST_Request $request Request instance.
+	 * @param \WP_REST_Request $request Request instance.
 	 *
 	 * @return array|WP_Error Removal result.
 	 */
@@ -402,8 +451,8 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Performs a request validation and sanitization
 	 *
-	 * @param string          $addon Target addon name.
-	 * @param WP_REST_Request $request Request instance.
+	 * @param string           $addon Target addon name.
+	 * @param \WP_REST_Request $request Request instance.
 	 *
 	 * @return array{0:Addon, 1:string}|WP_Error
 	 */
@@ -460,8 +509,8 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Callback to the backend ping endpoint.
 	 *
-	 * @param string          $addon Addon name.
-	 * @param WP_REST_Request $request Request object.
+	 * @param string           $addon Addon name.
+	 * @param \WP_REST_Request $request Request object.
 	 *
 	 * @return array|WP_Error
 	 */
@@ -502,8 +551,8 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Backend endpoints route callback.
 	 *
-	 * @param string          $addon Addon name.
-	 * @param WP_REST_Request $request Request object.
+	 * @param string           $addon Addon name.
+	 * @param \WP_REST_Request $request Request object.
 	 *
 	 * @return array|WP_Error
 	 */
@@ -544,8 +593,8 @@ class REST_Settings_Controller extends Base_Controller {
 	/**
 	 * Backend endpoint schema route callback.
 	 *
-	 * @param string          $addon Addon name.
-	 * @param WP_REST_Request $request Request object.
+	 * @param string           $addon Addon name.
+	 * @param \WP_REST_Request $request Request object.
 	 *
 	 * @return array|WP_Error
 	 */

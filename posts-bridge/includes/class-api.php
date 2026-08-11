@@ -6,7 +6,6 @@
  */
 
 use POSTS_BRIDGE\Settings_Store;
-use POSTS_BRIDGE\Posts_Bridge;
 use POSTS_BRIDGE\Addon;
 use POSTS_BRIDGE\Post_Bridge;
 use HTTP_BRIDGE\Backend;

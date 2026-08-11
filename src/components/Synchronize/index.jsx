@@ -39,15 +39,15 @@ const recurrenceOptions = [
   },
 ];
 
-export default function Synchronize({ synchronize, setSynchronize }) {
+export default function Synchronize({ data, setData }) {
   const [loading] = useLoading();
   const [error] = useError();
 
-  const { enabled, recurrence } = synchronize;
+  const { enabled, recurrence } = data;
 
   const sync = useAjaxSync();
 
-  const update = (field) => setSynchronize({ ...synchronize, ...field });
+  const update = (field) => setData({ ...data, ...field });
 
   return (
     <>

@@ -32,8 +32,8 @@ export default function GeneralSettings() {
   return (
     <>
       <Synchronize
-        synchronize={synchronize}
-        setSynchronize={(synchronize) => update({ synchronize })}
+        data={synchronize}
+        setData={(synchronize) => update({ synchronize })}
       />
       <Spacer paddingY="calc(8px)" />
       <Addons />

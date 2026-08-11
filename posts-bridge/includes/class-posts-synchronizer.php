@@ -750,6 +750,17 @@ class Posts_Synchronizer extends Singleton {
 				set_post_thumbnail( $post_id, $featured_media );
 			}
 
+			if ( ! empty( $post_data['meta_input'] ) && Posts_Bridge::acf_support() ) {
+				foreach ( $post_data['meta_input'] as $field_name => $field_value ) {
+					// $field = acf_maybe_get_field( $field_name, $post_id, false );
+					// if ( ! $field ) {
+					// continue;
+					// }
+
+					update_field( $field_name, $field_value, $post_id );
+				}
+			}
+
 			$rcpt = new Remote_CPT( $post_id, $foreign_id, $post_data );
 
 			do_action( 'posts_bridge_after_synchronization', $rcpt, $post_data );
